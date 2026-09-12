@@ -78,6 +78,11 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
         }
     }
 
+    fun selectGlyphById(id: String) {
+        val glyph = com.scribe.caligrafia.guided.catalog.ReferenceGlyphCatalog.findById(id) ?: return
+        selectGlyph(glyph)
+    }
+
     fun selectStage(stage: PracticeStage) {
         clearAttempt()
         _state.update {

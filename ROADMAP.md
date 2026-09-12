@@ -31,8 +31,8 @@ Before/after com deltas de precisão/inclinação/cadência (`AttemptComparator`
 ## M6 — Meu Alfabeto [CONCLUÍDO — v0.6.0]
 Catálogo de 68 glifos canônicos (`PersonalAlphabet`), versionamento de variantes (`GlyphVariant` v1, v2, v3...) com eleição de favoritas, repositório local atômico `.scribe` (`LocalPersonalAlphabetRepository`), motor de compilação de estilo pessoal (`PersonalStyleCompiler`), tela `AlphabetScreen` em Compose com grade adaptativa, preview vetorial e integração imediata com o `StyleEngine`.
 
-## M7 — Professor IA
-Somente após volume suficiente de sessões reais: interpretar padrões, recomendar foco e gerar próximo treino sem inventar métricas.
+## M7 — Professor IA & Coaching Inteligente [CONCLUÍDO — v0.7.0]
+Motor biomecânico determinístico de 4 dimensões (`MotorDiagnosticEngine`: estabilidade angular $\theta$, contenção de pauta, ritmo/cadência motora e controle de pressão com a S Pen); gerador dinâmico de treino sob medida (`CoachingCurriculumGenerator`); motor de insights pedagógicos, correções e ergonomia em linguagem clara (`CoachingFeedbackEngine`); repositório atômico local (`LocalTeacherRepository`); tela Compose `TeacherScreen` com radar biomecânico e integração direta no caderno.
 
 ## M8 — Expansões
 Galaxy Watch para timer/haptics, backup/sync opcionais, pacotes de estilos, laboratório de assinatura, modo copiar textos, acessibilidade e telas maiores.

@@ -1,65 +1,75 @@
-# Scribe v0.6.0 — Milestone M6: Meu Alfabeto & PersonalStyle
+# Scribe v0.7.0 — Milestone M7: Professor IA & Coaching Inteligente
 
-A versão **v0.6.0** (versionCode: 8) do **Scribe** conclui integralmente o **Milestone M6 (Meu Alfabeto & PersonalStyle)**, introduzindo o repositório vetorial de glifos pessoais (A-Z, a-z, 0-9 e pontuações), versionamento de variantes de escrita (`v1`, `v2`, `v3`...), favoritos e o compilador matemático offline `PersonalStyleCompiler`, capaz de sintetizar o estilo próprio do usuário diretamente em um `ScribeStyle` executável no caderno caligráfico.
+A versão **v0.7.0** (versionCode: 9) do **Scribe** conclui integralmente o **Milestone M7 (Professor IA & Coaching Inteligente)**, introduzindo a camada de inteligência pedagógica do aplicativo: diagnóstico biomecânico em 4 dimensões sobre os traços reais da S Pen, gerador de treino sob medida prescrito conforme a fraqueza prioritária observada, motor de insights pedagógicos em português claro e tela Compose `TeacherScreen`.
 
 ---
 
-## 1. O que foi entregue no Milestone M6 — Meu Alfabeto & PersonalStyle
+## 1. O que foi entregue no Milestone M7 — Professor IA & Coaching Inteligente
 
-### SCR-601: Modelo de Domínio e Variantes de Glifos Pessoais
-- Implementação em [`AlphabetModels.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/alphabet/model/AlphabetModels.kt):
-  - **Catálogo Canônico de 68 Glifos:** 26 maiúsculas (`A`-`Z`), 26 minúsculas (`a`-`z`), 10 dígitos (`0`-`9`) e 6 pontuações/conectores essenciais (`.`, `,`, `!`, `?`, `-`, `&`).
-  - **Categorização Estruturada:** `AlphabetCategory.UPPERCASE`, `LOWERCASE`, `DIGITS`, `PUNCTUATION`.
-  - **Variantes e Versionamento:** cada glifo mantém múltiplas tentativas históricas (`v1`, `v2`, `v3`...), com timestamp, métricas individuais de inclinação/pressão e marcação de variante favorita (`isFavorite`).
-  - **Preservação Vetorial Imutável:** os traçados originais (`List<Stroke>`) são preservados integralmente em formato binário vetorial, sem downsampling destrutivo nem conversão prematura para bitmap.
+### SCR-701: Motor de Diagnóstico Biomecânico (MotorDiagnosticEngine)
+- Implementação em [`MotorDiagnosticEngine.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/teacher/engine/MotorDiagnosticEngine.kt) e modelos em [`TeacherModels.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/teacher/model/TeacherModels.kt):
+  - **100% Offline e Determinístico:** Análise estatística e matemática direta sobre as coordenadas e sensores físicos da S Pen no Samsung Galaxy S25 Ultra:
+    1. **Estabilidade Angular ($\theta$):** Cálculo da inclinação média e desvio padrão ($\sigma_{\theta}$) nos traços descendentes comparados ao alvo formal da pauta (52.0°).
+    2. **Contenção de Pauta:** Taxa de retenção e respeito às linhas mestras (baseline, waistline, ascendente e descendente) sem transbordos.
+    3. **Ritmo e Cadência:** Velocidade média de traçado (px/ms) e detecção de hesitações ou micro-paradas involuntárias no meio do glifo.
+    4. **Controle de Pressão:** Relação de contraste entre downstrokes pesados e upstrokes leves, e detecção de tensão excessiva na empunhadura.
+  - **Índice de Maturidade Caligráfica:** Pontuação global ponderada (0 a 100) categorizada em 4 níveis canônicos: *Iniciante no Traço*, *Praticante Dedicado*, *Calígrafo em Desenvolvimento* e *Mestre do Traço*.
 
-### SCR-602: Compilador Matemático de Estilo Pessoal (PersonalStyleCompiler)
-- Implementação em [`PersonalStyleCompiler.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/alphabet/engine/PersonalStyleCompiler.kt):
-  - **100% Offline e Determinístico:** análise matemática vetorial pura sem modelos pesados de IA ou dependência de rede:
-    - **Ângulo de Inclinação Médio ($\theta$):** cálculo trigonométrico via `atan2(dy, dx)` para traços verticais descendentes predominantes (downstrokes).
-    - **Proporção de Pauta (Guideline Ratio):** estimativa entre corpo x-height, ascendentes e descendentes mapeada para `Ratio111` (1:1:1), `Ratio212` (2:1:2) ou `Ratio323` (3:2:3).
-    - **Espessura de Linha e Contraste de Pressão:** inferência das larguras mínimas e máximas de traço a partir da dinâmica de pressão da S Pen.
-    - **Geração de Estilo:** síntese de um `ScribeStyle` personalizado com categoria `StyleCategory.PERSONAL`, regras de ductus customizadas e registro dinâmico imediato no [`StyleEngine.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/style/engine/StyleEngine.kt) através de `registerCustomStyle()`.
+### SCR-702: Gerador de Treino Sob Medida (CoachingCurriculumGenerator)
+- Implementação em [`CoachingCurriculumGenerator.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/teacher/engine/CoachingCurriculumGenerator.kt):
+  - **Prescrição Dinâmica e Personalizada:** Prescreve uma sessão didática focada especificamente na fraqueza prioritária detectada:
+    - *Oscilação Angular:* Prescrição de treino de alinhamento com aquecimento em slant descendente e foco nas letras `t` ou `l`.
+    - *Contenção de Pauta:* Treino de limites com aquecimento em curvas de underturn/overturn e foco na letra `a`.
+    - *Hesitação de Cadência:* Treino de fluidez com curva composta e ligaduras `it` ou `al` em velocidade uniforme.
+    - *Pressão Constante / Tensa:* Treino de modulação e soltura da empunhadura.
+    - *Mestria:* Desafio em modo solo com marca d'água mínima (Ghost Mode 10%).
 
-### SCR-603: Repositório e Persistência Atômica de Glifos
-- Implementação em [`LocalPersonalAlphabetRepository.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/alphabet/repository/LocalPersonalAlphabetRepository.kt) e [`PersonalAlphabetSerializer.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/alphabet/repository/PersonalAlphabetSerializer.kt):
-  - **Segurança de I/O em Nível de Sistema:** protocolo `.tmp` + `Files.move(..., ATOMIC_MOVE)` com `fos.fd.sync()` para assegurar persistência atômica do manifesto mesmo em quedas abruptas de energia ou encerramentos do app.
-  - **Formato `.scribe` Especializado:** integração com `DedicatedFileStrategy` para armazenamento isolado de cada variante vetorial em subpasta dedicada `alphabet/`.
-  - **Sementes Didáticas Iniciais:** carregamento resiliente de glifos base (`a`, `l`, `i`, `it`) para permitir experimentação imediata no primeiro uso.
+### SCR-703: Motor de Insights Pedagógicos em Linguagem Clara (CoachingFeedbackEngine)
+- Implementação em [`CoachingFeedbackEngine.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/teacher/engine/CoachingFeedbackEngine.kt):
+  - **4 Categorias Estruturadas de Feedback:**
+    - **Elogio Fundamentado (`PRAISE`):** Reconhece ganhos e qualidades reais comprovadas por dados matemáticos.
+    - **Correção Técnica (`CORRECTION`):** Orienta a causa do erro motor e instrui o ajuste biomecânico necessário.
+    - **Dica Ergonômica (`ERGONOMIC_TIP`):** Conselhos práticos sobre a empunhadura da S Pen, pivô do braço na mesa e relaxamento dos dedos.
+    - **Desafio do Mestre (`CHALLENGE`):** Meta calibrada para a próxima sessão de escrita.
 
-### SCR-604: Interface Meu Alfabeto e Integração com Caderno
-- Implementação em [`AlphabetScreen.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/alphabet/ui/AlphabetScreen.kt) e [`AlphabetViewModel.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/alphabet/ui/AlphabetViewModel.kt):
-  - **Grade Adaptativa de Glifos:** renderização em `Canvas` vetorial auto-escalado com suporte à pauta suave e pré-visualização da variante favorita ou mais recente.
-  - **Filtro por Categorias e Indicador de Progresso:** badge visual de completude do alfabeto (ex: `X / 68 glifos preenchidos`).
-  - **Painel Detalhado de Inspeção de Glifo (Bottom Sheet):** navegação entre variantes históricas (`v1`, `v2`...), toggle de favorito, botão "Praticar este Glifo" com atalho direto para a prática guiada.
-  - **Diálogo de Compilação de Estilo:** exibição dos parâmetros biométricos calculados (inclinação calculada, proporção sugerida, contraste) com opção "Usar no Caderno" para aplicar o estilo pessoal imediatamente na sessão de escrita.
-  - **Atalho no Caderno:** chip de navegação rápida "Alfabeto (M6)" no topo do [`NotebookPracticeScreen.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/notebook/ui/NotebookPracticeScreen.kt) e roteamento central em [`MainActivity.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/MainActivity.kt).
+### SCR-704: Interface "Professor IA" em Compose & Persistência Atômica
+- Implementação em [`TeacherScreen.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/teacher/ui/TeacherScreen.kt) e [`TeacherViewModel.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/teacher/ui/TeacherViewModel.kt):
+  - **Maturity Header Card:** Exibição do nível caligráfico, nota geral, pontos fortes e pontos de atenção prioritários.
+  - **Card do Treino Prescrito:** Detalhes da sessão recomendada com botão de ação direta *"Iniciar Treino com o Professor"* (roteamento direto para a prática guiada).
+  - **Radar/Barras Biomecânicas Interativas:** Inspeção expansível de cada uma das 4 dimensões com diagnósticos detalhados.
+  - **Mural de Insights:** Cards coloridos por tipo de conselho com valores de métrica delta.
+  - **Persistência Atômica Segura:** [`LocalTeacherRepository.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/teacher/repository/LocalTeacherRepository.kt) com serializador Kotlin puro [`TeacherSerializer.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/teacher/repository/TeacherSerializer.kt) e protocolo `.tmp` + `fos.fd.sync()` + `Files.move(..., ATOMIC_MOVE)`.
+  - **Atalho no Caderno:** Chip de acesso rápido "Professor (M7)" na barra superior do [`NotebookPracticeScreen.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/notebook/ui/NotebookPracticeScreen.kt) e rota central na [`MainActivity.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/MainActivity.kt).
 
 ---
 
 ## 2. Testes Automatizados e Qualidade
 
-- **Testes Unitários:** **149 testes automatizados** passando com 100% de sucesso (33 classes de teste cobrindo M0 a M6).
-  - `PersonalStyleCompilerTest.kt`: validação de cálculo de inclinação angular, mapeamento de proporções de pauta e registro de estilo pessoal.
-  - `PersonalAlphabetSerializerTest.kt`: serialização e desserialização completa de manifesto de alfabeto, integridade de categorias e preservação de metadados.
-  - `LocalPersonalAlphabetRepositoryTest.kt`: gravação atômica, carregamento de sementes iniciais, persistência de variantes vetoriais e marcação de favoritos.
-  - `ViewModelInstantiationTest.kt`: verificação de `@JvmOverloads constructor` para `AlphabetViewModel` garantindo estabilidade e injeção de dependências sem crash.
+- **Testes Unitários:** **173 testes automatizados** passando com 100% de sucesso (38 classes de teste cobrindo M0 a M7).
+  - `MotorDiagnosticEngineTest.kt`: validação de cálculo de dispersão angular, penalidade por hesitação, contraste de pressão e diagnóstico global.
+  - `CoachingCurriculumGeneratorTest.kt`: validação de prescrição para fraquezas de ângulo, pauta, cadência, pressão e modo maestria.
+  - `CoachingFeedbackEngineTest.kt`: validação de todas as categorias de insight (elogio, correção, dica ergonômica, desafio).
+  - `TeacherSerializerTest.kt`: serialização e desserialização completa de diagnósticos, prescrições e insights.
+  - `LocalTeacherRepositoryTest.kt`: validação de gravação atômica, carregamento de baseline e conclusão de prescrição.
+  - `ViewModelInstantiationTest.kt`: verificação de `@JvmOverloads constructor` para `TeacherViewModel`.
 - **Análise Estática de Lint:** `lintDebug` executado com **0 erros**.
 - **Watchdog:** 4/4 etapas aprovadas (`scripts/watchdog.ps1`). Código 100% Kotlin nativo, zero WebViews e zero dependências não autorizadas de nuvem.
 - **Compilação de APKs:**
-  - APK Release Assinado: `app-release.apk` (**16.42 MB**)
-  - APK Debug: `app-debug.apk` (**22.52 MB**)
-- **Versionamento:** `versionCode = 8`, `versionName = "0.6.0"`.
+  - APK Release Assinado: `app-release.apk` (**16.45 MB**)
+  - APK Debug: `app-debug.apk` (**22.60 MB**)
+- **Versionamento:** `versionCode = 9`, `versionName = "0.7.0"`.
 
 ---
 
 ## 3. Distribuição dos Artefatos
 
 1. **Google Drive (Aparelho Físico / S25 Ultra):**
-   - `E:\Meu Drive\Apks\scribe-v0.6.0-release.apk`
-   - `E:\Meu Drive\Apks\scribe-v0.6.0-debug.apk`
-   - `E:\Meu Drive\Scribe\scribe-v0.6.0-release.apk`
-   - `E:\Meu Drive\Scribe\scribe-v0.6.0-debug.apk`
+   - `E:\Meu Drive\Apks\scribe-v0.7.0-release.apk`
+   - `E:\Meu Drive\Apks\scribe-v0.7.0-debug.apk`
+   - `E:\Meu Drive\Scribe\scribe-v0.7.0-release.apk`
+   - `E:\Meu Drive\Scribe\scribe-v0.7.0-debug.apk`
+   - `E:\Meu Drive\codex\scribe\scribe-v0.7.0-release.apk`
+   - `E:\Meu Drive\codex\scribe\scribe-v0.7.0-debug.apk`
    - Espelho completo do repositório em `E:\Meu Drive\codex\scribe\`
 2. **GitHub:**
-   - Commit e Tag `v0.6.0` sincronizados com `origin/main`.
+   - Commit e Tag `v0.7.0` sincronizados com `origin/main`.

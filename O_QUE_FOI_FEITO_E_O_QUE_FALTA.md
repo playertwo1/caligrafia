@@ -1,13 +1,13 @@
 # Scribe — O Que Foi Feito e O Que Falta (Relatório para Codex e Roadmap)
 
 **Data de Atualização:** 12 de Setembro de 2026  
-**Versão:** 0.6.0 (versionCode 8)  
+**Versão:** 0.7.0 (versionCode 9)  
 **Aparelho-Alvo Principal:** Samsung Galaxy S25 Ultra (com S Pen original)  
 **Repositório GitHub:** https://github.com/playertwo1/caligrafia  
 
 ---
 
-## 1. O Que Foi Feito Até Agora (Marcos M0, M1, M2, M3, M4, M5 e M6 100% Concluídos)
+## 1. O Que Foi Feito Até Agora (Marcos M0, M1, M2, M3, M4, M5, M6 e M7 100% Concluídos)
 
 ### 1.1. Milestone M0 — Stylus Lab (Fundação do Motor de Caneta)
 - **SCR-001 — Bootstrap do Projeto:** Android SDK 35, Min SDK 26, Kotlin 2.2.10, Gradle 9.3.1, AGP 9.1.1, Jetpack Compose com Material 3, aceleração gráfica por hardware ativa.
@@ -187,29 +187,42 @@
 
 ---
 
+### 1.9. Milestone M7 — Professor IA & Coaching Inteligente (v0.7.0)
+- **SCR-701 — Motor de Diagnóstico Biomecânico (`MotorDiagnosticEngine`):**
+  - Avaliação matemática e estatística offline sobre os traços reais da S Pen em 4 dimensões fundamentais:
+    - *Estabilidade Angular:* desvio padrão ($\sigma_{\theta}$) e proximidade da inclinação média em relação ao alvo formal da pauta.
+    - *Controle de Pauta:* taxa de contenção e respeito à baseline, waistline e ascendentes sem transbordos.
+    - *Ritmo e Cadência:* velocidade média de traçado (px/ms) e detecção de hesitações/micro-paradas na escrita.
+    - *Controle de Pressão:* contraste entre downstrokes e upstrokes, e detecção de tensão física excessiva na empunhadura da S Pen.
+- **SCR-702 — Gerador de Treino Sob Medida (`CoachingCurriculumGenerator`):**
+  - Prescrição dinâmica focada na fraqueza prioritária observada no calígrafo: aquecimento direcionado, exercício de foco, nível sugerido de Ghost Mode e meta técnica clara.
+- **SCR-703 — Motor de Insights Pedagógicos em Linguagem Clara (`CoachingFeedbackEngine`):**
+  - Elogios fundamentados em números reais, correções técnicas de traço, desafios e dicas ergonômicas sobre postura e uso da S Pen no Galaxy S25 Ultra.
+- **SCR-704 — Interface "Professor IA" em Jetpack Compose (`TeacherScreen` e `TeacherViewModel`):**
+  - Visualização de maturidade caligráfica global, radar/barras das 4 dimensões biomecânicas com expansão diagnóstica, card do treino prescrito com botão "Iniciar Treino com o Professor", mural de insights pedagógicos e atalho "Professor (M7)" na toolbar do caderno.
+  - Repositório local com persistência atômica segura `.tmp` + `ATOMIC_MOVE` e serializador Kotlin puro `TeacherSerializer`.
+
+---
+
 ## 2. Cobertura de Testes e Qualidade
 
-- **Testes Unitários Automatizados:** 149 testes passando 100% (33 classes de testes unitários cobrindo M0 a M6).
+- **Testes Unitários Automatizados:** 173 testes passando 100% (38 classes de testes unitários cobrindo M0 a M7).
 - **Verificação do Watchdog (`watchdog.ps1`):** Aprovado (4/4 verificações).
   - Zero WebViews.
   - Zero dependências não autorizadas de nuvem/backend.
 - **Análise de Lint (`lintDebug`):** 0 erros.
 - **Compilação:**
-  - APK Debug: `app-debug.apk` (22.52 MB)
-  - APK Release Assinado: `app-release.apk` (16.42 MB)
+  - APK Debug: `app-debug.apk` (22.60 MB)
+  - APK Release Assinado: `app-release.apk` (16.45 MB)
 
 ---
 
-## 3. O Que Falta Implementar nos Próximos Marcos (Roadmap M7 e M8)
+## 3. O Que Falta Implementar nos Próximos Marcos (Roadmap M8)
 
 Conforme a especificação [ROADMAP.md](file:///c:/Users/fael/Documents/Codex/scribe/ROADMAP.md) e [PRODUCT_SPEC.md](file:///c:/Users/fael/Documents/Codex/scribe/PRODUCT_SPEC.md):
 
-### 3.1. M7 — Professor IA (PRÓXIMO MARCO)
-- Somente após volume suficiente de sessões e variantes reais: modelagem local e segura para interpretação de padrões de escrita e sugestões de treino sem inventar métricas.
-- Respeito absoluto à privacidade do usuário e aos dados vetoriais locais (zero nuvem obrigatória).
-
-### 3.2. M8 — Expansões
-- Integração de relógio para haptics/ritmo (Galaxy Watch), backup opcional e exportação avançada.
+### 3.1. M8 — Expansões
+- Integração de relógio para haptics/ritmo (Galaxy Watch), backup/sync local opcional, pacotes de estilos avançados, laboratório de assinatura, modo copiar textos, acessibilidade e telas maiores.
 
 ---
 

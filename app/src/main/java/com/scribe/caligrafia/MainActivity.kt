@@ -26,6 +26,8 @@ import com.scribe.caligrafia.learning.ui.LearningHubScreen
 import com.scribe.caligrafia.learning.ui.LearningViewModel
 import com.scribe.caligrafia.notebook.ui.NotebookPracticeScreen
 import com.scribe.caligrafia.notebook.viewmodel.NotebookPracticeViewModel
+import com.scribe.caligrafia.teacher.ui.TeacherScreen
+import com.scribe.caligrafia.teacher.ui.TeacherViewModel
 import com.scribe.caligrafia.ui.theme.ScribeTheme
 
 enum class ScribeScreen {
@@ -34,6 +36,7 @@ enum class ScribeScreen {
     LEARNING_HUB,
     EVOLUTION,
     ALPHABET,
+    TEACHER_AI,
     STYLUS_LAB
 }
 
@@ -45,6 +48,7 @@ class MainActivity : ComponentActivity() {
     private val learningViewModel: LearningViewModel by viewModels()
     private val evolutionViewModel: EvolutionViewModel by viewModels()
     private val alphabetViewModel: AlphabetViewModel by viewModels()
+    private val teacherViewModel: TeacherViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,6 +74,7 @@ class MainActivity : ComponentActivity() {
                         ScribeScreen.LEARNING_HUB -> currentScreen = ScribeScreen.NOTEBOOK
                         ScribeScreen.EVOLUTION -> currentScreen = ScribeScreen.NOTEBOOK
                         ScribeScreen.ALPHABET -> currentScreen = ScribeScreen.NOTEBOOK
+                        ScribeScreen.TEACHER_AI -> currentScreen = ScribeScreen.NOTEBOOK
                         ScribeScreen.NOTEBOOK -> {
                             val now = System.currentTimeMillis()
                             if (now - lastBackPressTime < 2000L) {
@@ -90,7 +95,8 @@ class MainActivity : ComponentActivity() {
                             onNavigateToGuidedPractice = { currentScreen = ScribeScreen.GUIDED_PRACTICE },
                             onNavigateToLearningHub = { currentScreen = ScribeScreen.LEARNING_HUB },
                             onNavigateToEvolution = { currentScreen = ScribeScreen.EVOLUTION },
-                            onNavigateToAlphabet = { currentScreen = ScribeScreen.ALPHABET }
+                            onNavigateToAlphabet = { currentScreen = ScribeScreen.ALPHABET },
+                            onNavigateToTeacher = { currentScreen = ScribeScreen.TEACHER_AI }
                         )
                     }
                     ScribeScreen.GUIDED_PRACTICE -> {
@@ -117,6 +123,16 @@ class MainActivity : ComponentActivity() {
                             onNavigateBack = { currentScreen = ScribeScreen.NOTEBOOK },
                             onNavigateToPractice = { currentScreen = ScribeScreen.GUIDED_PRACTICE },
                             onNavigateToNotebook = { currentScreen = ScribeScreen.NOTEBOOK }
+                        )
+                    }
+                    ScribeScreen.TEACHER_AI -> {
+                        TeacherScreen(
+                            viewModel = teacherViewModel,
+                            onBack = { currentScreen = ScribeScreen.NOTEBOOK },
+                            onStartPractice = { exerciseId ->
+                                guidedPracticeViewModel.selectGlyphById(exerciseId)
+                                currentScreen = ScribeScreen.GUIDED_PRACTICE
+                            }
                         )
                     }
                     ScribeScreen.STYLUS_LAB -> {

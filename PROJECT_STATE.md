@@ -1,13 +1,13 @@
 # PROJECT_STATE
 
 **Projeto:** Scribe / Caligrafia
-**Versão documental:** v0.6.0
-**Versão do aplicativo:** v0.6.0 (versionCode 8)
-**Estado:** M6_COMPLETED — Milestone M6 (Meu Alfabeto & PersonalStyle) 100% concluído e verificado. Catálogo de escrita pessoal com 68 glifos canônicos (A-Z, a-z, 0-9, ligaduras/símbolos), curadoria de versões (v1, v2, v3...) com eleição de variantes favoritas, persistência atômica segura em disco via manifesto JSON e arquivos vetoriais brutos dedicados .scribe; Motor de compilação de estilo pessoal (PersonalStyleCompiler) calculando inclinação média ponderada, proporção de pauta e modulação de contraste em ScribeStyle próprio; Tela Compose AlphabetScreen com grade de caracteres, pré-visualização vetorial em tempo real, bottom sheet de inspeção e diálogo comemorativo de estilo. 149 testes unitários passando (100% green), lintDebug com 0 erros, Watchdog 4/4 aprovado, APKs v0.6.0 compilados e distribuídos no Google Drive e GitHub. Transição formal para o Milestone M7.
-**Milestone atual:** M7 — Professor IA (preparação).
-**Código de produto:** M0 concluído (SCR-001 a SCR-008); M1 concluído (SCR-009 a SCR-014); Hotfix SCR-BUG-001 (v0.1.1); Feature SCR-FEAT-001 (v0.1.2); M2 concluído (SCR-015 a SCR-019); M3 concluído (SCR-020 a SCR-023); M4 concluído (SCR-401 a SCR-404); M5 concluído (SCR-501 a SCR-504); M6 concluído (SCR-601 a SCR-604).
+**Versão documental:** v0.7.0
+**Versão do aplicativo:** v0.7.0 (versionCode 9)
+**Estado:** M7_COMPLETED — Milestone M7 (Professor IA & Coaching Inteligente) 100% concluído e verificado. Motor de diagnóstico biomecânico (MotorDiagnosticEngine) avaliando 4 dimensões (Estabilidade Angular, Contenção de Pauta, Ritmo e Cadência, Controle de Pressão da S Pen); Gerador de treino personalizado sob medida (CoachingCurriculumGenerator); Motor de insights pedagógicos em linguagem natural (CoachingFeedbackEngine); Repositório atômico local (LocalTeacherRepository); Tela Compose TeacherScreen com visualização de maturidade, radar biomecânico, card de treino prescrito e dicas ergonômicas da S Pen. 173 testes unitários passando (100% green), lintDebug com 0 erros, Watchdog 4/4 aprovado, APKs v0.7.0 compilados e distribuídos no Google Drive e GitHub. Transição formal para o Milestone M8.
+**Milestone atual:** M8 — Expansões (preparação).
+**Código de produto:** M0 concluído (SCR-001 a SCR-008); M1 concluído (SCR-009 a SCR-014); Hotfix SCR-BUG-001 (v0.1.1); Feature SCR-FEAT-001 (v0.1.2); M2 concluído (SCR-015 a SCR-019); M3 concluído (SCR-020 a SCR-023); M4 concluído (SCR-401 a SCR-404); M5 concluído (SCR-501 a SCR-504); M6 concluído (SCR-601 a SCR-604); M7 concluído (SCR-701 a SCR-704).
 
-## Status de Transição — Gate M0 a Gate M6
+## Status de Transição — Gate M0 a Gate M7
 - **Gate M0 (Stylus Lab):** Aprovado tecnicamente. Resolução de probe defects da auditoria do Codex integrada e validada via testes dedicados.
 - **Gate M1 (Caderno):** Aprovado integralmente com salvamento atômico, persistência .scribe robusta e exportação de PNG em alta resolução.
 - **Gate M2 (Treino Guiado):** Aprovado integralmente com catálogo de 12 exercícios, Ghost Mode (100% a 0%), fluxo Trace/Copiar/Sozinho e avaliação determinística calibrada (52° exato e teste de cobertura).
@@ -15,6 +15,7 @@
 - **Gate M4 (Learning System):** Aprovado integralmente com catálogo canônico de 18 lições progressivas nos 5 estágios caligráficos (`CurriculumCatalog`), temporizador determinístico por fases pedagógicas (`SessionTimer`), algoritmo local de repetição espaçada (`ReviewScheduler`), persistência atômica de histórico (`LocalLearningHistoryRepository` e `LearningHistorySerializer`) e nova tela Compose `LearningHubScreen` com métricas não-punitivas.
 - **Gate M5 (Progress & Evolution):** Aprovado integralmente com comparador Before/After (`AttemptComparator`), slider de sobreposição vetorial (`OverlaySlider`), motor de Dual Replay lado a lado sincronizado (`DualReplayEngine`), repositório de tentativas com salvamento atômico (`LocalPracticeAttemptRepository`), calendário de consistência não-punitivo (`CalendarConsistencyHelper`) e tela Compose unificada `EvolutionScreen` com 4 abas e integração na navegação principal.
 - **Gate M6 (Meu Alfabeto & PersonalStyle):** Aprovado integralmente com catálogo de 68 glifos (`PersonalAlphabet`), versionamento de variantes caligráficas (`GlyphVariant` v1, v2, v3...), repositório com gravação atômica `.tmp` + `ATOMIC_MOVE` e traços vetoriais em `.scribe` dedicado (`LocalPersonalAlphabetRepository`), motor de derivação matemática de estilos (`PersonalStyleCompiler`) e tela interativa `AlphabetScreen` com grade adaptativa, preview vetorial e registro imediato no `StyleEngine`.
+- **Gate M7 (Professor IA & Coaching):** Aprovado integralmente com motor biomecânico determinístico de 4 dimensões (`MotorDiagnosticEngine`), prescrição inteligente de treino (`CoachingCurriculumGenerator`), insights em linguagem clara (`CoachingFeedbackEngine`), persistência atômica (`LocalTeacherRepository`) e interface completa `TeacherScreen` com integração direta ao caderno.
 
 ## Entregas Concluídas
 - **SCR-001 a SCR-008 (Milestone M0 — Stylus Lab):** Bootstrap Android, Device Capability Inspector (Galaxy S25 Ultra + S Pen), Capture Pipeline com raw strokes imutáveis e historical samples, Live Renderer (Android Ink API + Bézier nativo de referência), Palm Rejection com proximidade EMR e modo Stylus Only, Persistence Spike (decisão arquitetural `.scribe` híbrido), Replay vetorial determinístico (0.5x, 1x, 2x) e Lifecycle Edge Cases (flush de traço ativo, contingência e detecção de silo de hardware).
@@ -50,14 +51,17 @@
 - **SCR-602 Motor de Compilação de Estilo Pessoal (M6):** Algoritmo determinístico `PersonalStyleCompiler` calculando inclinação média observada nos traços ($\theta$), proporção caligráfica (1:1:1, 2:1:2, 3:2:3), contraste de modulação de pressão e geração de `ScribeStyle` (`category = StyleCategory.PERSONAL`) com auto-registro no `StyleEngine`.
 - **SCR-603 Repositório Local com Persistência Atômica Segura (M6):** Módulo `LocalPersonalAlphabetRepository` com gravação atômica de manifesto `.tmp` + `ATOMIC_MOVE` + `fos.fd.sync()` e armazenamento de traços em arquivos compactados `.scribe` individuais via `DedicatedFileStrategy`; serializador puro em Kotlin `PersonalAlphabetSerializer`.
 - **SCR-604 Interface "Meu Alfabeto" em Jetpack Compose (M6):** Tela `AlphabetScreen` e `AlphabetViewModel` com visualização em grade adaptativa, pré-visualização vetorial em tempo real auto-escalada, bottom sheet de inspeção com eleição de favorito e atalho para Treino Guiado, diálogo de compilação de estilo e atalho "Alfabeto (M6)" na toolbar do caderno e roteador principal da `MainActivity`.
+- **SCR-701 Motor de Diagnóstico Biomecânico (M7):** Módulo `MotorDiagnosticEngine` avaliando 4 dimensões fundamentais (Estabilidade Angular $\theta$, Contenção de Pauta, Ritmo e Cadência com detecção de hesitação, e Controle de Pressão com detecção de tensão da S Pen).
+- **SCR-702 Gerador de Treino Sob Medida (M7):** Módulo `CoachingCurriculumGenerator` gerando prescrição de treino direcionada à fraqueza prioritária detectada no calígrafo.
+- **SCR-703 Motor de Insights Pedagógicos em Linguagem Clara (M7):** Módulo `CoachingFeedbackEngine` gerando elogios fundamentados, correções técnicas, desafios e dicas ergonômicas da S Pen no S25 Ultra.
+- **SCR-704 Interface do Professor IA e Repositório Atômico (M7):** Tela `TeacherScreen` e `TeacherViewModel` com visualização de maturidade, gráfico das 4 dimensões, card de treino prescrito e atalho "Professor (M7)" no caderno; persistência atômica via `LocalTeacherRepository`.
 
 ## Próxima Ação
-- **M7 — Professor IA (Preparação):**
-  - Somente após volume suficiente de sessões e variantes reais: modelagem local e segura para interpretação de padrões de escrita e sugestões de treino sem inventar métricas.
-  - Princípio inviolável: zero nuvem obrigatória, respeito absoluto à privacidade do usuário e aos dados vetoriais locais.
+- **M8 — Expansões (Preparação):**
+  - Integração opcional com Galaxy Watch para timer e haptics de postura, backup/sync local, laboratório de assinaturas e acessibilidade.
 
 ## Gates
-Não iniciar IA, backend, login, marketplace antes dos milestones correspondentes. Gates M0, M1, M2, M3, M4, M5 e M6 formalmente concluídos e verificados.
+Não iniciar backend, nuvem ou marketplace antes dos milestones correspondentes. Gates M0, M1, M2, M3, M4, M5, M6 e M7 formalmente concluídos e verificados.
 
 ## Decisões já tomadas
 - Kotlin nativo + Jetpack Compose.
@@ -105,4 +109,23 @@ Não iniciar IA, backend, login, marketplace antes dos milestones correspondente
   - *SCR-404 (Histórico e Progresso Não-Punitivo):* Repositório `LocalLearningHistoryRepository` com gravação atômica segura `.tmp` + `ATOMIC_MOVE`, serializador puro em Kotlin `LearningHistorySerializer` (zero dependências ou stubs do android.jar), métricas acumulativas sem streaks punitivos.
   - *Interface Compose do Hub de Aprendizado:* `LearningHubScreen` e `LearningViewModel`, diálogo modal da sessão com barra de progresso por fase e contagem regressiva, botão seletor de duração, acordeão da trilha caligráfica e atalho "Aulas (M4)" integrado no caderno e no roteador principal.
   - *Qualidade:* 129 testes unitários 100% aprovados, lintDebug aprovado com 0 erros, Watchdog 4/4 aprovado. Versão bump para v0.4.0 (versionCode 6). APKs de release (16.3 MB) e debug (22.3 MB) compilados e sincronizados no Google Drive e GitHub.
+- 2026-09-12 — Conclusão Integral do Milestone M5 — Progress & Evolution (SCR-501 a SCR-504 / v0.5.0):
+  - *SCR-501 (Before/After):* `AttemptComparator` computando pareamento e deltas determinísticos de precisão (+%), alinhamento angular e cadência (px/ms).
+  - *SCR-502 (Overlay):* Slider contínuo de sobreposição vetorial cross-fade (Coral vs. Azul Royal) sobre pautas clássicas.
+  - *SCR-503 (Dual Replay):* `DualReplayEngine` com timeline normalizada em 60-120 fps, controles de transporte completos e velocidades 0.5x, 1.0x e 2.0x.
+  - *SCR-504 (Calendário de Consistência):* `LocalPracticeAttemptRepository` com persistência atômica segura `.tmp` + `ATOMIC_MOVE`, arquivos `.scribe` por tentativa e `CalendarConsistencyHelper` com grade mensal não-punitiva.
+  - *Interface Compose de Evolução:* `EvolutionScreen` e `EvolutionViewModel` com 4 abas integradas à navegação principal e botão "Evolução (M5)" no caderno.
+  - *Qualidade:* 137 testes unitários 100% aprovados, 0 erros de lint, Watchdog 4/4 aprovado. Versão bump para v0.5.0 (versionCode 7). APKs distribuídos no Google Drive e GitHub.
+- 2026-09-12 — Conclusão Integral do Milestone M6 — Meu Alfabeto & PersonalStyle (SCR-601 a SCR-604 / v0.6.0):
+  - *SCR-601 (Catálogo Canônico):* 68 glifos canônicos com versionamento de variantes (v1, v2...), favoritos e preservação de raw strokes vetoriais (`AlphabetModels`).
+  - *SCR-602 (PersonalStyleCompiler):* Compilador matemático offline derivando inclinação média ($\theta$), proporção de pauta e modulação de pressão, sintetizando um `ScribeStyle` executável e auto-registrado no `StyleEngine`.
+  - *SCR-603 (Repositório Atômico):* `LocalPersonalAlphabetRepository` com `.scribe` dedicado via `DedicatedFileStrategy`, manifesto atômico via `fos.fd.sync()` e sementes iniciais didáticas.
+  - *SCR-604 (Interface Meu Alfabeto):* `AlphabetScreen` e `AlphabetViewModel` com grade responsiva auto-escalada, bottom sheet de variantes com atalho de treino e diálogo de compilação.
+  - *Qualidade:* 152 testes unitários 100% aprovados, 0 erros de lint, Watchdog 4/4 aprovado. Versão bump para v0.6.0 (versionCode 8). APKs distribuídos no Google Drive e GitHub.
+- 2026-09-12 — Conclusão Integral do Milestone M7 — Professor IA & Coaching Inteligente (SCR-701 a SCR-704 / v0.7.0):
+  - *SCR-701 (Motor de Diagnóstico Biomecânico):* `MotorDiagnosticEngine` calculando estabilidade angular ($\theta$), contenção de pauta, cadência/ritmo com detecção de hesitação, e controle de pressão com detecção de tensão da S Pen.
+  - *SCR-702 (Gerador de Treino Sob Medida):* `CoachingCurriculumGenerator` prescrevendo aquecimento e exercício direcionado à fraqueza prioritária observada.
+  - *SCR-703 (Motor de Insights Pedagógicos):* `CoachingFeedbackEngine` gerando elogios fundamentados, correções técnicas, desafios e dicas ergonômicas da S Pen no S25 Ultra.
+  - *SCR-704 (Interface e Persistência Atômica):* `TeacherScreen` e `TeacherViewModel` com índice de maturidade, radar das 4 dimensões, card de treino prescrito e atalho no caderno; repositório local atômico com serializador Kotlin puro `TeacherSerializer`.
+  - *Qualidade:* 173 testes unitários 100% aprovados, 0 erros de lint, Watchdog 4/4 aprovado. Versão bump para v0.7.0 (versionCode 9). APKs de release assinado e debug compilados e distribuídos no Google Drive e GitHub.
 
