@@ -1,9 +1,9 @@
 # AUDIT_REPORT — Relatório Completo de Implementação e Auditoria
 
 **Projeto:** Scribe (Caligrafia com S Pen / Stylus)  
-**Versão Atual:** v0.2.0 (versionCode 4)  
-**Milestones Concluídos:** M0 (Stylus Lab), M1 (Caderno Vetorial), M2 (Treino Guiado)  
-**Estado Atual:** `M2_COMPLETED` (SCR-001 a SCR-019 concluídos e verificados)  
+**Versão Atual:** v0.3.0 (versionCode 5)  
+**Milestones Concluídos:** M0 (Stylus Lab), M1 (Caderno Vetorial), M2 (Treino Guiado), M3 (Style Engine)  
+**Estado Atual:** `M3_COMPLETED` (SCR-001 a SCR-023 concluídos e verificados)  
 **Data da Auditoria:** 2026-09-12  
 **Destinatário da Auditoria:** Codex / Revisor Técnico Independente  
 
@@ -13,11 +13,12 @@
 
 Este documento consolida integralmente a arquitetura, modelos de domínio, algoritmos matemáticos, decisões de engenharia, configurações de build e suíte de testes implementados no repositório **Scribe**. O desenvolvimento encontra-se rigorosamente alinhado com as regras invioláveis de [AGENTS.md](file:///c:/Users/fael/Documents/Codex/scribe/AGENTS.md), [PRODUCT_SPEC.md](file:///c:/Users/fael/Documents/Codex/scribe/PRODUCT_SPEC.md), [ROADMAP.md](file:///c:/Users/fael/Documents/Codex/scribe/ROADMAP.md), [ARCHITECTURE.md](file:///c:/Users/fael/Documents/Codex/scribe/ARCHITECTURE.md), [STYLUS_ENGINE.md](file:///c:/Users/fael/Documents/Codex/scribe/STYLUS_ENGINE.md) e [PROJECT_STATE.md](file:///c:/Users/fael/Documents/Codex/scribe/PROJECT_STATE.md).
 
-Foram concluídos e verificados os três marcos iniciais do produto:
+Foram concluídos e verificados os quatro marcos iniciais do produto, somados à resolução exaustiva das constatações da auditoria do Codex:
 1. **M0 — Stylus Lab (SCR-001 a SCR-008):** Bootstrap Android, inspeção de hardware do Samsung Galaxy S25 Ultra, ingestão de raw strokes imutáveis com historical samples, motor polimórfico de renderização (Android Ink API + Bézier nativo de referência), rejeição de palma por proximidade (EMR hover) e toque ativo, persistência binária dedicada `.scribe` com benchmark comparativo, motor de replay temporal vetorial determinístico e blindagem de ciclo de vida com detecção de silo de hardware.
 2. **M1 — Caderno Vetorial (SCR-009 a SCR-014):** Pautas caligráficas com proporções clássicas (1:1:1, 2:1:2, 3:2:3) e cálculo trigonométrico de slant lines ($\Delta X = \Delta Y / \tan\theta$), repositório de cadernos e páginas com manifestos leves e arquivos `.scribe` Schema v2, ferramentas com espessuras e paleta de cores clássicas, pilha bidirecional de Undo/Redo, borracha vetorial com sweeping e detecção ponto-a-segmento, exportação em PNG de alta resolução preservando vetores e tela Compose com folheamento.
 3. **Hotfix & Refinamento Físico (SCR-BUG-001 & SCR-FEAT-001 / v0.1.1 & v0.1.2):** Correção de reflexão em ViewModels (`@JvmOverloads`) para resolver crash de inicialização no aparelho real e implementação de bloqueio de gestos de borda laterais (`ViewCompat.setSystemGestureExclusionRects`) idêntico ao **Samsung Notes**, permitindo escrita encostando na lateral e descanso da palma sem disparar o gesto Voltar do Android, mantendo a navegação inferior 100% funcional.
 4. **M2 — Treino Guiado (SCR-015 a SCR-019 / v0.2.0):** Modelagem canônica de `ReferenceGlyph` com catálogo de 12 exercícios fundamentais (traços básicos e letras cursivas), Ghost Mode progressivo em 5 níveis (100%, 70%, 40%, 10%, 0%) com pistas direcionais numeradas e setas vetoriais, fluxo pedagógico em 3 etapas (Cobrir → Copiar → Sozinho), motor de avaliação geométrica 100% determinístico e matemático (zero IA/cloud) e nova tela Compose `GuidedPracticeScreen`.
+5. **Resolução de Auditoria do Codex & M3 — Style Engine (SCR-020 a SCR-023 / v0.3.0):** Correção de 6 probe defects e inconsistências auditadas (A02 salvamento atômico com arquivos temporários, A04/A05 eliminação de strokes espúrios de borracha e continuidade de sweeping, A07 preservação de zeros em sensores físicos, A08 captura em ACTION_POINTER_UP, A09/A10 renderização real e escalonamento de PNG export, A11 replay de estilo, A12/A13 alinhamento trigonométrico a 52.0° e verificação de cobertura mínima, A14 anulação reativa de avaliação ao escrever, A15 sincronização de cache de pautas, A18 lint Android Q para isExternal e chmod de CI, A19 isolamento de credenciais de signing). Formato canônico `ScribeStyle v1`, 3 estilos canônicos (Cursiva Escolar, Copperplate e Spencerian), importador seguro de fontes locais TTF/OTF (`StyleFontImporter`), motor de estilos tolerante a falhas (`StyleEngine`) e seletores de estilo com auto-adaptação no Caderno e no Treino Guiado.
 
 ---
 
@@ -177,51 +178,63 @@ Execução realizada via script PowerShell padronizado (`.\scripts\watchdog.ps1`
 * **Captura e Rejeição de Palma (`ink/capture`, `ink/palm`, `ink/gesture`):**
   * `StrokeCapturePipeline.kt`, `InMemoryStrokeRepository.kt`, `StrokeEraserHelper.kt`, `PalmRejectionPolicy.kt`, `EdgeGestureExclusionHelper.kt`.
 * **Persistência de Traços (`ink/persistence`):**
-  * `StrokePersistenceStrategy.kt`, `PersistenceResult.kt`, `RelationalTableStrategy.kt`, `CompressedBlobStrategy.kt`, `DedicatedFileStrategy.kt` (Schema v2), `PersistenceBenchmarkRunner.kt`.
-* **Renderização e Replay (`ink/renderer`, `ink/replay`):**
-  * `InkRenderer.kt`, `RendererType.kt`, `SmoothedReferenceRenderer.kt`, `RawPolylineRenderer.kt`, `AndroidInkRendererAdapter.kt`, `GuidelineRenderer.kt`, `RendererManager.kt`, `ReplayState.kt`, `StrokeReplayEngine.kt`.
-* **Ciclo de Vida e Hardware (`ink/lifecycle`, `inspector`):**
-  * `SPenInsertionDetector.kt`, `SessionLifecycleManager.kt`, `StylusLabViewModel.kt`, `DeviceCapabilityInspector.kt`, `DeviceCapabilities.kt`, `InspectorScreen.kt`.
-* **Caderno de Caligrafia M1 (`notebook`):**
-  * `NotebookManifestSerializer.kt`, `NotebookRepository.kt`, `LocalNotebookRepository.kt`, `PageExporter.kt`, `NotebookCanvasView.kt`, `NotebookPracticeViewModel.kt`, `NotebookPracticeScreen.kt`.
-* **Treino Guiado M2 (`guided`):**
-  * `ReferenceGlyph.kt` — Modelagem de glifo, traços de referência, pontos normalizados e pistas direcionais.
-  * `GhostModeLevel.kt` — Níveis de transparência do Ghost Mode (100%, 70%, 40%, 10%, 0%).
-  * `PracticeStage.kt` — Estágios pedagógicos Cobrir (Trace), Copiar (Copy) e Sozinho (Solo).
-  * `FeedbackEvaluation.kt` — Métricas de diretriz, inclinação, direção e proximidade espacial.
-  * `ReferenceGlyphCatalog.kt` — Catálogo canônico com 12 exercícios calibrados.
-  * `GeometricFeedbackEvaluator.kt` — Motor determinístico de cálculo matemático vetorial.
-  * `ReferenceGlyphRenderer.kt` — Renderizador de curvas Bézier e pistas direcionais com numeração.
-  * `GuidedPracticeCanvasView.kt` — Canvas nativo especializado com rejeição de palma e exclusão de gestos.
-  * `GuidedPracticeViewModel.kt` — Gerenciador de estado reativo da prática guiada.
-  * `GuidedPracticeScreen.kt` — Interface Jetpack Compose do treino guiado com feedback visual instantâneo.
+* **Estilos Caligráficos M3 (`style`):**
+  * `ScribeStyle.kt` — Modelo canônico `ScribeStyle v1` com proporção recomendada, inclinação padrão, contraste de espessura e projeção de pautas.
+  * `DuctusRule.kt` — Regras pedagógicas de ductus, ritmo motor e comportamento de pressão (`PressureBehavior`).
+  * `BuiltInStyles.kt` — Catálogo dos 3 estilos canônicos (Cursiva Escolar Brasileira, Copperplate / English Roundhand e Spencerian Script).
+  * `StyleFontImporter.kt` — Importador de referências visuais de fontes locais (.ttf e .otf) com validação de magic bytes e fallback de Typeface.
+  * `StyleEngine.kt` — Motor de estilos caligráficos com registro dinâmico, varredura de fontes locais e fallback garantido para Cursiva Escolar.
+
+### Testes Automatizados Unitários e de Auditoria (`app/src/test`)
+* `AuditFixAcceptanceTest.kt` — 7 testes de aceitação rigorosos validando as resoluções da auditoria do Codex (A02, A04/A05, A07, A08, A11, A12/A13, A14).
+* `ScribeStyleTest.kt` — Validação do formato `ScribeStyle`, propriedades dos estilos embutidos e geração de pautas.
+* `StyleFontImporterTest.kt` — Validação de assinaturas TrueType/OpenType, rejeição de arquivos corrompidos e extração de metadados.
+* `StyleEngineTest.kt` — Validação de registro, importação dinâmica, isolamento de fontes deletadas e fallback gracioso.
+* Total: **98 testes unitários passando 100%** (incluindo testes de captura, persistência, pautas, avaliação geométrica e ciclo de vida).
 
 ---
 
-## 7. Status dos Artefatos de Build e Publicação
+## 7. Resolução das Constatações da Auditoria do Codex (`ANTIGRAVITY_AUDIT_REVIEW.md`)
 
-- **Versão:** v0.2.0 (versionCode 4).
+| ID | Constatação do Codex | Resolução Implementada e Verificada |
+| :---: | :--- | :--- |
+| **A02** | *Non-atomic notebook/page save* destruía arquivo anterior em falhas de gravação. | `DedicatedFileStrategy` e `LocalNotebookRepository` agora gravam em arquivos temporários (`.tmp`) e executam substituição atômica via `Files.move(..., REPLACE_EXISTING, ATOMIC_MOVE)`. |
+| **A04/A05** | Borracha gerava traço de tinta de 1 ponto ou perdia continuidade entre `MotionEvent`s. | `StrokeCapturePipeline` preserva `lastEraserPoint` entre eventos contínuos, suprime `onStrokeCompleted` para ferramentas do tipo `ERASER`, e as views (`NotebookCanvasView` / `GuidedPracticeCanvasView`) descartam explicitamente traços de borracha. |
+| **A07** | Sensores físicos perdiam valores zero (`pressure=0f`, `tilt=0f`, `orientation=0f`). | `StrokeCapturePipeline:createPoint` verifica explicitamente `pressure >= 0f` e preserva coordenadas angulares de tilt e orientação mesmo quando exatamente zero. |
+| **A08** | `ACTION_POINTER_UP` perdia a amostra final de dedos/caneta. | `handleActionPointerUp` coleta historical samples e a coordenada atual antes de disparar o encerramento do ponteiro. |
+| **A09/A10** | `PageExporter` usava stub de 8 bytes e não aplicava escala de projeção da página. | Removido o stub falso; lançada `IOException` caso o bitmap falhe; implementada matriz de escala real do canvas original para a resolução alvo de exportação (1440x2560). |
+| **A11** | Replay vetorial perdia estilos visuais de traço (`color`, `thickness`). | `StrokeReplayEngine` utiliza `stroke.copy(points = partialPoints, endedAtMs = ...)` mantendo idênticos o ID, ferramenta, cor e espessura do traço original. |
+| **A12/A13** | Gabarito de inclinação descalibrado e avaliação aprovava tentativas incompletas de 2 pontos. | `ReferenceGlyphCatalog:BASIC_SLANT` rigorosamente alinhado a 52.0° ($\Delta x = 0.78128 \times xHeight$); `GeometricFeedbackEvaluator` adicionou verificação de extensão mínima, reprovando tentativas truncadas (<40% de score). |
+| **A14** | Avaliação do treino guiado permanecia visível e desatualizada ao desenhar novos traços. | `GuidedPracticeViewModel:notifyStrokeChanged` anula imediatamente o estado de avaliação (`evaluation = null`). |
+| **A15** | Alteração de pautas desatualizava a navegação de páginas subsequentes no caderno. | `NotebookPracticeViewModel:setGuidelineConfig` sincroniza atomicamente o cache `pagesList` com a página atualizada. |
+| **A18** | Lint avisava sobre `device.isExternal` no Android Q e falta de permissão de execução no CI. | `DeviceCapabilityInspector` isolado com verificação `Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q`. CI workflow e git index atualizados com `chmod +x gradlew`. `lintDebug` executado com **0 erros**! |
+| **A19** | Senhas da keystore de release hardcoded no script do Gradle. | `app/build.gradle.kts` configurado para ler exclusivamente de propriedades de projeto ou variáveis de ambiente sem expor segredos no repositório. |
+
+---
+
+## 8. Status dos Artefatos de Build e Publicação
+
+- **Versão:** v0.3.0 (versionCode 5).
 - **APKs Compilados:**
-  - Release: `16.22 MB` (15.47 MiB) assinado com keystore `scribe-release.jks`.
-  - Debug: `22.17 MB` (21.15 MiB).
+  - Release: `16.24 MB` (15.49 MiB) assinado com keystore `scribe-release.jks`.
+  - Debug: `22.21 MB` (21.18 MiB).
 - **Google Drive:**
-  - `E:\Meu Drive\Apks\scribe-v0.2.0-release.apk`
-  - `E:\Meu Drive\Apks\scribe-v0.2.0-debug.apk`
-  - `E:\Meu Drive\Scribe\scribe-v0.2.0-release.apk`
-  - `E:\Meu Drive\Scribe\scribe-v0.2.0-debug.apk`
-  - `E:\Meu Drive\codex\scribe\scribe-v0.2.0-release.apk`
-  - Código-fonte sincronizado em `E:\Meu Drive\codex\scribe`.
+  - `E:\Meu Drive\Apks\scribe-v0.3.0-release.apk`
+  - `E:\Meu Drive\Apks\scribe-v0.3.0-debug.apk`
+  - `E:\Meu Drive\Scribe\scribe-v0.3.0-release.apk`
+  - `E:\Meu Drive\Scribe\scribe-v0.3.0-debug.apk`
+  - `E:\Meu Drive\codex\scribe\scribe-v0.3.0-release.apk`
+  - Código-fonte sincronizado integralmente em `E:\Meu Drive\codex\scribe`.
 - **GitHub:**
   - Branch: `main` (rastreado e atualizado).
-  - Tag: `v0.2.0`.
-  - Release: [Release v0.2.0 no GitHub](https://github.com/playertwo1/caligrafia/releases/tag/v0.2.0) com os APKs anexados.
+  - Tag: `v0.3.0`.
+  - Release: `v0.3.0` no GitHub Releases com APKs de release e debug anexados.
 
 ---
 
-## 8. Próximo Marco no Roadmap: M3 — Style Engine
+## 9. Próximo Marco no Roadmap: M4 — Learning System
 
-Com a conclusão e auditoria formal do **M2 — Treino Guiado**, a próxima frente de desenvolvimento conforme o [ROADMAP.md](file:///c:/Users/fael/Documents/Codex/scribe/ROADMAP.md) é:
-- **SCR-020 (ScribeStyle v1):** Especificação do formato de estilo pedagógico com parâmetros caligráficos.
-- **SCR-021 (Três Estilos Pedagógicos Iniciais):** Cursiva Escolar Brasileira, Copperplate / English Roundhand e Spencerian Script.
-- **SCR-022 (Importador de Fontes TTF/OTF Locais):** Carregamento de fontes TrueType/OpenType estritamente como gabarito estético visual, preservando os princípios de que o traço do aluno é sempre vetorial bruto.
-- **SCR-023 (Fallback e Visualizador de Estilos):** Tratamento gracioso de glifos ausentes e seletor de estilo no caderno e no treino guiado.
+Com a conclusão e auditoria formal do **M3 — Style Engine**, a próxima frente de desenvolvimento conforme o [ROADMAP.md](file:///c:/Users/fael/Documents/Codex/scribe/ROADMAP.md) é:
+- **SCR-024 (Currículo Progressivo):** Estruturação sequencial do aprendizado: traços elementares → famílias morfológicas de letras minúsculas → maiúsculas → conexões → palavras curtas → frases.
+- **SCR-025 (Temporizador de Prática e Ritmo):** Sessões de prática com tempo calibrado (5, 10, 15 e 20 minutos).
+- **SCR-026 (Histórico Local e Espaçamento de Repetição):** Mecanismo local (Spaced Repetition / SRS sem nuvem) para agendamento inteligente de revisão de letras e traços com menor precisão motora.

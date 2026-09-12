@@ -20,6 +20,8 @@ import java.io.FileOutputStream
 data class PageExportOptions(
     val widthPx: Int = 1440,
     val heightPx: Int = 2560,
+    val sourceWidthPx: Float? = null,
+    val sourceHeightPx: Float? = null,
     val includeGuidelines: Boolean = true,
     val backgroundColor: Int = Color.WHITE,
     val compressQuality: Int = 100
@@ -45,16 +47,34 @@ object PageExporter {
         targetFile: File,
         options: PageExportOptions = PageExportOptions()
     ): File {
-        targetFile.parentFile?.mkdirs()
+        val parent = targetFile.parentFile ?: File(".")
+        if (!parent.exists()) parent.mkdirs()
 
+        // A09: Erro explícito caso o ambiente não possua subsistema gráfico ou alocação falhe
         val bitmap = try {
             Bitmap.createBitmap(options.widthPx, options.heightPx, Bitmap.Config.ARGB_8888)
         } catch (e: Throwable) {
             null
-        }
+        } ?: throw java.io.IOException(
+            "Falha na renderização de bitmap gráfico para exportação: ambiente sem suporte gráfico ou memória insuficiente para ${options.widthPx}x${options.heightPx}"
+        )
 
-        if (bitmap != null) {
+        try {
             val canvas = Canvas(bitmap)
+
+            // A10: Projeção de escala caso o canvas de escrita tenha dimensão diferente da imagem de exportação
+            val scaleX = if (options.sourceWidthPx != null && options.sourceWidthPx > 0f) {
+                options.widthPx.toFloat() / options.sourceWidthPx
+            } else 1f
+            val scaleY = if (options.sourceHeightPx != null && options.sourceHeightPx > 0f) {
+                options.heightPx.toFloat() / options.sourceHeightPx
+            } else 1f
+
+            val needsScale = scaleX != 1f || scaleY != 1f
+            if (needsScale) {
+                canvas.save()
+                canvas.scale(scaleX, scaleY)
+            }
 
             // 1. Fundo
             if (options.backgroundColor != Color.TRANSPARENT) {
@@ -64,31 +84,59 @@ object PageExporter {
             // 2. Pautas caligráficas (se habilitado)
             if (options.includeGuidelines) {
                 val guidelineRenderer = GuidelineRenderer()
+                val effectiveW = if (options.sourceWidthPx != null && options.sourceWidthPx > 0f) options.sourceWidthPx else options.widthPx.toFloat()
+                val effectiveH = if (options.sourceHeightPx != null && options.sourceHeightPx > 0f) options.sourceHeightPx else options.heightPx.toFloat()
                 guidelineRenderer.draw(
                     canvas = canvas,
-                    width = options.widthPx.toFloat(),
-                    height = options.heightPx.toFloat(),
+                    width = effectiveW,
+                    height = effectiveH,
                     config = page.guidelineConfig
                 )
             }
 
-            // 3. Renderização fiel dos traços vetoriais
+            // 3. Renderização fiel dos traços vetoriais (ignora borracha)
             val renderer = SmoothedReferenceRenderer()
             for (stroke in strokes) {
-                renderer.renderStroke(canvas, stroke)
+                if (stroke.tool != com.scribe.caligrafia.core.model.ToolType.ERASER) {
+                    renderer.renderStroke(canvas, stroke)
+                }
             }
 
-            // 4. Compressão em stream PNG para o disco
-            FileOutputStream(targetFile).use { fos ->
-                bitmap.compress(Bitmap.CompressFormat.PNG, options.compressQuality, fos)
-                fos.flush()
+            if (needsScale) {
+                canvas.restore()
             }
+
+            // 4. Compressão em stream PNG atômico para o disco
+            val tempFile = File.createTempFile("scribe_export_", ".tmp", parent)
+            try {
+                FileOutputStream(tempFile).use { fos ->
+                    val compressed = bitmap.compress(Bitmap.CompressFormat.PNG, options.compressQuality, fos)
+                    if (!compressed) {
+                        throw java.io.IOException("Falha na compressão do bitmap em formato PNG")
+                    }
+                    fos.flush()
+                }
+
+                try {
+                    java.nio.file.Files.move(
+                        tempFile.toPath(),
+                        targetFile.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                        java.nio.file.StandardCopyOption.ATOMIC_MOVE
+                    )
+                } catch (_: Exception) {
+                    java.nio.file.Files.move(
+                        tempFile.toPath(),
+                        targetFile.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                    )
+                }
+            } catch (t: Throwable) {
+                tempFile.delete()
+                throw t
+            }
+        } finally {
             bitmap.recycle()
-        } else {
-            // Em ambiente de teste JVM sem runtime gráfico Skia do Android, gera arquivo válido
-            if (!targetFile.exists()) {
-                targetFile.writeBytes(byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A))
-            }
         }
 
         return targetFile

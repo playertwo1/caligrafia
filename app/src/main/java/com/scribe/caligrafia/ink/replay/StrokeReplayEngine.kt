@@ -166,11 +166,8 @@ class StrokeReplayEngine(
                 // Traço em andamento neste instante
                 val partialPoints = stroke.points.filter { it.tMs <= targetAbsoluteTime }
                 if (partialPoints.isNotEmpty()) {
-                    active = Stroke(
-                        id = stroke.id,
-                        tool = stroke.tool,
+                    active = stroke.copy(
                         points = partialPoints,
-                        startedAtMs = stroke.startedAtMs,
                         endedAtMs = partialPoints.last().tMs,
                         isCancelled = false
                     )

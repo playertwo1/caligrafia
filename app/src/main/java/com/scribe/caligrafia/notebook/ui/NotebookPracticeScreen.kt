@@ -16,16 +16,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Redo
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Undo
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -75,12 +78,120 @@ fun NotebookPracticeScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     var canvasViewRef by remember { mutableStateOf<NotebookCanvasView?>(null) }
+    var showStyleDialog by remember { mutableStateOf(false) }
+    var adaptGuidelinesOnSelect by remember { mutableStateOf(true) }
 
     LaunchedEffect(uiState.notificationMessage) {
         uiState.notificationMessage?.let { msg ->
             snackbarHostState.showSnackbar(msg)
             viewModel.dismissNotification()
         }
+    }
+
+    if (showStyleDialog) {
+        AlertDialog(
+            onDismissRequest = { showStyleDialog = false },
+            title = {
+                Text(
+                    text = "Selecionar Estilo Caligráfico (M3)",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Escolha a família formal de escrita para nortear pautas, inclinações e ductus:",
+                        fontSize = 12.sp,
+                        color = Color(0xFF475569)
+                    )
+
+                    uiState.availableStyles.forEach { style ->
+                        val isSelected = uiState.currentStyle.id == style.id
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.selectStyle(style.id, adaptPageGuidelines = adaptGuidelinesOnSelect)
+                                    canvasViewRef?.guidelineConfig = uiState.currentPage?.guidelineConfig
+                                    canvasViewRef?.requestRedraw()
+                                    showStyleDialog = false
+                                },
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSelected) Color(0xFFEFF6FF) else Color(0xFFF8FAFC)
+                            ),
+                            border = BorderStroke(
+                                width = if (isSelected) 2.dp else 1.dp,
+                                color = if (isSelected) Color(0xFF2563EB) else Color(0xFFE2E8F0)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = style.name,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        color = if (isSelected) Color(0xFF1D4ED8) else Color(0xFF1E293B)
+                                    )
+                                    Text(
+                                        text = "${style.defaultSlantAngle.toInt()}°",
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF64748B)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Proporção: ${style.recommendedRatio.displayName} • Traço: ${style.recommendedStrokeWidthPx}px",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF64748B)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = style.description,
+                                    fontSize = 10.sp,
+                                    color = Color(0xFF475569)
+                                )
+                            }
+                        }
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { adaptGuidelinesOnSelect = !adaptGuidelinesOnSelect }
+                            .padding(top = 4.dp)
+                    ) {
+                        androidx.compose.material3.Checkbox(
+                            checked = adaptGuidelinesOnSelect,
+                            onCheckedChange = { adaptGuidelinesOnSelect = it }
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Ajustar pautas da página para o estilo",
+                            fontSize = 12.sp,
+                            color = Color(0xFF1E293B)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showStyleDialog = false }) {
+                    Text("Fechar")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -99,13 +210,25 @@ fun NotebookPracticeScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "M1: Caderno Vetorial (.scribe) • ${uiState.strokeCount} traços",
+                            text = "Estilo: ${uiState.currentStyle.name} • ${uiState.strokeCount} traços",
                             fontSize = 11.sp,
                             color = Color(0xFF94A3B8)
                         )
                     }
                 },
                 actions = {
+                    // Botão seletor de estilo (M3)
+                    FilterChip(
+                        selected = true,
+                        onClick = { showStyleDialog = true },
+                        label = { Text("Estilo: ${uiState.currentStyle.name}", fontSize = 11.sp, color = Color.White) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF0284C7),
+                            selectedLabelColor = Color.White
+                        ),
+                        modifier = Modifier.padding(end = 4.dp)
+                    )
+
                     // Botão alternador para Treino Guiado (M2)
                     FilterChip(
                         selected = false,
@@ -159,15 +282,22 @@ fun NotebookPracticeScreen(
                 onExport = { viewModel.exportCurrentPage(context) }
             )
 
-            // 2. Toolbar de Ferramentas Caligráficas (Espessura, Cor, Pauta, Borracha, Undo/Redo)
+            // 2. Toolbar de Ferramentas Caligráficas (Espessura, Cor, Pauta/Estilos, Borracha, Undo/Redo)
             NotebookToolbar(
                 toolConfig = uiState.toolConfig,
                 currentGuideline = uiState.currentPage?.guidelineConfig,
+                availableStyles = uiState.availableStyles,
+                currentStyle = uiState.currentStyle,
                 canUndo = uiState.canUndo,
                 canRedo = uiState.canRedo,
                 onSelectTool = { viewModel.setToolMode(it) },
                 onSelectThickness = { viewModel.setPenThickness(it) },
                 onSelectColor = { viewModel.setCalligraphyColor(it) },
+                onSelectStyle = { style ->
+                    viewModel.selectStyle(style.id, adaptPageGuidelines = true)
+                    canvasViewRef?.guidelineConfig = uiState.currentPage?.guidelineConfig
+                    canvasViewRef?.requestRedraw()
+                },
                 onSelectGuideline = {
                     viewModel.setGuidelineConfig(it)
                     canvasViewRef?.guidelineConfig = it
@@ -249,7 +379,7 @@ private fun NotebookPaginationBar(
                     enabled = currentPageIndex > 0
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Página Anterior",
                         tint = if (currentPageIndex > 0) Color(0xFF0F172A) else Color(0xFFCBD5E1)
                     )
@@ -267,7 +397,7 @@ private fun NotebookPaginationBar(
                     enabled = currentPageIndex < totalPages - 1
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowForward,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = "Próxima Página",
                         tint = if (currentPageIndex < totalPages - 1) Color(0xFF0F172A) else Color(0xFFCBD5E1)
                     )
@@ -312,11 +442,14 @@ private fun NotebookPaginationBar(
 private fun NotebookToolbar(
     toolConfig: ToolConfig,
     currentGuideline: GuidelineConfig?,
+    availableStyles: List<com.scribe.caligrafia.style.model.ScribeStyle>,
+    currentStyle: com.scribe.caligrafia.style.model.ScribeStyle,
     canUndo: Boolean,
     canRedo: Boolean,
     onSelectTool: (ToolMode) -> Unit,
     onSelectThickness: (PenThickness) -> Unit,
     onSelectColor: (CalligraphyColor) -> Unit,
+    onSelectStyle: (com.scribe.caligrafia.style.model.ScribeStyle) -> Unit,
     onSelectGuideline: (GuidelineConfig) -> Unit,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
@@ -378,14 +511,14 @@ private fun NotebookToolbar(
                 Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                     IconButton(onClick = onUndo, enabled = canUndo) {
                         Icon(
-                            imageVector = Icons.Default.Undo,
+                            imageVector = Icons.AutoMirrored.Filled.Undo,
                             contentDescription = "Desfazer",
                             tint = if (canUndo) Color(0xFF1E293B) else Color(0xFFCBD5E1)
                         )
                     }
                     IconButton(onClick = onRedo, enabled = canRedo) {
                         Icon(
-                            imageVector = Icons.Default.Redo,
+                            imageVector = Icons.AutoMirrored.Filled.Redo,
                             contentDescription = "Refazer",
                             tint = if (canRedo) Color(0xFF1E293B) else Color(0xFFCBD5E1)
                         )
@@ -400,7 +533,7 @@ private fun NotebookToolbar(
                 }
             }
 
-            // Linha 2: Paleta de Cores Caligráficas + Presets de Pautas
+            // Linha 2: Paleta de Cores Caligráficas + Presets de Estilos/Pautas (M3)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -429,25 +562,19 @@ private fun NotebookToolbar(
                     }
                 }
 
-                // Presets de Pautas
+                // Presets de Estilos Caligráficos (M3)
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Pauta:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
+                    Text("Estilo:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
 
-                    val presets = listOf(
-                        "Copperplate" to GuidelineConfig.copperplate(),
-                        "Escolar" to GuidelineConfig.school(),
-                        "Spencerian" to GuidelineConfig.spencerian()
-                    )
-
-                    presets.forEach { (label, presetConfig) ->
-                        val isSelected = currentGuideline?.ratio == presetConfig.ratio
+                    availableStyles.forEach { style ->
+                        val isSelected = currentStyle.id == style.id
                         FilterChip(
                             selected = isSelected,
-                            onClick = { onSelectGuideline(presetConfig) },
-                            label = { Text(label, fontSize = 10.sp) }
+                            onClick = { onSelectStyle(style) },
+                            label = { Text(style.name, fontSize = 10.sp) }
                         )
                     }
                 }

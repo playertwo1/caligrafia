@@ -108,5 +108,10 @@ class MainActivity : ComponentActivity() {
         } catch (e: Throwable) {
             android.util.Log.e("Scribe", "Erro no onPause do StylusLab", e)
         }
+        try {
+            notebookViewModel.onPauseLifecycle()
+        } catch (e: Throwable) {
+            android.util.Log.e("Scribe", "Erro no onPause do Notebook", e)
+        }
     }
 }

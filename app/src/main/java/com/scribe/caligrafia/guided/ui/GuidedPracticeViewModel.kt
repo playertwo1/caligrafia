@@ -14,13 +14,16 @@ import com.scribe.caligrafia.guided.model.PracticeStage
 import com.scribe.caligrafia.guided.model.ReferenceGlyph
 import com.scribe.caligrafia.ink.capture.InMemoryStrokeRepository
 import com.scribe.caligrafia.ink.capture.StrokeCapturePipeline
+import com.scribe.caligrafia.style.engine.StyleEngine
+import com.scribe.caligrafia.style.model.BuiltInStyles
+import com.scribe.caligrafia.style.model.ScribeStyle
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 /**
- * Estado observável da tela de Treino Guiado.
+ * Estado observável da tela de Treino Guiado (M2 e M3).
  */
 data class GuidedPracticeState(
     val selectedGlyph: ReferenceGlyph = ReferenceGlyphCatalog.BASIC_SLANT,
@@ -29,11 +32,13 @@ data class GuidedPracticeState(
     val guidelineConfig: GuidelineConfig = GuidelineConfig.copperplate(xHeightPx = 65f),
     val strokeCount: Int = 0,
     val evaluation: FeedbackEvaluation? = null,
-    val availableGlyphs: List<ReferenceGlyph> = ReferenceGlyphCatalog.ALL_GLYPHS
+    val availableGlyphs: List<ReferenceGlyph> = ReferenceGlyphCatalog.ALL_GLYPHS,
+    val availableStyles: List<ScribeStyle> = emptyList(),
+    val currentStyle: ScribeStyle = BuiltInStyles.COPPERPLATE
 )
 
 /**
- * ViewModel para o gerenciamento pedagógico do Treino Guiado (M2).
+ * ViewModel para o gerenciamento pedagógico do Treino Guiado (M2 e M3).
  */
 class GuidedPracticeViewModel @JvmOverloads constructor(
     application: Application,
@@ -41,8 +46,27 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
     val pipeline: StrokeCapturePipeline = StrokeCapturePipeline(toolConfig = ToolConfig())
 ) : AndroidViewModel(application) {
 
-    private val _state = MutableStateFlow(GuidedPracticeState())
+    val styleEngine = StyleEngine()
+
+    private val _state = MutableStateFlow(
+        GuidedPracticeState(
+            availableStyles = styleEngine.getAvailableStyles(),
+            currentStyle = styleEngine.getStyle("copperplate")
+        )
+    )
     val state: StateFlow<GuidedPracticeState> = _state.asStateFlow()
+
+    fun selectStyle(styleId: String) {
+        val style = styleEngine.getStyle(styleId)
+        val newConfig = style.toGuidelineConfig(xHeightPx = _state.value.guidelineConfig.xHeightPx)
+        _state.update {
+            it.copy(
+                currentStyle = style,
+                guidelineConfig = newConfig,
+                evaluation = null
+            )
+        }
+    }
 
     fun selectGlyph(glyph: ReferenceGlyph) {
         clearAttempt()
@@ -94,7 +118,10 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
 
     fun notifyStrokeChanged() {
         _state.update {
-            it.copy(strokeCount = strokeRepository.count)
+            it.copy(
+                strokeCount = strokeRepository.count,
+                evaluation = null // A14: Invalida avaliação prévia após alteração de traços
+            )
         }
     }
 

@@ -38,60 +38,89 @@ class DedicatedFileStrategy(private val baseDir: File) : StrokePersistenceStrate
     fun getFile(sessionId: String): File = File(baseDir, "$sessionId.scribe")
 
     fun save(file: File, strokes: List<Stroke>, sessionId: String = file.nameWithoutExtension): Long {
-        file.parentFile?.mkdirs()
-        FileOutputStream(file).use { fos ->
-            BufferedOutputStream(fos).use { bos ->
-                DataOutputStream(bos).use { dos ->
-                    // 1. Cabeçalho de arquivo (não-comprimido para rápida identificação de arquivo)
-                    dos.write(MAGIC_HEADER)
-                    dos.writeShort(SCHEMA_VERSION.toInt())
-                    dos.writeUTF(sessionId)
-                    dos.writeInt(strokes.size)
-                    dos.flush()
+        val parent = file.parentFile ?: baseDir
+        if (!parent.exists()) parent.mkdirs()
 
-                    // 2. Carga útil comprimida com Deflater
-                    DeflaterOutputStream(bos).use { deflater ->
-                        DataOutputStream(deflater).use { payloadDos ->
-                            for (stroke in strokes) {
-                                payloadDos.writeUTF(stroke.id)
-                                payloadDos.writeUTF(stroke.tool.name)
-                                payloadDos.writeLong(stroke.startedAtMs)
-                                payloadDos.writeLong(stroke.endedAtMs)
-                                payloadDos.writeBoolean(stroke.isCancelled)
+        // A02: Gravação atômica em arquivo temporário para evitar destruição de versão anterior em falhas
+        val tempFile = File.createTempFile("scribe_${file.nameWithoutExtension}_", ".tmp", parent)
+        try {
+            FileOutputStream(tempFile).use { fos ->
+                BufferedOutputStream(fos).use { bos ->
+                    DataOutputStream(bos).use { dos ->
+                        // 1. Cabeçalho de arquivo (não-comprimido para rápida identificação de arquivo)
+                        dos.write(MAGIC_HEADER)
+                        dos.writeShort(SCHEMA_VERSION.toInt())
+                        dos.writeUTF(sessionId)
+                        dos.writeInt(strokes.size)
+                        dos.flush()
 
-                                val hasColor = stroke.color != null
-                                payloadDos.writeBoolean(hasColor)
-                                if (hasColor) payloadDos.writeInt(stroke.color!!)
+                        // 2. Carga útil comprimida com Deflater
+                        DeflaterOutputStream(bos).use { deflater ->
+                            DataOutputStream(deflater).use { payloadDos ->
+                                for (stroke in strokes) {
+                                    payloadDos.writeUTF(stroke.id)
+                                    payloadDos.writeUTF(stroke.tool.name)
+                                    payloadDos.writeLong(stroke.startedAtMs)
+                                    payloadDos.writeLong(stroke.endedAtMs)
+                                    payloadDos.writeBoolean(stroke.isCancelled)
 
-                                val hasWidth = stroke.baseWidthPx != null
-                                payloadDos.writeBoolean(hasWidth)
-                                if (hasWidth) payloadDos.writeFloat(stroke.baseWidthPx!!)
+                                    val hasColor = stroke.color != null
+                                    payloadDos.writeBoolean(hasColor)
+                                    if (hasColor) payloadDos.writeInt(stroke.color!!)
 
-                                payloadDos.writeInt(stroke.points.size)
+                                    val hasWidth = stroke.baseWidthPx != null
+                                    payloadDos.writeBoolean(hasWidth)
+                                    if (hasWidth) payloadDos.writeFloat(stroke.baseWidthPx!!)
 
-                                for (p in stroke.points) {
-                                    payloadDos.writeFloat(p.x)
-                                    payloadDos.writeFloat(p.y)
-                                    payloadDos.writeLong(p.tMs)
+                                    payloadDos.writeInt(stroke.points.size)
 
-                                    var flags = 0
-                                    if (p.pressure != null) flags = flags or 0x01
-                                    if (p.tiltRad != null) flags = flags or 0x02
-                                    if (p.orientationRad != null) flags = flags or 0x04
-                                    payloadDos.writeByte(flags)
+                                    for (p in stroke.points) {
+                                        payloadDos.writeFloat(p.x)
+                                        payloadDos.writeFloat(p.y)
+                                        payloadDos.writeLong(p.tMs)
 
-                                    if (p.pressure != null) payloadDos.writeFloat(p.pressure)
-                                    if (p.tiltRad != null) payloadDos.writeFloat(p.tiltRad)
-                                    if (p.orientationRad != null) payloadDos.writeFloat(p.orientationRad)
+                                        var flags = 0
+                                        if (p.pressure != null) flags = flags or 0x01
+                                        if (p.tiltRad != null) flags = flags or 0x02
+                                        if (p.orientationRad != null) flags = flags or 0x04
+                                        payloadDos.writeByte(flags)
+
+                                        if (p.pressure != null) payloadDos.writeFloat(p.pressure)
+                                        if (p.tiltRad != null) payloadDos.writeFloat(p.tiltRad)
+                                        if (p.orientationRad != null) payloadDos.writeFloat(p.orientationRad)
+                                    }
                                 }
                             }
                         }
                     }
                 }
+                try {
+                    fos.fd.sync()
+                } catch (_: Throwable) {
+                    // Ignora falha de sync quando o filesystem não suporta sincronização direta no descritor
+                }
             }
-        }
 
-        return file.length()
+            try {
+                java.nio.file.Files.move(
+                    tempFile.toPath(),
+                    file.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                    java.nio.file.StandardCopyOption.ATOMIC_MOVE
+                )
+            } catch (_: Exception) {
+                java.nio.file.Files.move(
+                    tempFile.toPath(),
+                    file.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                )
+            }
+
+            return file.length()
+        } catch (t: Throwable) {
+            tempFile.delete()
+            throw t
+        }
     }
 
     override fun save(sessionId: String, strokes: List<Stroke>): Long {

@@ -68,9 +68,11 @@ class NotebookCanvasView(
             invalidate()
         }
         pipeline.onStrokeCompleted = { stroke ->
-            strokeRepository.addStroke(stroke)
-            onStrokeChanged?.invoke()
-            invalidate()
+            if (stroke.tool != ToolType.ERASER) {
+                strokeRepository.addStroke(stroke)
+                onStrokeChanged?.invoke()
+                invalidate()
+            }
         }
         pipeline.onEraserPointsAdded = { points ->
             val erased = strokeRepository.eraseStrokesIntersecting(

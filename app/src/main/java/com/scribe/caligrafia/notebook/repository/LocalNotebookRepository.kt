@@ -84,7 +84,7 @@ class LocalNotebookRepository(
             documentRelativePath = "notebooks/$id/pages/$firstPageId.scribe"
         )
         val pageMetaFile = File(pagesDir, "$firstPageId.meta")
-        pageMetaFile.writeText(NotebookManifestSerializer.serializePage(firstPage))
+        atomicWriteText(pageMetaFile, NotebookManifestSerializer.serializePage(firstPage))
 
         // Inicializa o arquivo binário .scribe vazio da primeira página
         val scribeFile = File(baseDir, firstPage.documentRelativePath)
@@ -96,7 +96,7 @@ class LocalNotebookRepository(
             pageIds = listOf(firstPageId)
         )
         val manifestFile = File(nbDir, "manifest.txt")
-        manifestFile.writeText(NotebookManifestSerializer.serializeNotebook(notebook))
+        atomicWriteText(manifestFile, NotebookManifestSerializer.serializeNotebook(notebook))
 
         notebook
     }
@@ -165,7 +165,7 @@ class LocalNotebookRepository(
 
         // Salva metadados da página
         val pageMetaFile = File(pagesDir, "$pageId.meta")
-        pageMetaFile.writeText(NotebookManifestSerializer.serializePage(newPage))
+        atomicWriteText(pageMetaFile, NotebookManifestSerializer.serializePage(newPage))
 
         // Inicializa arquivo de traços .scribe
         val scribeFile = File(baseDir, newPage.documentRelativePath)
@@ -177,7 +177,7 @@ class LocalNotebookRepository(
             updatedAt = System.currentTimeMillis()
         )
         val manifestFile = File(nbDir, "manifest.txt")
-        manifestFile.writeText(NotebookManifestSerializer.serializeNotebook(updatedNb))
+        atomicWriteText(manifestFile, NotebookManifestSerializer.serializeNotebook(updatedNb))
 
         newPage
     }
@@ -200,7 +200,7 @@ class LocalNotebookRepository(
             updatedAt = System.currentTimeMillis()
         )
         val manifestFile = File(nbDir, "manifest.txt")
-        manifestFile.writeText(NotebookManifestSerializer.serializeNotebook(updatedNb))
+        atomicWriteText(manifestFile, NotebookManifestSerializer.serializeNotebook(updatedNb))
         true
     }
 
@@ -213,7 +213,7 @@ class LocalNotebookRepository(
             guidelineConfig = guidelineConfig,
             updatedAt = System.currentTimeMillis()
         )
-        metaFile.writeText(NotebookManifestSerializer.serializePage(updatedPage))
+        atomicWriteText(metaFile, NotebookManifestSerializer.serializePage(updatedPage))
         true
     }
 
@@ -228,5 +228,31 @@ class LocalNotebookRepository(
         scribeFile.parentFile?.mkdirs()
         fileStrategy.save(scribeFile, strokes)
         true
+    }
+
+    private fun atomicWriteText(file: File, content: String) {
+        val parent = file.parentFile ?: notebooksRoot
+        if (!parent.exists()) parent.mkdirs()
+        val tempFile = File.createTempFile("scribe_meta_", ".tmp", parent)
+        try {
+            tempFile.writeText(content)
+            try {
+                java.nio.file.Files.move(
+                    tempFile.toPath(),
+                    file.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                    java.nio.file.StandardCopyOption.ATOMIC_MOVE
+                )
+            } catch (_: Exception) {
+                java.nio.file.Files.move(
+                    tempFile.toPath(),
+                    file.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                )
+            }
+        } catch (t: Throwable) {
+            tempFile.delete()
+            throw t
+        }
     }
 }

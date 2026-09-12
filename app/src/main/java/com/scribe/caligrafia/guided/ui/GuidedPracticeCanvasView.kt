@@ -13,6 +13,7 @@ import android.view.View
 import androidx.core.view.ViewCompat
 import com.scribe.caligrafia.core.model.GuidelineBand
 import com.scribe.caligrafia.core.model.GuidelineConfig
+import com.scribe.caligrafia.core.model.ToolType
 import com.scribe.caligrafia.ink.capture.InMemoryStrokeRepository
 import com.scribe.caligrafia.ink.capture.StrokeCapturePipeline
 import com.scribe.caligrafia.ink.gesture.EdgeGestureExclusionHelper
@@ -86,9 +87,11 @@ class GuidedPracticeCanvasView(
 
         pipeline.onStrokePointAdded = { invalidate() }
         pipeline.onStrokeCompleted = { stroke ->
-            strokeRepository.addStroke(stroke)
-            onStrokeChanged?.invoke()
-            invalidate()
+            if (stroke.tool != ToolType.ERASER) {
+                strokeRepository.addStroke(stroke)
+                onStrokeChanged?.invoke()
+                invalidate()
+            }
         }
         pipeline.onEraserPointsAdded = { points ->
             val erased = strokeRepository.eraseStrokesIntersecting(

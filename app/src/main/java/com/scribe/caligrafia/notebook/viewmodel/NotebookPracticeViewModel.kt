@@ -19,6 +19,9 @@ import com.scribe.caligrafia.notebook.export.PageExportOptions
 import com.scribe.caligrafia.notebook.export.PageExporter
 import com.scribe.caligrafia.notebook.repository.LocalNotebookRepository
 import com.scribe.caligrafia.notebook.repository.NotebookRepository
+import com.scribe.caligrafia.style.engine.StyleEngine
+import com.scribe.caligrafia.style.model.BuiltInStyles
+import com.scribe.caligrafia.style.model.ScribeStyle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,7 +31,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 /**
- * Estado da interface do Caderno de Prática Caligráfica (M1).
+ * Estado da interface do Caderno de Prática Caligráfica (M1 e M3).
  */
 data class NotebookPracticeUiState(
     val currentNotebook: Notebook? = null,
@@ -41,16 +44,19 @@ data class NotebookPracticeUiState(
     val strokeCount: Int = 0,
     val totalPoints: Int = 0,
     val isSaving: Boolean = false,
-    val notificationMessage: String? = null
+    val notificationMessage: String? = null,
+    val availableStyles: List<ScribeStyle> = emptyList(),
+    val currentStyle: ScribeStyle = BuiltInStyles.CURSIVA_ESCOLAR
 )
 
 /**
- * ViewModel que orquestra a experiência de Caderno de Caligrafia (M1).
+ * ViewModel que orquestra a experiência de Caderno de Caligrafia (M1 e M3).
  */
 class NotebookPracticeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val baseFilesDir: File = application.filesDir
     private val notebookRepository: NotebookRepository = LocalNotebookRepository(baseFilesDir)
+    val styleEngine = StyleEngine(File(baseFilesDir, "custom_fonts"))
 
     val strokeRepository = InMemoryStrokeRepository()
     val pipeline = StrokeCapturePipeline(
@@ -59,7 +65,12 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
     )
     val renderer = SmoothedReferenceRenderer()
 
-    private val _uiState = MutableStateFlow(NotebookPracticeUiState())
+    private val _uiState = MutableStateFlow(
+        NotebookPracticeUiState(
+            availableStyles = styleEngine.getAvailableStyles(),
+            currentStyle = styleEngine.defaultStyle()
+        )
+    )
     val uiState: StateFlow<NotebookPracticeUiState> = _uiState.asStateFlow()
 
     private var pagesList: List<NotebookPage> = emptyList()
@@ -118,8 +129,11 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
 
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(isSaving = true) }
-            notebookRepository.savePageStrokes(page, currentStrokes)
-            _uiState.update { it.copy(isSaving = false) }
+            try {
+                notebookRepository.savePageStrokes(page, currentStrokes)
+            } finally {
+                _uiState.update { it.copy(isSaving = false) }
+            }
         }
     }
 
@@ -226,7 +240,40 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
         viewModelScope.launch(Dispatchers.IO) {
             notebookRepository.updatePageGuidelines(page.id, config)
             val updatedPage = page.copy(guidelineConfig = config)
-            _uiState.update { it.copy(currentPage = updatedPage) }
+            // A15: Atualiza a lista interna e a lista em StateFlow para que navegação futura use a pauta correta
+            pagesList = pagesList.map { if (it.id == updatedPage.id) updatedPage else it }
+            _uiState.update { state ->
+                state.copy(
+                    currentPage = updatedPage
+                )
+            }
+        }
+    }
+
+    /**
+     * Seleciona o estilo caligráfico ativo (M3 — SCR-023).
+     *
+     * @param styleId Identificador do estilo desejado.
+     * @param adaptPageGuidelines Se true, recalcula e aplica automaticamente as pautas da página para
+     *                            refletir a proporção e a inclinação recomendadas do estilo.
+     */
+    fun selectStyle(styleId: String, adaptPageGuidelines: Boolean = false) {
+        val style = styleEngine.getStyle(styleId)
+        _uiState.update { it.copy(currentStyle = style) }
+        if (adaptPageGuidelines) {
+            setGuidelineConfig(style.toGuidelineConfig())
+        }
+    }
+
+    /**
+     * A06: Flush de segurança quando a tela é pausada ou o app entra em segundo plano.
+     */
+    fun onPauseLifecycle() {
+        pipeline.flushActiveStroke(commitIfValid = true)
+        val page = _uiState.value.currentPage ?: return
+        val currentStrokes = strokeRepository.allStrokes
+        viewModelScope.launch(Dispatchers.IO) {
+            notebookRepository.savePageStrokes(page, currentStrokes)
         }
     }
 

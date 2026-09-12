@@ -73,16 +73,30 @@ object GeometricFeedbackEvaluator {
         // 5. Avaliação de Proximidade Geométrica (Path Proximity)
         val proximityMetric = evaluateProximity(allUserPoints, mappedRefStrokes, band.xHeight)
 
-        // 6. Cálculo da Pontuação Ponderada Global (0 a 100%)
-        val totalScore = (
+        // 6. Avaliação de Cobertura / Completude (A12)
+        val coverageRadius = band.xHeight * 0.25f
+        val coveredCount = allMappedRefPoints.count { refPt ->
+            allUserPoints.any { uPt -> distance(refPt.x, refPt.y, uPt.x, uPt.y) <= coverageRadius }
+        }
+        val coverageRatio = if (allMappedRefPoints.isNotEmpty()) {
+            coveredCount.toFloat() / allMappedRefPoints.size
+        } else 1.0f
+
+        // 7. Cálculo da Pontuação Ponderada Global (0 a 100%) modulada pela completude
+        val rawScore = (
             guidelineMetric.scorePercent * 0.30f +
             slantMetric.scorePercent * 0.25f +
             directionMetric.scorePercent * 0.20f +
             proximityMetric.scorePercent * 0.25f
         ).roundToInt().coerceIn(0, 100)
 
-        // 7. Compilação das mensagens pedagógicas
+        val totalScore = (rawScore * coverageRatio).roundToInt().coerceIn(0, 100)
+
+        // 8. Compilação das mensagens pedagógicas
         val feedbackMessages = mutableListOf<String>()
+        if (coverageRatio < 0.65f) {
+            feedbackMessages.add("Traço incompleto (${(coverageRatio * 100).roundToInt()}% percorrido). Complete todo o desenho do modelo.")
+        }
         feedbackMessages.add(guidelineMetric.feedback)
         feedbackMessages.add(slantMetric.feedback)
         feedbackMessages.add(directionMetric.feedback)

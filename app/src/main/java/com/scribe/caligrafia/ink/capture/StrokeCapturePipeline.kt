@@ -38,6 +38,7 @@ class StrokeCapturePipeline(
     private var activeTool: ToolType = ToolType.UNKNOWN
     private var activeStartedAtMs: Long = 0L
     private val activePoints = mutableListOf<StrokePoint>()
+    private var lastEraserPoint: StrokePoint? = null
 
     var totalHistoricalSamplesAbsorbed: Long = 0L
         private set
@@ -53,6 +54,7 @@ class StrokeCapturePipeline(
 
     fun getActiveStrokePreview(): Stroke? {
         val id = activeStrokeId ?: return null
+        if (activeTool == ToolType.ERASER) return null // A04: Borracha não produz prévia de tinta
         return Stroke(
             id = id,
             tool = activeTool,
@@ -146,6 +148,7 @@ class StrokeCapturePipeline(
         onStrokePointAdded?.invoke(point)
 
         if (activeTool == ToolType.ERASER) {
+            lastEraserPoint = point
             onEraserPointsAdded?.invoke(listOf(point))
         }
 
@@ -169,7 +172,14 @@ class StrokeCapturePipeline(
         points.forEach { onStrokePointAdded?.invoke(it) }
 
         if (activeTool == ToolType.ERASER) {
-            onEraserPointsAdded?.invoke(points)
+            // A05: Conecta o último ponto do evento anterior ao lote atual para não perder interseções
+            val eraserBatch = if (lastEraserPoint != null) {
+                listOf(lastEraserPoint!!) + points
+            } else {
+                points
+            }
+            lastEraserPoint = points.lastOrNull() ?: lastEraserPoint
+            onEraserPointsAdded?.invoke(eraserBatch)
         }
 
         return true
@@ -190,9 +200,15 @@ class StrokeCapturePipeline(
             totalPointsCaptured += finalPoints.size
             finalPoints.forEach { onStrokePointAdded?.invoke(it) }
             if (activeTool == ToolType.ERASER) {
-                onEraserPointsAdded?.invoke(finalPoints)
+                val eraserBatch = if (lastEraserPoint != null) {
+                    listOf(lastEraserPoint!!) + finalPoints
+                } else {
+                    finalPoints
+                }
+                onEraserPointsAdded?.invoke(eraserBatch)
             }
         }
+        lastEraserPoint = null
 
         if (activeTool == ToolType.STYLUS || activeTool == ToolType.ERASER) {
             palmPolicy.onStylusUp(eventTime)
@@ -365,12 +381,37 @@ class StrokeCapturePipeline(
         val actionIndex = event.actionIndex
         val pointerId = event.getPointerId(actionIndex)
         if (pointerId == activePointerId) {
-            return onPointerUp(pointerId, emptyList(), event.eventTime)
+            val finalPoints = mutableListOf<StrokePoint>()
+            val historySize = event.historySize
+            for (h in 0 until historySize) {
+                finalPoints.add(
+                    createPoint(
+                        x = event.getHistoricalX(actionIndex, h),
+                        y = event.getHistoricalY(actionIndex, h),
+                        tMs = event.getHistoricalEventTime(h),
+                        pressure = event.getHistoricalPressure(actionIndex, h),
+                        tilt = event.getHistoricalAxisValue(MotionEvent.AXIS_TILT, actionIndex, h),
+                        orientation = event.getHistoricalOrientation(actionIndex, h)
+                    )
+                )
+            }
+            finalPoints.add(
+                createPoint(
+                    x = event.getX(actionIndex),
+                    y = event.getY(actionIndex),
+                    tMs = event.eventTime,
+                    pressure = event.getPressure(actionIndex),
+                    tilt = event.getAxisValue(MotionEvent.AXIS_TILT, actionIndex),
+                    orientation = event.getOrientation(actionIndex)
+                )
+            )
+            return onPointerUp(pointerId, finalPoints, event.eventTime)
         }
         return false
     }
 
     private fun handleActionCancel(event: MotionEvent): Boolean {
+        lastEraserPoint = null
         return onPointerCancel(activePointerId, event.eventTime)
     }
 
@@ -392,11 +433,15 @@ class StrokeCapturePipeline(
         activeTool = ToolType.UNKNOWN
         activeStartedAtMs = 0L
         activePoints.clear()
+        lastEraserPoint = null
 
         if (isCancelled) {
             onStrokeCancelled?.invoke(completedStroke)
         } else {
-            onStrokeCompleted?.invoke(completedStroke)
+            // A04: Ações de borracha nunca são adicionadas ao histórico de traços de tinta
+            if (completedStroke.tool != ToolType.ERASER) {
+                onStrokeCompleted?.invoke(completedStroke)
+            }
         }
     }
 
@@ -412,9 +457,9 @@ class StrokeCapturePipeline(
             x = x,
             y = y,
             tMs = tMs,
-            pressure = if (pressure > 0f) pressure else null,
-            tiltRad = if (tilt != 0f) tilt else null,
-            orientationRad = if (orientation != 0f) orientation else null
+            pressure = if (!pressure.isNaN() && pressure >= 0f) pressure else null,
+            tiltRad = if (!tilt.isNaN()) tilt else null,
+            orientationRad = if (!orientation.isNaN()) orientation else null
         )
     }
 

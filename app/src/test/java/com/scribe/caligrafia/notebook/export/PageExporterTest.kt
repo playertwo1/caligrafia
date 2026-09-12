@@ -29,7 +29,7 @@ class PageExporterTest {
     }
 
     @Test
-    fun exportToPng_createsTargetFile_and_preservesVectorStrokes() {
+    fun exportToPng_throwsIOException_in_non_graphic_environment_and_does_not_create_invalid_file() {
         val page = NotebookPage(
             id = "page-export-1",
             notebookId = "nb-1",
@@ -50,17 +50,29 @@ class PageExporterTest {
             baseWidthPx = 4f
         )
         val strokes = listOf(stroke)
-
         val targetFile = File(tempDir, "exported_page.png")
-        val resultFile = PageExporter.exportToPng(
-            page = page,
-            strokes = strokes,
-            targetFile = targetFile,
-            options = PageExportOptions(widthPx = 1080, heightPx = 1920)
-        )
 
-        assertTrue("Arquivo exportado deve existir", resultFile.exists())
-        assertTrue("Tamanho do arquivo deve ser maior que 0", resultFile.length() > 0)
+        // No ambiente JVM stubbed (sem Skia/Android OS gráfico real), deve falhar com IOException explícita
+        // sem jamais criar um arquivo PNG falso de 8 bytes (A09).
+        val result = runCatching {
+            PageExporter.exportToPng(
+                page = page,
+                strokes = strokes,
+                targetFile = targetFile,
+                options = PageExportOptions(widthPx = 1080, heightPx = 1920)
+            )
+        }
+
+        if (result.isFailure) {
+            val exception = result.exceptionOrNull()
+            assertTrue("Deve lançar IOException explicativa", exception is java.io.IOException)
+            assertTrue("Arquivo não deve ter sido gerado como stub de 8 bytes", !targetFile.exists() || targetFile.length() != 8L)
+        } else {
+            // Se executado com runtime gráfico real (ex: Robolectric ou device)
+            val file = result.getOrThrow()
+            assertTrue(file.exists())
+            assertTrue(file.length() > 8L)
+        }
 
         // Princípio central: os traços vetoriais brutos não sofreram qualquer mutação
         assertEquals(1, strokes.size)

@@ -11,8 +11,8 @@ android {
         applicationId = "com.scribe.caligrafia"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.2.0"
+        versionCode = 5
+        versionName = "0.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -22,9 +22,12 @@ android {
             val keystoreFile = rootProject.file("keystore/scribe-release.jks")
             if (keystoreFile.exists()) {
                 storeFile = keystoreFile
-                storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: "ScribeCaligrafia2026SecureKey!"
-                keyAlias = System.getenv("RELEASE_KEY_ALIAS") ?: "scribe_release_key"
-                keyPassword = System.getenv("RELEASE_KEY_PASSWORD") ?: "ScribeCaligrafia2026SecureKey!"
+                storePassword = (project.findProperty("RELEASE_KEYSTORE_PASSWORD") as? String)
+                    ?: System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: ""
+                keyAlias = (project.findProperty("RELEASE_KEY_ALIAS") as? String)
+                    ?: System.getenv("RELEASE_KEY_ALIAS") ?: "scribe_release_key"
+                keyPassword = (project.findProperty("RELEASE_KEY_PASSWORD") as? String)
+                    ?: System.getenv("RELEASE_KEY_PASSWORD") ?: ""
             }
         }
     }
@@ -95,3 +98,8 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
+
+tasks.withType<Test>().configureEach {
+    binaryResultsDirectory.set(layout.buildDirectory.dir("test-bin/${name}-${System.currentTimeMillis()}"))
+}
+

@@ -70,6 +70,7 @@ fun GuidedPracticeScreen(
     val state by viewModel.state.collectAsState()
     var canvasViewRef by remember { mutableStateOf<GuidedPracticeCanvasView?>(null) }
     var showGlyphMenu by remember { mutableStateOf(false) }
+    var showStyleMenu by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -96,7 +97,7 @@ fun GuidedPracticeScreen(
                             }
                         }
                         Text(
-                            text = "Toque no título para trocar de exercício",
+                            text = "Estilo: ${state.currentStyle.name} (${state.currentStyle.defaultSlantAngle.toInt()}°)",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -111,6 +112,30 @@ fun GuidedPracticeScreen(
                     }
                 },
                 actions = {
+                    // Botão seletor de estilo (M3)
+                    Box {
+                        OutlinedButton(
+                            onClick = { showStyleMenu = true },
+                            modifier = Modifier.padding(end = 4.dp)
+                        ) {
+                            Text(text = "Estilo: ${state.currentStyle.name}")
+                        }
+                        DropdownMenu(
+                            expanded = showStyleMenu,
+                            onDismissRequest = { showStyleMenu = false }
+                        ) {
+                            state.availableStyles.forEach { style ->
+                                DropdownMenuItem(
+                                    text = { Text("${style.name} (${style.defaultSlantAngle.toInt()}°)") },
+                                    onClick = {
+                                        viewModel.selectStyle(style.id)
+                                        showStyleMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
                     // Botão seletor de exercício
                     Box {
                         OutlinedButton(
@@ -247,6 +272,7 @@ fun GuidedPracticeScreen(
                             onStrokeChanged = { viewModel.notifyStrokeChanged() }
                         ).also { view ->
                             canvasViewRef = view
+                            view.guidelineConfig = state.guidelineConfig
                             view.currentGlyph = state.selectedGlyph
                             view.currentStage = state.currentStage
                             view.ghostLevel = state.ghostModeLevel
@@ -254,6 +280,7 @@ fun GuidedPracticeScreen(
                     },
                     update = { view ->
                         canvasViewRef = view
+                        view.guidelineConfig = state.guidelineConfig
                         view.currentGlyph = state.selectedGlyph
                         view.currentStage = state.currentStage
                         view.ghostLevel = state.ghostModeLevel

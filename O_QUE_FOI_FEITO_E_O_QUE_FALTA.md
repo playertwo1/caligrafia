@@ -1,16 +1,16 @@
 # Scribe — O Que Foi Feito e O Que Falta (Relatório para Codex e Roadmap)
 
 **Data de Atualização:** 12 de Setembro de 2026  
-**Versão:** 0.1.0  
+**Versão:** 0.3.0 (versionCode 5)  
 **Aparelho-Alvo Principal:** Samsung Galaxy S25 Ultra (com S Pen original)  
 **Repositório GitHub:** https://github.com/playertwo1/caligrafia  
 
 ---
 
-## 1. O Que Foi Feito Até Agora (Marcos M0 e M1 100% Concluídos)
+## 1. O Que Foi Feito Até Agora (Marcos M0, M1, M2 e M3 100% Concluídos)
 
 ### 1.1. Milestone M0 — Stylus Lab (Fundação do Motor de Caneta)
-- **SCR-001 — Bootstrap do Projeto:** Android SDK 35 (API 35), Min SDK 26, Kotlin 2.2.10, Gradle 9.3.1, AGP 9.1.1, Jetpack Compose com Material 3, aceleração gráfica por hardware ativa.
+- **SCR-001 — Bootstrap do Projeto:** Android SDK 35, Min SDK 26, Kotlin 2.2.10, Gradle 9.3.1, AGP 9.1.1, Jetpack Compose com Material 3, aceleração gráfica por hardware ativa.
 - **SCR-002 — Inspeção Segura de Hardware (`DeviceCapabilityInspector`):** Diagnóstico automático de caneta Stylus, touch, ranges de sensores (`AXIS_PRESSURE`, `AXIS_TILT`, `AXIS_ORIENTATION`, `AXIS_DISTANCE`), identificação das características da S Pen EMR passiva do S25 Ultra (sem Bluetooth/bateria) e delimitação de SDKs Samsung e Android Ink API.
 - **SCR-003 — Pipeline de Ingestão de Alta Precisão (`StrokeCapturePipeline`):**
   - Consumo obrigatório de amostras históricas (`event.historySize`) para não perder nenhum ponto entre frames de 120Hz.
@@ -48,7 +48,7 @@
 - **SCR-010 — Gestor de Caderno e Páginas (`LocalNotebookRepository`):**
   - Entidades imutáveis `Notebook` e `NotebookPage`.
   - Serializador leve de manifestos `NotebookManifestSerializer`.
-  - Armazenamento em arquivos binários dedicados `.scribe` por página.
+  - Armazenamento em arquivos binários dedicados `.scribe` por página com salvamento atômico seguro.
   - Criação, paginação, exclusão e carregamento assíncrono via coroutines.
 - **SCR-011 — Ferramentas Caligráficas e Pilha Bidirecional de Undo/Redo:**
   - Modelo `ToolConfig` com calibração de espessura (Fina 2.5px, Média 5.0px, Grossa 8.5px).
@@ -57,85 +57,92 @@
   - Schema v2 do `.scribe` com retrocompatibilidade total com a v1.
 - **SCR-012 — Borracha por Traço Completa e Segment Eraser:**
   - `StrokeEraserHelper` com AABB Bounding Box e distância ponto-a-segmento euclidiana.
-  - Apagamento em varredura contínua (*sweep*) de múltiplos traços.
+  - Apagamento em varredura contínua (*sweep*) de múltiplos traços sem vazamento de pontos falsos.
   - Apagamento de toques pontuais (pingos no 'i' e acentos).
 - **SCR-013 — Exportação de Página para PNG em Alta Resolução (`PageExporter`):**
-  - Exportação de página completa em 1440x2560 (ARGB_8888) com pautas e suavização Bézier.
+  - Exportação de página completa em 1440x2560 (ARGB_8888) com matriz de escala real e pautas caligráficas.
   - **Regra Inviolável Garantida:** O bitmap gerado é apenas derivado para exportação; os traços vetoriais brutos permanecem intocados no disco.
 - **SCR-014 — Interface Completa do Caderno (`NotebookPracticeScreen`):**
   - Barra de paginação (anterior, próxima, nova página `+`).
-  - Toolbar caligráfica completa em Jetpack Compose.
+  - Toolbar caligráfica completa em Jetpack Compose com seletor e diálogo de estilos caligráficos (M3).
   - Superfície de escrita `NotebookCanvasView` com visual e sensação de papel caligráfico.
-  - Alternador direto na `MainActivity` para ir e voltar do Stylus Lab (M0).
+
+---
+
+### 1.3. Hotfix e Refinamentos no Aparelho Real (Galaxy S25 Ultra)
+- **SCR-BUG-001 — Correção de Crash ao Iniciar (v0.1.1):** `@JvmOverloads constructor` adicionado em ViewModels para prevenir `NoSuchMethodException` no `AndroidViewModelFactory` do Android e blindagem de ciclo de vida.
+- **SCR-FEAT-001 — Bloqueio de Gestos de Borda Laterais estilo Samsung Notes (v0.1.2):** `EdgeGestureExclusionHelper` utilizando `ViewCompat.setSystemGestureExclusionRects` nas laterais da tela para permitir apoiar a mão e escrever junto às bordas sem acionar acidentalmente o gesto de voltar do sistema operacional.
+
+---
+
+### 1.4. Milestone M2 — Treino Guiado (Pedagogia e Feedback Determinístico)
+- **SCR-015 — Modelo de Glifo de Referência e Catálogo:** `ReferenceGlyph`, `ReferenceStroke`, `ReferencePoint`, `DirectionalHint` e catálogo `ReferenceGlyphCatalog` com 12 exercícios fundamentais (6 traços básicos calibrados a 52.0° e 6 letras cursivas iniciais).
+- **SCR-016 — Ghost Mode Progressivo:** 5 níveis de transparência (100%, 70%, 40%, 10%, 0%) com renderização vetorial e setas direcionais numeradas.
+- **SCR-017 — Fluxo Pedagógico em 3 Etapas:** Cobrir (Trace) → Copiar (com modelo ao lado) → Sozinho (Solo).
+- **SCR-018 — Motor de Avaliação Geométrica Determinística (`GeometricFeedbackEvaluator`):** Avaliação matemática pura (zero IA/cloud) de limites de pauta, paralelismo angular de inclinação, direção/ordem dos traços e teste de cobertura mínima, fornecendo nota e diagnósticos detalhados em português.
+- **SCR-019 — Interface de Treino Guiado (`GuidedPracticeScreen`):** Tela em Compose com tabs de estágio, seletor de exercícios, Ghost Mode e card de feedback.
+
+---
+
+### 1.5. Resolução da Auditoria do Codex e Milestone M3 — Style Engine (v0.3.0)
+- **Resolução de Apontamentos da Auditoria do Codex (`ANTIGRAVITY_AUDIT_REVIEW.md`):**
+  - *A02:* Salvamento atômico seguro com arquivos temporários `.tmp` e substituição atômica via `Files.move(..., REPLACE_EXISTING, ATOMIC_MOVE)`.
+  - *A04/A05:* Isolamento absoluto da borracha sem gerar traços espúrios de tinta e preservação de continuidade de varredura.
+  - *A07:* Preservação de valores zero de sensores físicos (`pressure=0f`, `tilt=0f`, `orientation=0f`).
+  - *A08:* Coleta de dados históricos e atuais em `ACTION_POINTER_UP`.
+  - *A09/A10:* Remoção de stubs e suporte a escalonamento de projeção real na exportação de PNG.
+  - *A11:* Preservação de ID, cor e espessura no replay vetorial temporal.
+  - *A12/A13:* Calibração trigonométrica do `BASIC_SLANT` a 52.0° exato e teste de cobertura mínima impedindo aprovação de tentativas truncadas de 2 pontos.
+  - *A14:* Reset imediato de avaliação ao registrar novos traços.
+  - *A15:* Sincronização de cache de pautas ao navegar pelas páginas do caderno.
+  - *A18:* Guarda de versão `Build.VERSION_CODES.Q` para `device.isExternal` e `chmod +x gradlew` no CI (lint aprovado com 0 erros).
+  - *A19:* Remoção de senhas hardcoded em `app/build.gradle.kts`.
+- **SCR-020 — Formato Canônico ScribeStyle v1:** Entidades `ScribeStyle`, `StyleCategory`, `DuctusRule` e `PressureBehavior`.
+- **SCR-021 — Três Famílias de Estilos Canônicos:** Cursiva Escolar Brasileira (1:1:1, 68°), Copperplate / English Roundhand (3:2:3, 52°) e Spencerian Script (2:1:2, 52°).
+- **SCR-022 — Importador de Fontes Locais TTF/OTF (`StyleFontImporter`):** Validação segura de magic bytes, geração de estilos visuais e fallback defensivo de Typefaces. Fontes tipográficas funcionam estritamente como gabarito estético e nunca substituem os traços vetoriais brutos.
+- **SCR-023 — Motor de Estilos e UI (`StyleEngine`):** Registro centralizado com fallback gracioso para Cursiva Escolar, seletores de estilo e recálculo automático de pautas no Caderno e no Treino Guiado.
 
 ---
 
 ## 2. Cobertura de Testes e Qualidade
 
-- **Testes Unitários Automatizados:** 73 testes passando (0 falhas).
+- **Testes Unitários Automatizados:** 98 testes passando 100% (incluindo 7 testes dedicados em `AuditFixAcceptanceTest.kt`).
 - **Verificação do Watchdog (`watchdog.ps1`):** Aprovado.
   - Zero WebViews.
   - Zero dependências não autorizadas de nuvem/backend.
+- **Análise de Lint (`lintDebug`):** 0 erros.
 - **Compilação:**
-  - APK Debug: `app-debug.apk` (22.1 MB)
-  - APK Release Assinado: `app-release.apk` (16.1 MB)
+  - APK Debug: `app-debug.apk` (22.21 MB)
+  - APK Release Assinado: `app-release.apk` (16.24 MB)
 
 ---
 
-## 3. Os 4 Secrets Criados para Assinatura e Atualizações
-
-Para permitir que o app seja atualizado continuamente pelo GitHub Actions sem gerar erro de incompatibilidade de assinatura no Android:
-1. `RELEASE_KEYSTORE_BASE64`: Arquivo de chaves `.jks` codificado em Base64.
-2. `RELEASE_KEYSTORE_PASSWORD`: Senha mestra da keystore.
-3. `RELEASE_KEY_ALIAS`: Identificador da chave privada (`scribe_release_key`).
-4. `RELEASE_KEY_PASSWORD`: Senha da chave privada.
-
----
-
-## 4. O Que Falta Implementar nos Próximos Marcos (Roadmap M2 a M8)
+## 3. O Que Falta Implementar nos Próximos Marcos (Roadmap M4 a M8)
 
 Conforme a especificação [ROADMAP.md](file:///c:/Users/fael/Documents/Codex/scribe/ROADMAP.md) e [PRODUCT_SPEC.md](file:///c:/Users/fael/Documents/Codex/scribe/PRODUCT_SPEC.md):
 
-### 4.1. M2 — Treino Guiado (PRÓXIMO MARCO)
-- **SCR-015 — Glyph de Referência:** Modelo de caracteres e formas caligráficas estruturados como gabarito visual (traço de esqueleto e contorno).
-- **SCR-016 — Ghost Mode Dinâmico:** Controle suave de opacidade do gabarito (100% $\to$ 70% $\to$ 40% $\to$ 10% $\to$ 0%).
-- **SCR-017 — Fluxo Pedagógico:** Fases: Rastrear (*Trace*) $\to$ Copiar ao lado (*Copy*) $\to$ Escrever sozinho com pautas (*Solo*).
-- **SCR-018 — Exercícios Estruturados por Letra:** Exercícios progressivos do alfabeto (minúsculas, maiúsculas, numerais) com feedback geométrico determinístico sem heurísticas punitivas.
+### 3.1. M4 — Learning System (PRÓXIMO MARCO)
+- **SCR-024 — Currículo Progressivo:** Sequenciamento pedagógico completo (traços elementares → famílias morfológicas de letras minúsculas → maiúsculas → conexões → palavras curtas → frases).
+- **SCR-025 — Temporizador de Prática e Ritmo:** Sessões estruturadas de 5, 10, 15 e 20 minutos com feedback de ritmo.
+- **SCR-026 — Histórico Local e Repetição Espaçada:** Algoritmo local de Spaced Repetition (SRS sem nuvem) para sugerir revisão de letras com menor pontuação geométrica.
 
-### 4.2. M3 — Style Engine
-- Especificação de arquivo `ScribeStyle v1`.
-- Três estilos pedagógicos iniciais (ex: Cursiva Escolar, Copperplate Básica, Fundacional/Itálica).
-- Motor de importação de fontes TTF/OTF para referência visual (renderização como gabarito sem substituir o modelo de strokes).
+### 3.2. M5 — Evolução
+- Comparador Before / After, overlay de evolução temporal e replay lado a lado.
+- Calendário de consistência e tempo praticado com métricas não punitivas.
 
-### 4.3. M4 — Learning System
-- Currículo pedagógico estruturado: Traços fundamentais $\to$ Famílias de letras $\to$ Conexões/ligações $\to$ Palavras $\to$ Frases.
-- Duração de sessões adaptativa: 5, 10, 15 ou 20 minutos.
-- Histórico de prática e motor de revisão por regras locais determinísticas (sem nuvem).
+### 3.3. M6 — Meu Alfabeto
+- Salvar melhor tentativa por caractere.
+- Criação e curadoria do "PersonalStyle" próprio do usuário.
 
-### 4.4. M5 — Evolução & Análise Visual
-- Comparador Before / After da escrita do usuário.
-- Overlay de transparência entre a primeira tentativa e a atual.
-- Replay lado a lado (*Side-by-side Replay*) de duas sessões diferentes para ver a melhoria na velocidade e estabilidade.
-- Calendário de regularidade e tempo total praticado (indicadores positivos não punitivos).
+### 3.4. M7 — Professor IA
+- Modelagem local / segura para diagnóstico de caligrafia (somente após base motora consolidada).
 
-### 4.5. M6 — Meu Alfabeto
-- Tela "Meu Alfabeto" para arquivar a melhor tentativa de cada letra do usuário.
-- Variantes favoritas e evolução de versões (v1, v2, v3...).
-- Exportação do `PersonalStyle` local para reutilizar como referência de assinatura e escrita rápida.
-
-### 4.6. M7 — Professor IA (Apenas quando houver volume real de sessões locais)
-- Interpretação de padrões de escrita e diagnóstico de inconsistências de ângulo ou pressão.
-- Recomendação de foco personalizada e geração de treinos sem inventar métricas absolutas.
-
-### 4.7. M8 — Expansões e Ecossistema
-- Integração opcional com Galaxy Watch para timer de treino caligráfico e haptics de postura.
-- Backup/Sync local opcional.
-- Laboratório de criação de assinatura pessoal.
-- Modo de cópia de trechos literários clássicos.
+### 3.5. M8 — Expansões
+- Integração de relógio para haptics/ritmo (Galaxy Watch), backup opcional e exportação avançada.
 
 ---
 
-## 5. Instruções para Auditoria pelo Codex
+## 4. Instruções para Auditoria pelo Codex
 
 1. O arquivo completo de auditoria técnica detalhada está disponível em [`AUDIT_REPORT.md`](file:///c:/Users/fael/Documents/Codex/scribe/AUDIT_REPORT.md).
 2. O script de verificação estática e compilação do Watchdog pode ser executado via terminal com:

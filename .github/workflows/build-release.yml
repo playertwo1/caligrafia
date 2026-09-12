@@ -32,6 +32,9 @@ jobs:
           mkdir -p keystore
           echo "$KEYSTORE_BASE64" | base64 -d > keystore/scribe-release.jks
 
+      - name: Make Gradlew Executable
+        run: chmod +x ./gradlew
+
       - name: Run Unit Tests
         run: ./gradlew testDebugUnitTest --no-daemon
 

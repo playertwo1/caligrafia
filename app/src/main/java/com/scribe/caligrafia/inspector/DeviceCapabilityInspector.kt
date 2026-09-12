@@ -1,6 +1,7 @@
 package com.scribe.caligrafia.inspector
 
 import android.content.Context
+import android.os.Build
 import android.view.InputDevice
 import android.view.MotionEvent
 import com.scribe.caligrafia.core.model.ToolType
@@ -78,7 +79,11 @@ object DeviceCapabilityInspector {
                     id = device.id,
                     name = device.name ?: "Unknown Device",
                     descriptor = try { device.descriptor ?: "" } catch (_: Throwable) { "" },
-                    isExternal = try { device.isExternal } catch (_: Throwable) { false },
+                    isExternal = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        try { device.isExternal } catch (_: Throwable) { false }
+                    } else {
+                        false
+                    },
                     isVirtual = try { device.isVirtual } catch (_: Throwable) { false },
                     sources = sources,
                     hasStylusSource = hasStylus,

@@ -64,8 +64,8 @@ object ReferenceGlyphCatalog {
         strokes = listOf(
             ReferenceStroke(
                 orderIndex = 1,
-                points = sampleLine(Pair(0.65f, 1.0f), Pair(0.35f, 0.0f), steps = 15),
-                hint = DirectionalHint(1, ReferencePoint(0.65f, 1.0f), -0.3f, -1.0f, "Puxe para baixo")
+                points = sampleLine(Pair(0.9883f, 1.0f), Pair(0.0117f, 0.0f), steps = 15),
+                hint = DirectionalHint(1, ReferencePoint(0.9883f, 1.0f), -0.78f, -1.0f, "Puxe para baixo")
             )
         )
     )
