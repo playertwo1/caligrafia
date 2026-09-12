@@ -52,11 +52,19 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        stylusLabViewModel.onResumeLifecycle(this)
+        try {
+            stylusLabViewModel.onResumeLifecycle(this)
+        } catch (e: Throwable) {
+            android.util.Log.e("Scribe", "Erro no onResume do StylusLab", e)
+        }
     }
 
     override fun onPause() {
         super.onPause()
-        stylusLabViewModel.onPauseLifecycle()
+        try {
+            stylusLabViewModel.onPauseLifecycle(this)
+        } catch (e: Throwable) {
+            android.util.Log.e("Scribe", "Erro no onPause do StylusLab", e)
+        }
     }
 }

@@ -46,7 +46,7 @@ enum class GuidelinePreset(val displayName: String) {
     SPENCERIAN("Spencerian (68°)")
 }
 
-class StylusLabViewModel(
+class StylusLabViewModel @JvmOverloads constructor(
     application: Application,
     val lifecycleManager: SessionLifecycleManager = SessionLifecycleManager(
         File(application.filesDir, "autosave_storage")
@@ -206,7 +206,10 @@ class StylusLabViewModel(
     /**
      * Invocado no ciclo de vida onPause da Activity ou quando o app perde o foco de janela.
      */
-    fun onPauseLifecycle() {
+    fun onPauseLifecycle(context: Context? = null) {
+        if (context != null) {
+            sPenDetector.unregister(context)
+        }
         pipeline.flushActiveStroke(commitIfValid = true)
         updateMetrics()
         triggerAutoSave()

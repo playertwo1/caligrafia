@@ -20,8 +20,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.AutoFixHigh
-import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Redo
 import androidx.compose.material.icons.filled.Share
@@ -343,7 +343,7 @@ private fun NotebookToolbar(
                         onClick = { onSelectTool(ToolMode.ERASER) },
                         label = { Text("Borracha", fontSize = 12.sp) },
                         leadingIcon = {
-                            Icon(Icons.Default.AutoFixHigh, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Clear, contentDescription = null, modifier = Modifier.size(16.dp))
                         }
                     )
                 }
@@ -379,7 +379,7 @@ private fun NotebookToolbar(
                     }
                     IconButton(onClick = onClear) {
                         Icon(
-                            imageVector = Icons.Default.DeleteSweep,
+                            imageVector = Icons.Default.Delete,
                             contentDescription = "Limpar Página",
                             tint = Color(0xFFEF4444)
                         )

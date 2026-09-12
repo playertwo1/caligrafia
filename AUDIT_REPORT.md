@@ -257,34 +257,48 @@ Durante a execução de builds e testes concorrentes no ambiente Windows, identi
 * [GuidelineConfigTest.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/test/java/com/scribe/caligrafia/core/model/GuidelineConfigTest.kt) (9 testes)
 * [NotebookRepositoryTest.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/test/java/com/scribe/caligrafia/notebook/repository/NotebookRepositoryTest.kt) (7 testes)
 * [PageExporterTest.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/test/java/com/scribe/caligrafia/notebook/export/PageExporterTest.kt) (2 testes)
-* **Total:** 73 testes unitários automatizados (100% de aprovação).
+* [ViewModelInstantiationTest.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/test/java/com/scribe/caligrafia/viewmodel/ViewModelInstantiationTest.kt) (2 testes)
+* **Total:** 75 testes unitários automatizados (100% de aprovação).
 
 ---
 
-## 7. Status de Transição & Conclusão do Milestone M1 — Caderno
+## 8. Diagnóstico e Resolução do Crash de Inicialização (Bugfix SCR-BUG-001)
 
-### 7.1. Entregas do Milestone M1
-Todas as metas estabelecidas no [ROADMAP.md](file:///c:/Users/fael/Documents/Codex/scribe/ROADMAP.md) para o **M1 — Caderno** foram integralmente entregues e verificadas pelo Watchdog:
-1. **Páginas e Sessões (SCR-009 / SCR-010):** Estrutura hierárquica `Notebook` e `NotebookPage`, manifestos leves em disco, ordenação por páginas e arquivos binários `.scribe` dedicados.
-2. **Guias Caligráficas (SCR-009):** `GuidelineConfig` com 4 linhas fundamentais (Ascender, Waistline/x-Height, Baseline, Descender), proporções clássicas (1:1:1, 2:1:2, 3:2:3), linhas diagonais de inclinação (*slant lines*) com $\Delta X = \Delta Y / \tan(\theta)$, e `GuidelineRenderer` nativo no plano de fundo.
-3. **Ferramentas de Escrita e Cores (SCR-011):** Espessuras calibradas (Fina 2.5px, Média 5.0px, Grossa 8.5px), paleta caligráfica clássica (Nanquim, Sépia, Azul Real, Vinho, Grafite, Verde), e armazenamento no traço e no schema v2 do `.scribe`.
-4. **Pilha Bidirecional de Undo / Redo (SCR-011):** `InMemoryStrokeRepository` com gerenciamento formal de ações de adição e borracha, reversibilidade completa, invalidação correta do redo em novas adições e 8 testes dedicados em `UndoRedoStackTest.kt`.
-5. **Borracha por Traço Completa (SCR-012):** Detecção vetorial por AABB Bounding Box e distância ponto-a-segmento, suporte a múltiplos traços interceptados em sweep contínuo e pontos isolados caligráficos.
-6. **Exportação de Página para PNG (SCR-013):** `PageExporter` gerando imagens de alta resolução (1440x2560) com renderização de pautas e suavização Bézier, garantindo o princípio inviolável de que os traços vetoriais brutos nunca são substituídos ou descartados.
-7. **Interface Completa do Caderno (SCR-014):** `NotebookPracticeScreen` com folheamento de páginas, adição de novas folhas pautadas, toolbar caligráfica moderna, alternador rápido para o Stylus Lab (M0) e integridade de ciclo de vida.
+### 8.1. Causa Raiz do Fechamento Imediato
+Ao instalar o APK no dispositivo físico (Galaxy S25 Ultra), o aplicativo fechava imediatamente após abrir. A investigação revelou o mecanismo exato do crash:
+1. **Ausência do Construtor `(Application)` em `StylusLabViewModel`:** 
+   O `StylusLabViewModel` estende `AndroidViewModel(application)`. Na instanciação via `private val stylusLabViewModel: StylusLabViewModel by viewModels()` na `MainActivity`, a fábrica padrão `AndroidViewModelFactory` utiliza reflexão Java (`Class.getConstructor(Application.class)`).
+   Como o construtor primário possuía múltiplos parâmetros com valores padrão em Kotlin sem a anotação `@JvmOverloads`, o bytecode continha apenas o construtor completo de 4 argumentos e o construtor sintético com máscara de bits. A busca por reflexão lançava invariavelmente `NoSuchMethodException: StylusLabViewModel.<init>(Application)`, resultando em `RuntimeException: Cannot create an instance of class StylusLabViewModel`.
+2. **Avaliação no `onResume`:** 
+   Como `MainActivity.onResume()` invocava `stylusLabViewModel.onResumeLifecycle(this)` imediatamente, o delegate lazy disparava a instanciação falha antes mesmo da renderização do primeiro frame na tela, derrubando o processo.
+3. **Dependência de Ícones Estendidos na Toolbar:**
+   O uso de ícones do pacote `material-icons-extended` (`AutoFixHigh` e `DeleteSweep`) introduzia riscos de inicialização de classes pesadas durante a composição.
 
-### 7.2. Gate M1: APROVADO
-- **Suíte de Testes:** 73 testes unitários passando (0 falhas).
-- **Regras Arquiteturais:** Nenhuma WebView, nenhuma biblioteca de nuvem não autorizada, dados de traço vetorial bruto 100% preservados.
-- **Artefato de Produção:** APK de depuração compilado com sucesso (21.12 MB).
+### 8.2. Ações Corretivas Executadas
+1. **Anotação `@JvmOverloads constructor` em `StylusLabViewModel`:**
+   Gera no bytecode o construtor público `StylusLabViewModel(Application)`, permitindo que o `AndroidViewModelFactory` instancie o ViewModel sem falhas.
+2. **Ciclo de Vida Resiliente em `MainActivity`:**
+   Adicionados blocos `try/catch` defensivos com registro no Logcat (`tag = "Scribe"`) ao redor das chamadas de `onResumeLifecycle` e `onPauseLifecycle`.
+3. **Desregistro do Receptor da S Pen:**
+   `StylusLabViewModel.onPauseLifecycle(context)` agora invoca `sPenDetector.unregister(context)` para evitar vazamentos de `BroadcastReceiver`.
+4. **Substituição por Ícones Nativos do Core Compose:**
+   Substituídos `AutoFixHigh` e `DeleteSweep` por `Icons.Default.Clear` e `Icons.Default.Delete` do módulo base `material-icons-core`.
+5. **Novo Teste de Reflexão Automatizado:**
+   Criado `ViewModelInstantiationTest.kt` validando formalmente que todos os ViewModels do aplicativo expõem construtores `(Application)` públicos válidos para reflexão.
+
+### 8.3. Verificação
+- **Watchdog:** 4/4 verificações aprovadas (`scripts/watchdog.ps1`).
+- **Testes Unitários:** 75/75 testes passando com sucesso.
+- **Artefatos:** Novos APKs `scribe-v0.1.0-release.apk` e `scribe-v0.1.0-debug.apk` compilados, assinados e sincronizados no Google Drive (`E:\Meu Drive\Apks` e `E:\Meu Drive\Scribe`).
 
 ---
 
-## 8. Próximo Marco: M2 — Treino Guiado
+## 9. Próximo Marco: M2 — Treino Guiado
 
-Com o motor de stylus validado (M0) e o caderno vetorial multi-página operacional (M1), o projeto está formalmente pronto para o desenvolvimento de **M2 — Treino Guiado**:
+Com o motor de stylus validado (M0), o caderno vetorial multi-página operacional (M1) e a inicialização corrigida e blindada, o projeto está formalmente pronto para o desenvolvimento de **M2 — Treino Guiado**:
 1. **Glyph de Referência:** Modelo de caracteres e formas caligráficas estruturados como gabarito visual.
 2. **Ghost Mode Dinâmico:** Opacidade gradual do gabarito (100% → 70% → 40% → 10% → 0% / Desligado).
 3. **Fluxo Pedagógico:** Rastrear sobre o gabarito (Trace) → Copiar ao lado (Copy) → Escrever sozinho com pautas (Solo).
 4. **Exercícios de Caligrafia por Letra:** Exercícios progressivos com feedback geométrico determinístico sem heurísticas punitivas.
+
 
