@@ -1,10 +1,14 @@
 # AUDIT_REPORT — Relatório Completo de Implementação e Auditoria
 
+> [!IMPORTANT]
+> **NOVA AUDITORIA DISPONÍVEL (M4 a M6):** Para a auditoria detalhada de tudo o que foi implementado desde o encerramento do Milestone M3 (versões v0.4.0, v0.5.0 e v0.6.0 — Milestones M4, M5 e M6), consulte o relatório dedicado:
+> 👉 [`AUDIT_REPORT_M4_M6.md`](file:///c:/Users/fael/Documents/Codex/scribe/AUDIT_REPORT_M4_M6.md)
+
 **Projeto:** Scribe (Caligrafia com S Pen / Stylus)  
-**Versão Atual:** v0.3.0 (versionCode 5)  
-**Milestones Concluídos:** M0 (Stylus Lab), M1 (Caderno Vetorial), M2 (Treino Guiado), M3 (Style Engine)  
-**Estado Atual:** `M3_COMPLETED` (SCR-001 a SCR-023 concluídos e verificados)  
-**Data da Auditoria:** 2026-09-12  
+**Versão Atual do Projeto:** v0.6.0 (versionCode 8)  
+**Escopo Deste Documento Original:** Milestones M0 a M3 + Resolução das Constatações da Auditoria Inicial do Codex (v0.3.0)  
+**Escopo do Relatório de Delta:** Milestones M4, M5 e M6 ([`AUDIT_REPORT_M4_M6.md`](file:///c:/Users/fael/Documents/Codex/scribe/AUDIT_REPORT_M4_M6.md))  
+**Data da Auditoria Original:** 2026-09-12  
 **Destinatário da Auditoria:** Codex / Revisor Técnico Independente  
 
 ---
@@ -232,9 +236,14 @@ Execução realizada via script PowerShell padronizado (`.\scripts\watchdog.ps1`
 
 ---
 
-## 9. Próximo Marco no Roadmap: M4 — Learning System
+## 9. Atualização de Roadmap: Milestones M4, M5 e M6 Concluídos
 
-Com a conclusão e auditoria formal do **M3 — Style Engine**, a próxima frente de desenvolvimento conforme o [ROADMAP.md](file:///c:/Users/fael/Documents/Codex/scribe/ROADMAP.md) é:
-- **SCR-024 (Currículo Progressivo):** Estruturação sequencial do aprendizado: traços elementares → famílias morfológicas de letras minúsculas → maiúsculas → conexões → palavras curtas → frases.
-- **SCR-025 (Temporizador de Prática e Ritmo):** Sessões de prática com tempo calibrado (5, 10, 15 e 20 minutos).
-- **SCR-026 (Histórico Local e Espaçamento de Repetição):** Mecanismo local (Spaced Repetition / SRS sem nuvem) para agendamento inteligente de revisão de letras e traços com menor precisão motora.
+Os marcos subsequentes foram integralmente implementados, testados (152 testes unitários 100% aprovados, 0 lint errors, 4/4 watchdog) e lançados na versão **v0.6.0** (versionCode 8):
+- **M4 — Learning System (v0.4.0):** SCR-401 a SCR-404 (Currículo de 18 lições em 5 estágios, temporizador de 5 fases pedagógicas, motor SRS local determinístico, histórico atômico e métricas não-punitivas).
+- **M5 — Progress & Evolution (v0.5.0):** SCR-501 a SCR-504 (Comparador Before/After com deltas matemáticos, slider de sobreposição vetorial cross-fade, motor de Dual Replay em 60-120 fps e calendário mensal de consistência).
+- **M6 — Meu Alfabeto & PersonalStyle (v0.6.0):** SCR-601 a SCR-604 (Catálogo canônico de 68 glifos, variantes históricas v1, v2... com favoritos, compilador matemático de estilo pessoal, repositório local atômico com .scribe e interface com grade vetorial auto-escalada).
+
+Para o relatório completo de auditoria do código-fonte, arquitetura, modelos e testes dessas entregas, acesse:
+👉 **[`AUDIT_REPORT_M4_M6.md`](file:///c:/Users/fael/Documents/Codex/scribe/AUDIT_REPORT_M4_M6.md)**
+
+O próximo marco planejado no [ROADMAP.md](file:///c:/Users/fael/Documents/Codex/scribe/ROADMAP.md) é o **M7 — Professor IA & Coaching Inteligente**.

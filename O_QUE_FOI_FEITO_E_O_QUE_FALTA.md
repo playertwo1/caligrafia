@@ -215,9 +215,11 @@ Conforme a especificação [ROADMAP.md](file:///c:/Users/fael/Documents/Codex/sc
 
 ## 4. Instruções para Auditoria pelo Codex
 
-1. O arquivo completo de auditoria técnica detalhada está disponível em [`AUDIT_REPORT.md`](file:///c:/Users/fael/Documents/Codex/scribe/AUDIT_REPORT.md).
-2. O script de verificação estática e compilação do Watchdog pode ser executado via terminal com:
+1. O relatório focado em tudo o que foi implementado desde a última auditoria (Milestones M4, M5 e M6 — v0.3.0 até v0.6.0) está disponível em:
+   👉 **[`AUDIT_REPORT_M4_M6.md`](file:///c:/Users/fael/Documents/Codex/scribe/AUDIT_REPORT_M4_M6.md)**
+2. O histórico consolidado das fundações anteriores (M0 a M3) e correções de apontamentos anteriores continua em [`AUDIT_REPORT.md`](file:///c:/Users/fael/Documents/Codex/scribe/AUDIT_REPORT.md).
+3. O script de verificação estática e compilação do Watchdog pode ser executado via terminal com:
    ```powershell
    .\scripts\watchdog.ps1
    ```
-3. O APK assinado pronto para instalação direta no Samsung Galaxy S25 Ultra foi copiado para o Google Drive na pasta `Apks/` e `Scribe/`.
+4. O APK assinado pronto para instalação direta no Samsung Galaxy S25 Ultra foi copiado para o Google Drive na pasta `Apks/`, `Scribe/` e `codex/scribe/`.
