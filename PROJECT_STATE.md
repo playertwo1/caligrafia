@@ -1,15 +1,16 @@
 # PROJECT_STATE
 
 **Projeto:** Scribe / Caligrafia
-**Versão documental:** v0.1.2
-**Versão do aplicativo:** v0.1.2 (versionCode 3)
-**Estado:** M1_COMPLETED / FEATURE_GESTURE_EXCLUSION — Versão v0.1.2 operacional com bloqueio de gestos laterais (estilo Samsung Notes) para escrita em tela cheia sem minimizar o app, navegação inferior preservada, 78 testes unitários 100% aprovados, APK 15.42 MB release / 21.07 MB debug, Watchdog aprovado. Transição formal para o Milestone M2 (Treino Guiado).
-**Milestone atual:** M2 — Treino Guiado.
-**Código de produto:** M0 concluído (SCR-001 a SCR-008); M1 concluído (SCR-009 a SCR-014); Hotfix SCR-BUG-001 (v0.1.1); Feature SCR-FEAT-001 (v0.1.2).
+**Versão documental:** v0.2.0
+**Versão do aplicativo:** v0.2.0 (versionCode 4)
+**Estado:** M2_COMPLETED — Milestone M2 (Treino Guiado) 100% concluído e verificado (91 testes unitários passando, APK 15.47 MB release / 21.15 MB debug, Watchdog aprovado). Transição formal para o Milestone M3 (Style Engine).
+**Milestone atual:** M3 — Style Engine.
+**Código de produto:** M0 concluído (SCR-001 a SCR-008); M1 concluído (SCR-009 a SCR-014); Hotfix SCR-BUG-001 (v0.1.1); Feature SCR-FEAT-001 (v0.1.2); M2 concluído (SCR-015 a SCR-019).
 
-## Status de Transição — Gate M0 & Gate M1
+## Status de Transição — Gate M0, Gate M1 & Gate M2
 - **Gate M0 (Stylus Lab):** Aprovado tecnicamente com pendências de auditoria independente pelo Codex e testes físicos no Samsung Galaxy S25 Ultra registradas no `AUDIT_REPORT.md`.
 - **Gate M1 (Caderno):** Aprovado integralmente com 78 testes unitários passando, zero violações arquiteturais e APK v0.1.2 operacional.
+- **Gate M2 (Treino Guiado):** Aprovado integralmente com 91 testes unitários passando, catálogo pedagógico de 12 exercícios, Ghost Mode (100% a 0%), fluxo Trace/Copiar/Sozinho, avaliação determinística matemática e APK v0.2.0 operacional.
 
 ## Entregas Concluídas
 - **SCR-001 a SCR-008 (Milestone M0 — Stylus Lab):** Bootstrap Android, Device Capability Inspector (Galaxy S25 Ultra + S Pen), Capture Pipeline com raw strokes imutáveis e historical samples, Live Renderer (Android Ink API + Bézier nativo de referência), Palm Rejection com proximidade EMR e modo Stylus Only, Persistence Spike (decisão arquitetural `.scribe` híbrido), Replay vetorial determinístico (0.5x, 1x, 2x) e Lifecycle Edge Cases (flush de traço ativo, contingência e detecção de silo de hardware).
@@ -19,13 +20,18 @@
 - **SCR-012 Borracha por Traço Completa e Segment Eraser (M1):** Utilitário `StrokeEraserHelper` com AABB bounding box e distância euclidiana ponto-a-segmento, suporte a sweeping contínuo com múltiplos traços apagados em uma única passada, e apagamento de pontos pontuais/acentos caligráficos.
 - **SCR-013 Exportação em Alta Resolução de Página para PNG (M1):** Módulo `PageExporter` que renderiza pautas e traços vetoriais em imagens PNG de alta resolução (1440x2560) preservando a regra inviolável de que traços brutos nunca são substituídos ou destruídos por bitmaps.
 - **SCR-014 Interface do Caderno de Prática (M1):** Tela Jetpack Compose `NotebookPracticeScreen` com navegação por páginas (anterior/próxima/adicionar), toolbar de caligrafia com chips de espessura, seletor de cores, presets de pauta e ações de undo/redo/limpar/exportar, tela de canvas nativa `NotebookCanvasView` e roteador central na `MainActivity`.
+- **SCR-015 Modelo de ReferenceGlyph e Catálogo Pedagógico (M2):** Modelos `ReferenceGlyph`, `ReferenceStroke`, `ReferencePoint`, `DirectionalHint` e catálogo `ReferenceGlyphCatalog` com 12 exercícios calibrados (traços básicos: slant, underturn, overturn, curva composta, oval, laçada alta; e letras cursivas: 'i', 't', 'a', 'l', 'c', 'o').
+- **SCR-016 Ghost Mode Progressivo e Renderizador Vetorial (M2):** Níveis de transparência calibrados (100% Total, 70% Nítido, 40% Tênue, 10% Marca d'Água, 0% Oculto) com `ReferenceGlyphRenderer` desenhando curvas Bézier e pistas direcionais com numeração de traço e setas vetoriais.
+- **SCR-017 Motor Pedagógico: Fluxo Trace → Copiar → Sozinho (M2):** Modelagem de `PracticeStage` (Cobrir, Copiar com modelo em card à esquerda, Sozinho com foco em memória muscular e evocação ativa), transições de etapa em `GuidedPracticeViewModel`.
+- **SCR-018 Motor de Feedback Geométrico Determinístico (M2):** Avaliador `GeometricFeedbackEvaluator` baseado em matemática pura (zero IA/cloud): limites verticais de pauta com penalização de overshoot, paralelismo angular com guias de inclinação ($\theta$), direção/ordem dos traços e proximidade euclidiana média ponto-a-segmento com notas percentuais e diagnósticos em português.
+- **SCR-019 Interface de Treino Guiado (M2):** Tela Jetpack Compose `GuidedPracticeScreen` com tabs de estágio, seletor de Ghost Mode, menu de exercícios, canvas nativo `GuidedPracticeCanvasView` com rejeição de palma e bloqueio de gestos de borda, card de feedback determinístico e roteamento central em `MainActivity`.
 
 ## Próxima Ação
-- **M2 — Treino Guiado (SCR-015):**
-  - Definição do modelo de **Glyph de Referência** caligráfico.
-  - Implementação do **Ghost Mode** com transparência progressiva (100% -> 70% -> 40% -> 10% -> 0%).
-  - Fluxo pedagógico: Trace -> Copiar -> Sozinho.
-  - Exercícios de caligrafia por letra com feedback geométrico determinístico.
+- **M3 — Style Engine (SCR-020):**
+  - Definição do formato canônico `ScribeStyle v1` (estilos caligráficos como objetos de domínio).
+  - Três estilos pedagógicos iniciais (ex: Cursiva Escolar, Copperplate / Roundhand, Spencerian).
+  - Importação de referências visuais de fontes TTF/OTF locais (preservando o princípio de que fonte tipográfica é gabarito estético, não traçado do aluno).
+  - Fallback gracioso de glifos ausentes e seletor de estilos no caderno e treino.
 
 ## Gates
 Não iniciar IA, backend, login, marketplace ou biblioteca avançada de estilos antes dos milestones correspondentes. Gate M0 formalizado com pendências externas documentadas.
@@ -64,3 +70,4 @@ Não iniciar IA, backend, login, marketplace ou biblioteca avançada de estilos 
 - 2026-09-12 — Conclusão do Milestone M1 — Caderno: SCR-010 (LocalNotebookRepository, serializador de manifestos e .scribe dedicado), SCR-011 (ToolConfig, paleta clássica de cores, espessuras e pilha bidirecional de Undo/Redo), SCR-012 (StrokeEraserHelper para varredura e pontos), SCR-013 (PageExporter PNG de alta resolução preservando traços vetoriais), SCR-014 (NotebookPracticeScreen em Compose com folheamento, toolbar e canvas nativo). 73 testes unitários aprovados no Watchdog, APK de 21.12 MB. Transição formal para o Milestone M2 — Treino Guiado.
 - 2026-09-12 — Resolução de Bug de Inicialização no Dispositivo Físico (SCR-BUG-001): Identificada ausência de `@JvmOverloads` no construtor primário de `StylusLabViewModel` provocando `NoSuchMethodException` em `AndroidViewModelFactory` durante o `onResume` da `MainActivity`. Adicionado `@JvmOverloads constructor`, blindagem com `try/catch` no ciclo de vida de `MainActivity`, desregistro defensivo do receptor da S Pen no `onPauseLifecycle` e substituição de ícones estendidos por core (`Clear` e `Delete`). Criado teste automatizado `ViewModelInstantiationTest.kt` (totalizando 75 testes 100% aprovados). APKs de release e debug recompilados e sincronizados no Google Drive e GitHub.
 - 2026-09-12 — Bloqueio de Gestos de Borda Laterais estilo Samsung Notes (SCR-FEAT-001 / v0.1.2): Implementado `EdgeGestureExclusionHelper` utilizando `ViewCompat.setSystemGestureExclusionRects` nas margens esquerda e direita do canvas do caderno (`NotebookCanvasView`) e do lab (`ProbeSurfaceView`), desativando o gesto de Voltar acidental pelas bordas laterais durante a escrita e descanso da palma. Preservada 100% a barra de navegação inferior para alternância de apps e voltar à tela inicial. Adicionado `BackHandler` com proteção contra fechamento acidental (exige confirmação de duplo clique para sair) e `BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE`. 78 testes unitários 100% aprovados. Version bump para v0.1.2 (versionCode 3). APKs compilados e distribuídos no Google Drive e GitHub Releases.
+- 2026-09-12 — Conclusão Integral do Milestone M2 — Treino Guiado (SCR-015 a SCR-019 / v0.2.0): Modelagem de `ReferenceGlyph` com catálogo de 12 exercícios (traços básicos e letras cursivas fundamentais), Ghost Mode calibrado em 5 níveis (100%, 70%, 40%, 10%, 0%) com renderização vetorial Bézier e setas direcionais numeradas (`ReferenceGlyphRenderer`), fluxo pedagógico em 3 etapas (Cobrir, Copiar, Sozinho), motor de avaliação geométrica 100% determinístico (`GeometricFeedbackEvaluator` avaliando limites de pauta, inclinação $\theta$, ordem/sentido e proximidade euclidiana) e nova tela Compose `GuidedPracticeScreen` integrada à navegação principal. 91 testes unitários 100% aprovados no Watchdog. Version bump para v0.2.0 (versionCode 4). APKs distribuídos no Google Drive e GitHub Releases. Transição formal para o Milestone M3 (Style Engine).

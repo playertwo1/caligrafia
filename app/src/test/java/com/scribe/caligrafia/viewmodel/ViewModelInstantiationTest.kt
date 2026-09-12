@@ -19,4 +19,10 @@ class ViewModelInstantiationTest {
         val constructor = NotebookPracticeViewModel::class.java.getConstructor(Application::class.java)
         assertNotNull(constructor)
     }
+
+    @Test
+    fun verifyGuidedPracticeViewModelHasSingleApplicationConstructor() {
+        val constructor = com.scribe.caligrafia.guided.ui.GuidedPracticeViewModel::class.java.getConstructor(Application::class.java)
+        assertNotNull(constructor)
+    }
 }

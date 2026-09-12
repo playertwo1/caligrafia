@@ -17,11 +17,14 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.scribe.caligrafia.inspector.ui.InspectorScreen
 import com.scribe.caligrafia.inspector.viewmodel.StylusLabViewModel
 import com.scribe.caligrafia.notebook.ui.NotebookPracticeScreen
+import com.scribe.caligrafia.guided.ui.GuidedPracticeScreen
+import com.scribe.caligrafia.guided.ui.GuidedPracticeViewModel
 import com.scribe.caligrafia.notebook.viewmodel.NotebookPracticeViewModel
 import com.scribe.caligrafia.ui.theme.ScribeTheme
 
 enum class ScribeScreen {
     NOTEBOOK,
+    GUIDED_PRACTICE,
     STYLUS_LAB
 }
 
@@ -29,6 +32,7 @@ class MainActivity : ComponentActivity() {
 
     private val stylusLabViewModel: StylusLabViewModel by viewModels()
     private val notebookViewModel: NotebookPracticeViewModel by viewModels()
+    private val guidedPracticeViewModel: GuidedPracticeViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,15 +52,17 @@ class MainActivity : ComponentActivity() {
                 // Interceptador inteligente do gesto "Voltar":
                 // Previne fechamento involuntário do app ao escrever nas laterais.
                 BackHandler {
-                    if (currentScreen == ScribeScreen.STYLUS_LAB) {
-                        currentScreen = ScribeScreen.NOTEBOOK
-                    } else {
-                        val now = System.currentTimeMillis()
-                        if (now - lastBackPressTime < 2000L) {
-                            finish()
-                        } else {
-                            lastBackPressTime = now
-                            Toast.makeText(this@MainActivity, "Pressione voltar novamente para sair", Toast.LENGTH_SHORT).show()
+                    when (currentScreen) {
+                        ScribeScreen.STYLUS_LAB -> currentScreen = ScribeScreen.NOTEBOOK
+                        ScribeScreen.GUIDED_PRACTICE -> currentScreen = ScribeScreen.NOTEBOOK
+                        ScribeScreen.NOTEBOOK -> {
+                            val now = System.currentTimeMillis()
+                            if (now - lastBackPressTime < 2000L) {
+                                finish()
+                            } else {
+                                lastBackPressTime = now
+                                Toast.makeText(this@MainActivity, "Pressione voltar novamente para sair", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     }
                 }
@@ -65,7 +71,14 @@ class MainActivity : ComponentActivity() {
                     ScribeScreen.NOTEBOOK -> {
                         NotebookPracticeScreen(
                             viewModel = notebookViewModel,
-                            onNavigateToLab = { currentScreen = ScribeScreen.STYLUS_LAB }
+                            onNavigateToLab = { currentScreen = ScribeScreen.STYLUS_LAB },
+                            onNavigateToGuidedPractice = { currentScreen = ScribeScreen.GUIDED_PRACTICE }
+                        )
+                    }
+                    ScribeScreen.GUIDED_PRACTICE -> {
+                        GuidedPracticeScreen(
+                            viewModel = guidedPracticeViewModel,
+                            onNavigateBack = { currentScreen = ScribeScreen.NOTEBOOK }
                         )
                     }
                     ScribeScreen.STYLUS_LAB -> {
