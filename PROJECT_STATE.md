@@ -1,18 +1,19 @@
 # PROJECT_STATE
 
 **Projeto:** Scribe / Caligrafia
-**Versão documental:** v0.4.0
-**Versão do aplicativo:** v0.4.0 (versionCode 6)
-**Estado:** M4_COMPLETED — Milestone M4 (Learning System) 100% concluído e verificado. Trilha curricular estruturada de 18 lições nos 5 estágios, sessões deliberadas com temporizador por fases, algoritmo de repetição espaçada local determinístico (SRS) e histórico não-punitivo. 129 testes unitários passando (100% green), lintDebug com 0 erros, Watchdog aprovado, APKs v0.4.0 compilados e distribuídos no Google Drive e GitHub. Transição formal para o Milestone M5.
-**Milestone atual:** M5 — Export & Portability (preparação).
-**Código de produto:** M0 concluído (SCR-001 a SCR-008); M1 concluído (SCR-009 a SCR-014); Hotfix SCR-BUG-001 (v0.1.1); Feature SCR-FEAT-001 (v0.1.2); M2 concluído (SCR-015 a SCR-019); M3 concluído (SCR-020 a SCR-023); M4 concluído (SCR-401 a SCR-404).
+**Versão documental:** v0.5.0
+**Versão do aplicativo:** v0.5.0 (versionCode 7)
+**Estado:** M5_COMPLETED — Milestone M5 (Progress & Evolution) 100% concluído e verificado. Comparador Before / After com deltas matemáticos de score, alinhamento de inclinação e cadência; Slider de sobreposição vetorial (Overlay) com cross-fade 0-100% em Coral (#E11D48) e Azul Royal (#2563EB); Motor de Dual Replay lado a lado sincronizado com controles de reprodução (Play, Pause, Stop, Seek) e velocidades (0.5x, 1.0x, 2.0x); Calendário de consistência com badges suaves de tempo praticado 100% não-punitivo (zero streaks/penalidades). Repositório local com persistência atômica segura .scribe. 137 testes unitários passando (100% green), lintDebug com 0 erros, Watchdog aprovado, APKs v0.5.0 compilados e distribuídos no Google Drive e GitHub. Transição formal para o Milestone M6.
+**Milestone atual:** M6 — Meu Alfabeto (preparação).
+**Código de produto:** M0 concluído (SCR-001 a SCR-008); M1 concluído (SCR-009 a SCR-014); Hotfix SCR-BUG-001 (v0.1.1); Feature SCR-FEAT-001 (v0.1.2); M2 concluído (SCR-015 a SCR-019); M3 concluído (SCR-020 a SCR-023); M4 concluído (SCR-401 a SCR-404); M5 concluído (SCR-501 a SCR-504).
 
-## Status de Transição — Gate M0, Gate M1, Gate M2, Gate M3 & Gate M4
+## Status de Transição — Gate M0, Gate M1, Gate M2, Gate M3, Gate M4 & Gate M5
 - **Gate M0 (Stylus Lab):** Aprovado tecnicamente. Resolução de probe defects da auditoria do Codex integrada e validada via testes dedicados.
 - **Gate M1 (Caderno):** Aprovado integralmente com salvamento atômico, persistência .scribe robusta e exportação de PNG em alta resolução.
 - **Gate M2 (Treino Guiado):** Aprovado integralmente com catálogo de 12 exercícios, Ghost Mode (100% a 0%), fluxo Trace/Copiar/Sozinho e avaliação determinística calibrada (52° exato e teste de cobertura).
 - **Gate M3 (Style Engine):** Aprovado integralmente com formato canônico `ScribeStyle v1`, 3 famílias formais (Cursiva Escolar, Copperplate e Spencerian), importador seguro de fontes locais TTF/OTF (`StyleFontImporter`), motor de resolução com fallback gracioso (`StyleEngine`) e seletores de estilo com auto-adaptação de pautas no Caderno e no Treino Guiado.
 - **Gate M4 (Learning System):** Aprovado integralmente com catálogo canônico de 18 lições progressivas nos 5 estágios caligráficos (`CurriculumCatalog`), temporizador determinístico por fases pedagógicas (`SessionTimer`), algoritmo local de repetição espaçada (`ReviewScheduler`), persistência atômica de histórico (`LocalLearningHistoryRepository` e `LearningHistorySerializer`) e nova tela Compose `LearningHubScreen` com métricas não-punitivas.
+- **Gate M5 (Progress & Evolution):** Aprovado integralmente com comparador Before/After (`AttemptComparator`), slider de sobreposição vetorial (`OverlaySlider`), motor de Dual Replay lado a lado sincronizado (`DualReplayEngine`), repositório de tentativas com salvamento atômico (`LocalPracticeAttemptRepository`), calendário de consistência não-punitivo (`CalendarConsistencyHelper`) e tela Compose unificada `EvolutionScreen` com 4 abas e integração na navegação principal.
 
 ## Entregas Concluídas
 - **SCR-001 a SCR-008 (Milestone M0 — Stylus Lab):** Bootstrap Android, Device Capability Inspector (Galaxy S25 Ultra + S Pen), Capture Pipeline com raw strokes imutáveis e historical samples, Live Renderer (Android Ink API + Bézier nativo de referência), Palm Rejection com proximidade EMR e modo Stylus Only, Persistence Spike (decisão arquitetural `.scribe` híbrido), Replay vetorial determinístico (0.5x, 1x, 2x) e Lifecycle Edge Cases (flush de traço ativo, contingência e detecção de silo de hardware).
@@ -38,14 +39,20 @@
 - **SCR-404 Histórico Atômico e Progresso Não-Punitivo (M4):** Repositório `LocalLearningHistoryRepository` com persistência atômica segura via `LearningHistorySerializer` (puro em Kotlin, zero stubs do android.jar), métricas acumulativas sem penalização de streaks (minutos totais, sessões completas, dias ativos nos últimos 30 dias).
 - **Interface do Hub de Aprendizado (M4):** Tela Compose `LearningHubScreen` e `LearningViewModel`, diálogo modal interativo da sessão ativa com barra de progresso por fase e contagem regressiva, e botão de navegação ("Aulas (M4)") integrado no `NotebookPracticeScreen` e roteador central na `MainActivity`.
 
+- **SCR-501 Comparador Before / After e Métricas de Evolução (M5):** Módulo `AttemptComparator` calculando pareamento temporal entre primeira tentativa (baseline) e tentativa atual, computando deltas de precisão (+% de score), alinhamento de inclinação angular (graus de desvio) e cadência de escrita (velocidade média de traçado px/ms).
+- **SCR-502 Slider de Sobreposição Vetorial (Overlay) (M5):** Visualização de sobreposição direta no mesmo espaço de coordenadas com slider de opacidade de 0% a 100%, renderizando a tentativa Antes em tom Coral (`#E11D48`) e a tentativa Depois em tom Azul Royal (`#2563EB`) sobre pautas caligráficas clássicas.
+- **SCR-503 Motor de Dual Replay Lado a Lado Sincronizado (M5):** `DualReplayEngine` com timeline unificada baseada na duração máxima dos dois traçados, suporte a velocidades 0.5x, 1.0x e 2.0x, scrubber temporal interativo, estados de transporte (Play, Pause, Stop, Seek) e reconstrução pura dos traços vetoriais brutos a 60-120 fps.
+- **SCR-504 Calendário de Consistência e Métricas Agregadas Não-Punitivas (M5):** Repositório `LocalPracticeAttemptRepository` com gravação atômica de manifestos `.tmp` + `ATOMIC_MOVE` e serialização `.scribe` por tentativa; `CalendarConsistencyHelper` gerando grade mensal com intensidade suave de calor por tempo praticado (sem punição ou quebra de streak); resumo com minutos totais e exercícios com maior salto evolutivo.
+- **Interface de Evolução e Progresso (M5):** Tela Jetpack Compose `EvolutionScreen` e `EvolutionViewModel` com 4 abas temáticas ("Antes / Depois", "Sobreposição", "Replay Duplo", "Consistência"), seletores de exercício e tentativas, pré-visualizações vetoriais em Canvas e atalho integrado "Evolução (M5)" no caderno e roteador central da `MainActivity`.
+
 ## Próxima Ação
-- **M5 — Export & Portability (Preparação):**
-  - Exportação avançada de cadernos completos em múltiplos formatos (PDF vetorial, SVG de traços, metadados JSON do caderno).
-  - Backup e restauração local transparente de cadernos e histórico de aprendizado.
-  - Otimizações finais de renderização e preparação para integração multimodal de IA futura (M6).
+- **M6 — Meu Alfabeto (Preparação):**
+  - Salvar melhor tentativa por caractere/glifo individual.
+  - Curadoria e seleção de variantes favoritas (maiúsculas, minúsculas, números).
+  - Versionamento de variantes (v1, v2, v3) e compilação do estilo pessoal do usuário (`PersonalStyle`).
 
 ## Gates
-Não iniciar IA, backend, login, marketplace antes dos milestones correspondentes. Gates M0, M1, M2, M3 e M4 formalmente concluídos e verificados.
+Não iniciar IA, backend, login, marketplace antes dos milestones correspondentes. Gates M0, M1, M2, M3, M4 e M5 formalmente concluídos e verificados.
 
 ## Decisões já tomadas
 - Kotlin nativo + Jetpack Compose.

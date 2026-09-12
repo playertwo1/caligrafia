@@ -1,13 +1,13 @@
 # Scribe — O Que Foi Feito e O Que Falta (Relatório para Codex e Roadmap)
 
 **Data de Atualização:** 12 de Setembro de 2026  
-**Versão:** 0.4.0 (versionCode 6)  
+**Versão:** 0.5.0 (versionCode 7)  
 **Aparelho-Alvo Principal:** Samsung Galaxy S25 Ultra (com S Pen original)  
 **Repositório GitHub:** https://github.com/playertwo1/caligrafia  
 
 ---
 
-## 1. O Que Foi Feito Até Agora (Marcos M0, M1, M2, M3 e M4 100% Concluídos)
+## 1. O Que Foi Feito Até Agora (Marcos M0, M1, M2, M3, M4 e M5 100% Concluídos)
 
 ### 1.1. Milestone M0 — Stylus Lab (Fundação do Motor de Caneta)
 - **SCR-001 — Bootstrap do Projeto:** Android SDK 35, Min SDK 26, Kotlin 2.2.10, Gradle 9.3.1, AGP 9.1.1, Jetpack Compose com Material 3, aceleração gráfica por hardware ativa.
@@ -132,35 +132,62 @@
 
 ---
 
+### 1.7. Milestone M5 — Evolução & Progresso (Before/After, Overlay, Dual Replay e Consistência)
+- **SCR-501 — Comparador Before / After e Métricas de Evolução (`AttemptComparator`):**
+  - Pareamento de duas tentativas (baseline / primeira tentativa vs. tentativa atual ou selecionada).
+  - Cálculo de deltas matemáticos determinísticos:
+    - Delta de precisão/score (+% de evolução).
+    - Delta de inclinação angular (redução de desvio em relação ao ângulo canônico da pauta).
+    - Delta de cadência de escrita (velocidade média em pixels/ms).
+- **SCR-502 — Slider de Sobreposição Vetorial Cross-Fade (`OverlaySlider`):**
+  - Sobreposição direta das duas tentativas no mesmo sistema de coordenadas com pautas caligráficas clássicas no fundo.
+  - Slider contínuo de 0% a 100% alternando opacidade:
+    - Tentativa "Antes" renderizada em tom Coral vibrante (`#E11D48`).
+    - Tentativa "Depois" renderizada em tom Azul Royal clássico (`#2563EB`).
+  - Renderização vetorial pura a partir dos pontos brutos (`StrokePoint`), sem rasterização intermediária.
+- **SCR-503 — Motor de Dual Replay Lado a Lado Sincronizado (`DualReplayEngine`):**
+  - Replay temporal de vetores em duas janelas paralelas sincronizadas por timeline unificada baseada na duração máxima.
+  - Painel de controles de transporte de áudio/vídeo: Play, Pause, Stop, Seek interativo.
+  - Três velocidades canônicas de reprodução: 0.5x (câmera lenta analítica), 1.0x (tempo real), 2.0x (visão acelerada).
+  - Reconstrução pura em 60 a 120 fps sobre o hardware gráfico do S25 Ultra.
+- **SCR-504 — Calendário de Consistência e Métricas Agregadas Não-Punitivas (`CalendarConsistencyHelper`):**
+  - Repositório local com persistência atômica segura `.tmp` + `ATOMIC_MOVE` (`LocalPracticeAttemptRepository`).
+  - Serialização `.scribe` individual por tentativa vinculada ao exercício pedagógico.
+  - Grade mensal de calendário com intensidade suave de cor por tempo praticado.
+  - Filosofia 100% não-punitiva: zero penalidades de quebra de sequência ("streaks"), valorização da soma total de minutos praticados e destaque do exercício com maior salto evolutivo.
+- **Interface Completa de Evolução (`EvolutionScreen` e `EvolutionViewModel`):**
+  - 4 abas estruturadas: "Antes / Depois", "Sobreposição", "Replay Duplo" e "Consistência".
+  - Seletores interativos de exercícios e tentativas com pré-visualização vetorial no Canvas nativo.
+  - Botão de acesso rápido "Evolução (M5)" na barra superior do caderno e rota direta na `MainActivity`.
+
+---
+
 ## 2. Cobertura de Testes e Qualidade
 
-- **Testes Unitários Automatizados:** 129 testes passando 100% (25 classes de testes unitários cobrindo M0 a M4).
+- **Testes Unitários Automatizados:** 137 testes passando 100% (29 classes de testes unitários cobrindo M0 a M5).
 - **Verificação do Watchdog (`watchdog.ps1`):** Aprovado (4/4 verificações).
   - Zero WebViews.
   - Zero dependências não autorizadas de nuvem/backend.
 - **Análise de Lint (`lintDebug`):** 0 erros.
 - **Compilação:**
-  - APK Debug: `app-debug.apk` (22.30 MB)
-  - APK Release Assinado: `app-release.apk` (16.30 MB)
+  - APK Debug: `app-debug.apk` (22.40 MB)
+  - APK Release Assinado: `app-release.apk` (16.36 MB)
 
 ---
 
-## 3. O Que Falta Implementar nos Próximos Marcos (Roadmap M5 a M8)
+## 3. O Que Falta Implementar nos Próximos Marcos (Roadmap M6 a M8)
 
 Conforme a especificação [ROADMAP.md](file:///c:/Users/fael/Documents/Codex/scribe/ROADMAP.md) e [PRODUCT_SPEC.md](file:///c:/Users/fael/Documents/Codex/scribe/PRODUCT_SPEC.md):
 
-### 3.1. M5 — Evolução (PRÓXIMO MARCO)
-- Comparador Before / After, overlay de evolução temporal e replay lado a lado de traços históricos.
-- Calendário de consistência e tempo praticado com métricas não punitivas agregadas.
+### 3.1. M6 — Meu Alfabeto (PRÓXIMO MARCO)
+- Salvar melhor tentativa por caractere/glifo individual (maiúsculas, minúsculas, números e ligaduras).
+- Curadoria e seleção de variantes favoritas com versionamento histórico (v1, v2, v3).
+- Compilação e exportação do estilo pessoal do usuário (`PersonalStyle`).
 
-### 3.2. M6 — Meu Alfabeto
-- Salvar melhor tentativa por caractere.
-- Criação e curadoria do "PersonalStyle" próprio do usuário.
-
-### 3.4. M7 — Professor IA
+### 3.2. M7 — Professor IA
 - Modelagem local / segura para diagnóstico de caligrafia (somente após base motora consolidada).
 
-### 3.5. M8 — Expansões
+### 3.3. M8 — Expansões
 - Integração de relógio para haptics/ritmo (Galaxy Watch), backup opcional e exportação avançada.
 
 ---

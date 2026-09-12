@@ -25,8 +25,8 @@ Glyph de referência, Ghost Mode 100/70/40/10/0%, trace → copiar → sozinho, 
 ## M4 — Learning System [CONCLUÍDO — v0.4.0]
 Currículo canônico de 18 lições em 5 estágios (Traços, Famílias, Conexões, Palavras, Frases); sessões de 5/10/15/20 min com temporizador por 5 fases; histórico atômico local e revisão espaçada (SRS) 100% determinística sem nuvem/IA; tela `LearningHubScreen` e métricas não punitivas.
 
-## M5 — Evolução
-Before/after, overlay, replay lado a lado, calendário, tempo praticado e indicadores não punitivos.
+## M5 — Evolução [CONCLUÍDO — v0.5.0]
+Before/after com deltas de precisão/inclinação/cadência (`AttemptComparator`), slider de sobreposição com cross-fade (`OverlaySlider`), replay lado a lado sincronizado (`DualReplayEngine`), calendário de consistência com tempo praticado e indicadores não punitivos (`CalendarConsistencyHelper`), repositório com persistência atômica segura `.scribe` (`LocalPracticeAttemptRepository`) e tela unificada `EvolutionScreen`.
 
 ## M6 — Meu Alfabeto
 Salvar melhor tentativa por glyph, variantes favoritas, versões v1/v2/v3 e PersonalStyle local.

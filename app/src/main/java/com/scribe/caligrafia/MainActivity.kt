@@ -17,6 +17,8 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.scribe.caligrafia.inspector.ui.InspectorScreen
 import com.scribe.caligrafia.inspector.viewmodel.StylusLabViewModel
 import com.scribe.caligrafia.notebook.ui.NotebookPracticeScreen
+import com.scribe.caligrafia.evolution.ui.EvolutionScreen
+import com.scribe.caligrafia.evolution.ui.EvolutionViewModel
 import com.scribe.caligrafia.guided.ui.GuidedPracticeScreen
 import com.scribe.caligrafia.guided.ui.GuidedPracticeViewModel
 import com.scribe.caligrafia.learning.ui.LearningHubScreen
@@ -28,6 +30,7 @@ enum class ScribeScreen {
     NOTEBOOK,
     GUIDED_PRACTICE,
     LEARNING_HUB,
+    EVOLUTION,
     STYLUS_LAB
 }
 
@@ -37,6 +40,7 @@ class MainActivity : ComponentActivity() {
     private val notebookViewModel: NotebookPracticeViewModel by viewModels()
     private val guidedPracticeViewModel: GuidedPracticeViewModel by viewModels()
     private val learningViewModel: LearningViewModel by viewModels()
+    private val evolutionViewModel: EvolutionViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,6 +64,7 @@ class MainActivity : ComponentActivity() {
                         ScribeScreen.STYLUS_LAB -> currentScreen = ScribeScreen.NOTEBOOK
                         ScribeScreen.GUIDED_PRACTICE -> currentScreen = ScribeScreen.NOTEBOOK
                         ScribeScreen.LEARNING_HUB -> currentScreen = ScribeScreen.NOTEBOOK
+                        ScribeScreen.EVOLUTION -> currentScreen = ScribeScreen.NOTEBOOK
                         ScribeScreen.NOTEBOOK -> {
                             val now = System.currentTimeMillis()
                             if (now - lastBackPressTime < 2000L) {
@@ -78,7 +83,8 @@ class MainActivity : ComponentActivity() {
                             viewModel = notebookViewModel,
                             onNavigateToLab = { currentScreen = ScribeScreen.STYLUS_LAB },
                             onNavigateToGuidedPractice = { currentScreen = ScribeScreen.GUIDED_PRACTICE },
-                            onNavigateToLearningHub = { currentScreen = ScribeScreen.LEARNING_HUB }
+                            onNavigateToLearningHub = { currentScreen = ScribeScreen.LEARNING_HUB },
+                            onNavigateToEvolution = { currentScreen = ScribeScreen.EVOLUTION }
                         )
                     }
                     ScribeScreen.GUIDED_PRACTICE -> {
@@ -90,6 +96,12 @@ class MainActivity : ComponentActivity() {
                     ScribeScreen.LEARNING_HUB -> {
                         LearningHubScreen(
                             viewModel = learningViewModel,
+                            onNavigateBack = { currentScreen = ScribeScreen.NOTEBOOK }
+                        )
+                    }
+                    ScribeScreen.EVOLUTION -> {
+                        EvolutionScreen(
+                            viewModel = evolutionViewModel,
                             onNavigateBack = { currentScreen = ScribeScreen.NOTEBOOK }
                         )
                     }
