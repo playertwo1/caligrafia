@@ -1,13 +1,13 @@
 # Scribe — O Que Foi Feito e O Que Falta (Relatório para Codex e Roadmap)
 
 **Data de Atualização:** 12 de Setembro de 2026  
-**Versão:** 0.7.0 (versionCode 9)  
+**Versão:** 0.8.0 (versionCode 10)  
 **Aparelho-Alvo Principal:** Samsung Galaxy S25 Ultra (com S Pen original)  
 **Repositório GitHub:** https://github.com/playertwo1/caligrafia  
 
 ---
 
-## 1. O Que Foi Feito Até Agora (Marcos M0, M1, M2, M3, M4, M5, M6 e M7 100% Concluídos)
+## 1. O Que Foi Feito Até Agora (Marcos M0 a M8 100% Concluídos)
 
 ### 1.1. Milestone M0 — Stylus Lab (Fundação do Motor de Caneta)
 - **SCR-001 — Bootstrap do Projeto:** Android SDK 35, Min SDK 26, Kotlin 2.2.10, Gradle 9.3.1, AGP 9.1.1, Jetpack Compose com Material 3, aceleração gráfica por hardware ativa.
@@ -204,25 +204,54 @@
 
 ---
 
+### 1.9. Milestone M8 — Expansões e Refinamento do Produto (v0.8.0)
+- **SCR-801 — Sistema de Backup & Restauração Atômica (.scribepack):**
+  - Gerenciador `ScribeBackupManager` que empacota cadernos, páginas vetoriais, alfabeto pessoal, lições, tentativas e diagnósticos em arquivo ZIP padronizado `.scribepack`.
+  - Serializador Kotlin puro `BackupSerializer` para o manifesto `manifest.json`.
+  - Proteção estrita contra vulnerabilidade Zip-Slip e movimentação atômica de diretórios via pasta temporária.
+- **SCR-802 — Laboratório de Assinatura & Monogramas (Signature Studio):**
+  - Superfície de escrita nativa `SignatureCanvasView` com linha base, pautas auxiliares e elipse de floreio.
+  - Motor determinístico `SignatureConsistencyEngine` que compara uma tentativa com uma referência salva (score de 0 a 100%, deltas de velocidade, aspect ratio e contagem de traços).
+  - Exportador profissional `SignatureExporter` gerando SVG vetorial puro em código XML e Bitmap PNG transparente de alta definição para assinatura digital de documentos.
+- **SCR-803 — Modo Cópia de Textos Longos & Citações:**
+  - Catálogo `PassageCatalog` contendo pangramas da língua portuguesa, poesias clássicas (Camões, Machado de Assis, Fernando Pessoa) e citações de mestres calígrafos.
+  - Motor `PassagePacingEngine` que calcula palavras por minuto (WPM) sob a ótica da caligrafia deliberada e constância de ritmo.
+- **SCR-804 — Estilos Expandidos & Calibração de Pressão da S Pen:**
+  - Três novos estilos históricos canônicos em `ExpandedStyles`: Gótica Textura Quadrata (90°, 45° de pena), Itálica Chanceleresca (85°, 5° de inclinação) e Uncial Clássica (90°, maiúsculas circulares), integrados ao `StyleEngine`.
+  - Modelador de curvas de resposta de pressão `PressureCalibration` (Linear, Toque Suave $p^{0.6}$, Toque Firme $p^{1.6}$ e Sigmoide Caligráfico de Alto Contraste).
+- **SCR-805 — Adaptador Wear OS / Galaxy Watch:**
+  - Ponte desacoplada `WatchCompanionAdapter` com interface `IWatchCompanionBridge`.
+  - Disparo de pulsos hápticos em transições de fases de estudo e monitor ergonômico contínuo disparando alertas posturais a cada 15-20 minutos de escrita para prevenção de DORT/cãibras.
+- **SCR-806 — Central de Expansões & Telas Maiores:**
+  - Tela Compose moderna `ExpansionsScreen` e `ExpansionsViewModel` com 4 abas especializadas (Assinatura, Textos, Backup, S Pen/Watch) e atalho direto `Estúdio (M8)` no caderno.
+
+---
+
 ## 2. Cobertura de Testes e Qualidade
 
-- **Testes Unitários Automatizados:** 173 testes passando 100% (38 classes de testes unitários cobrindo M0 a M7).
+- **Testes Unitários Automatizados:** 196 testes passando 100% (45 classes de testes unitários cobrindo M0 a M8).
 - **Verificação do Watchdog (`watchdog.ps1`):** Aprovado (4/4 verificações).
   - Zero WebViews.
   - Zero dependências não autorizadas de nuvem/backend.
 - **Análise de Lint (`lintDebug`):** 0 erros.
 - **Compilação:**
-  - APK Debug: `app-debug.apk` (22.60 MB)
-  - APK Release Assinado: `app-release.apk` (16.45 MB)
+  - APK Debug: `app-debug.apk` (22.73 MB)
+  - APK Release Assinado: `app-release.apk` (16.53 MB)
 
 ---
 
-## 3. O Que Falta Implementar nos Próximos Marcos (Roadmap M8)
+## 3. Estado dos Marcos do Roadmap (M0 a M8 100% Concluídos)
 
-Conforme a especificação [ROADMAP.md](file:///c:/Users/fael/Documents/Codex/scribe/ROADMAP.md) e [PRODUCT_SPEC.md](file:///c:/Users/fael/Documents/Codex/scribe/PRODUCT_SPEC.md):
-
-### 3.1. M8 — Expansões
-- Integração de relógio para haptics/ritmo (Galaxy Watch), backup/sync local opcional, pacotes de estilos avançados, laboratório de assinatura, modo copiar textos, acessibilidade e telas maiores.
+Todos os marcos previstos no [ROADMAP.md](file:///c:/Users/fael/Documents/Codex/scribe/ROADMAP.md) foram integralmente implementados, testados e validados:
+- **M0 — Stylus Lab:** Concluído (v0.1.0)
+- **M1 — Caderno:** Concluído (v0.1.0 / v0.1.2)
+- **M2 — Treino Guiado:** Concluído (v0.2.0)
+- **M3 — Style Engine:** Concluído (v0.3.0)
+- **M4 — Learning System:** Concluído (v0.4.0)
+- **M5 — Evolução & Replay:** Concluído (v0.5.0)
+- **M6 — Meu Alfabeto & Estilo Pessoal:** Concluído (v0.6.0)
+- **M7 — Professor IA & Coaching:** Concluído (v0.7.0)
+- **M8 — Expansões & Refinamento:** Concluído (v0.8.0)
 
 ---
 

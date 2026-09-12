@@ -34,5 +34,6 @@ Catálogo de 68 glifos canônicos (`PersonalAlphabet`), versionamento de variant
 ## M7 — Professor IA & Coaching Inteligente [CONCLUÍDO — v0.7.0]
 Motor biomecânico determinístico de 4 dimensões (`MotorDiagnosticEngine`: estabilidade angular $\theta$, contenção de pauta, ritmo/cadência motora e controle de pressão com a S Pen); gerador dinâmico de treino sob medida (`CoachingCurriculumGenerator`); motor de insights pedagógicos, correções e ergonomia em linguagem clara (`CoachingFeedbackEngine`); repositório atômico local (`LocalTeacherRepository`); tela Compose `TeacherScreen` com radar biomecânico e integração direta no caderno.
 
-## M8 — Expansões
-Galaxy Watch para timer/haptics, backup/sync opcionais, pacotes de estilos, laboratório de assinatura, modo copiar textos, acessibilidade e telas maiores.
+## M8 — Expansões e Refinamento do Produto [CONCLUÍDO — v0.8.0]
+Sistema de backup e restauração atômica offline `.scribepack` (ZIP com manifesto JSON puro), Laboratório de Assinaturas e Monogramas com cálculo determinístico de repetibilidade e exportação vetorial SVG e PNG transparente, Modo Cópia de Textos Longos com pangramas e poesias clássicas em português (WPM caligráfico deliberado), três novos estilos pedagógicos expandidos (Gótica Textura Quadrata, Itálica Chanceleresca e Uncial Clássica), calibrador de curvas de resposta de pressão da S Pen, adaptador Wear OS / Galaxy Watch com alerta postural e haptics de timer, e tela central `ExpansionsScreen`.
+

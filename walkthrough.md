@@ -1,75 +1,61 @@
-# Scribe v0.7.0 — Milestone M7: Professor IA & Coaching Inteligente
+# Walkthrough — Milestone M8: Expansões e Refinamento do Produto (v0.8.0)
 
-A versão **v0.7.0** (versionCode: 9) do **Scribe** conclui integralmente o **Milestone M7 (Professor IA & Coaching Inteligente)**, introduzindo a camada de inteligência pedagógica do aplicativo: diagnóstico biomecânico em 4 dimensões sobre os traços reais da S Pen, gerador de treino sob medida prescrito conforme a fraqueza prioritária observada, motor de insights pedagógicos em português claro e tela Compose `TeacherScreen`.
+## Resumo da Entrega
+O **Milestone M8 (v0.8.0)** expande o Scribe além do aprendizado elementar de letras, transformando o aplicativo em uma plataforma caligráfica completa para o usuário do Samsung Galaxy S25 Ultra.
 
----
-
-## 1. O que foi entregue no Milestone M7 — Professor IA & Coaching Inteligente
-
-### SCR-701: Motor de Diagnóstico Biomecânico (MotorDiagnosticEngine)
-- Implementação em [`MotorDiagnosticEngine.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/teacher/engine/MotorDiagnosticEngine.kt) e modelos em [`TeacherModels.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/teacher/model/TeacherModels.kt):
-  - **100% Offline e Determinístico:** Análise estatística e matemática direta sobre as coordenadas e sensores físicos da S Pen no Samsung Galaxy S25 Ultra:
-    1. **Estabilidade Angular ($\theta$):** Cálculo da inclinação média e desvio padrão ($\sigma_{\theta}$) nos traços descendentes comparados ao alvo formal da pauta (52.0°).
-    2. **Contenção de Pauta:** Taxa de retenção e respeito às linhas mestras (baseline, waistline, ascendente e descendente) sem transbordos.
-    3. **Ritmo e Cadência:** Velocidade média de traçado (px/ms) e detecção de hesitações ou micro-paradas involuntárias no meio do glifo.
-    4. **Controle de Pressão:** Relação de contraste entre downstrokes pesados e upstrokes leves, e detecção de tensão excessiva na empunhadura.
-  - **Índice de Maturidade Caligráfica:** Pontuação global ponderada (0 a 100) categorizada em 4 níveis canônicos: *Iniciante no Traço*, *Praticante Dedicado*, *Calígrafo em Desenvolvimento* e *Mestre do Traço*.
-
-### SCR-702: Gerador de Treino Sob Medida (CoachingCurriculumGenerator)
-- Implementação em [`CoachingCurriculumGenerator.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/teacher/engine/CoachingCurriculumGenerator.kt):
-  - **Prescrição Dinâmica e Personalizada:** Prescreve uma sessão didática focada especificamente na fraqueza prioritária detectada:
-    - *Oscilação Angular:* Prescrição de treino de alinhamento com aquecimento em slant descendente e foco nas letras `t` ou `l`.
-    - *Contenção de Pauta:* Treino de limites com aquecimento em curvas de underturn/overturn e foco na letra `a`.
-    - *Hesitação de Cadência:* Treino de fluidez com curva composta e ligaduras `it` ou `al` em velocidade uniforme.
-    - *Pressão Constante / Tensa:* Treino de modulação e soltura da empunhadura.
-    - *Mestria:* Desafio em modo solo com marca d'água mínima (Ghost Mode 10%).
-
-### SCR-703: Motor de Insights Pedagógicos em Linguagem Clara (CoachingFeedbackEngine)
-- Implementação em [`CoachingFeedbackEngine.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/teacher/engine/CoachingFeedbackEngine.kt):
-  - **4 Categorias Estruturadas de Feedback:**
-    - **Elogio Fundamentado (`PRAISE`):** Reconhece ganhos e qualidades reais comprovadas por dados matemáticos.
-    - **Correção Técnica (`CORRECTION`):** Orienta a causa do erro motor e instrui o ajuste biomecânico necessário.
-    - **Dica Ergonômica (`ERGONOMIC_TIP`):** Conselhos práticos sobre a empunhadura da S Pen, pivô do braço na mesa e relaxamento dos dedos.
-    - **Desafio do Mestre (`CHALLENGE`):** Meta calibrada para a próxima sessão de escrita.
-
-### SCR-704: Interface "Professor IA" em Compose & Persistência Atômica
-- Implementação em [`TeacherScreen.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/teacher/ui/TeacherScreen.kt) e [`TeacherViewModel.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/teacher/ui/TeacherViewModel.kt):
-  - **Maturity Header Card:** Exibição do nível caligráfico, nota geral, pontos fortes e pontos de atenção prioritários.
-  - **Card do Treino Prescrito:** Detalhes da sessão recomendada com botão de ação direta *"Iniciar Treino com o Professor"* (roteamento direto para a prática guiada).
-  - **Radar/Barras Biomecânicas Interativas:** Inspeção expansível de cada uma das 4 dimensões com diagnósticos detalhados.
-  - **Mural de Insights:** Cards coloridos por tipo de conselho com valores de métrica delta.
-  - **Persistência Atômica Segura:** [`LocalTeacherRepository.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/teacher/repository/LocalTeacherRepository.kt) com serializador Kotlin puro [`TeacherSerializer.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/teacher/repository/TeacherSerializer.kt) e protocolo `.tmp` + `fos.fd.sync()` + `Files.move(..., ATOMIC_MOVE)`.
-  - **Atalho no Caderno:** Chip de acesso rápido "Professor (M7)" na barra superior do [`NotebookPracticeScreen.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/notebook/ui/NotebookPracticeScreen.kt) e rota central na [`MainActivity.kt`](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/MainActivity.kt).
+Neste marco, foram implementados:
+1. **Sistema de Backup & Restauração Atômica (.scribepack):** Exportação e restauração 100% offline em formato ZIP com manifesto JSON puro (`ScribeBackupManager` e `BackupSerializer`), preservando todos os arquivos vetoriais brutos sem intermediação de nuvem.
+2. **Laboratório de Assinaturas & Monogramas (Signature Studio):** Canvas dedicado (`SignatureCanvasView`) com pautas específicas (baseline, x-height, elipse de floreio), cálculo determinístico de repetibilidade motora (`SignatureConsistencyEngine`) e exportação vetorial de nível profissional em SVG e PNG com canal alfa transparente (`SignatureExporter`).
+3. **Modo de Cópia de Textos Longos & Poemas Clássicos (Passage Mode):** Catálogo de pangramas canônicos em português, poesias clássicas (Camões, Machado de Assis, Pessoa) e citações célebres (`PassageCatalog`), com avaliação de cadência motora e WPM caligráfico deliberado (`PassagePacingEngine`).
+4. **Pacotes de Estilos Históricos & Calibração de Pressão:** Três novos estilos pedagógicos clássicos (`Gothic Textura Quadrata`, `Chancery Italic` e `Uncial Clássica`) integrados ao `StyleEngine`, além de modelagem de curvas de resposta de pressão para a S Pen (`PressureCalibration`: Linear, Toque Suave, Toque Firme, Sigmoide Caligráfico).
+5. **Adaptador Wear OS / Galaxy Watch (Haptics & Timer):** Ponte desacoplada (`WatchCompanionAdapter`) que envia pulsos vibratórios em transições de fase e monitora sessões contínuas para alertas posturais ergonômicos a cada 15–20 minutos.
+6. **Central de Expansões em Jetpack Compose:** Nova tela modular `ExpansionsScreen` e `ExpansionsViewModel` com 4 abas especializadas e atalho direto `Estúdio (M8)` integrado à barra de navegação do caderno.
 
 ---
 
-## 2. Testes Automatizados e Qualidade
+## Verificação e Qualidade
 
-- **Testes Unitários:** **173 testes automatizados** passando com 100% de sucesso (38 classes de teste cobrindo M0 a M7).
-  - `MotorDiagnosticEngineTest.kt`: validação de cálculo de dispersão angular, penalidade por hesitação, contraste de pressão e diagnóstico global.
-  - `CoachingCurriculumGeneratorTest.kt`: validação de prescrição para fraquezas de ângulo, pauta, cadência, pressão e modo maestria.
-  - `CoachingFeedbackEngineTest.kt`: validação de todas as categorias de insight (elogio, correção, dica ergonômica, desafio).
-  - `TeacherSerializerTest.kt`: serialização e desserialização completa de diagnósticos, prescrições e insights.
-  - `LocalTeacherRepositoryTest.kt`: validação de gravação atômica, carregamento de baseline e conclusão de prescrição.
-  - `ViewModelInstantiationTest.kt`: verificação de `@JvmOverloads constructor` para `TeacherViewModel`.
-- **Análise Estática de Lint:** `lintDebug` executado com **0 erros**.
-- **Watchdog:** 4/4 etapas aprovadas (`scripts/watchdog.ps1`). Código 100% Kotlin nativo, zero WebViews e zero dependências não autorizadas de nuvem.
-- **Compilação de APKs:**
-  - APK Release Assinado: `app-release.apk` (**16.45 MB**)
-  - APK Debug: `app-debug.apk` (**22.60 MB**)
-- **Versionamento:** `versionCode = 9`, `versionName = "0.7.0"`.
+| Métrica / Teste | Resultado | Detalhes |
+|---|:---:|---|
+| **Testes Unitários** | **196 / 196 Passando** | 45 suítes de teste executadas com 100% de aprovação (`:app:testDebugUnitTest`). |
+| **Android Lint** | **0 Erros** | Análise estática aprovada com sucesso (`:app:lintDebug`). Permissão `VIBRATE` declarada no manifesto. |
+| **Watchdog de Arquitetura** | **4 / 4 Passando** | Regras de imutabilidade de traços, isolamento offline, integridade de sensores e reflexão de ViewModels validadas. |
+| **APK Release (Assinado)** | **16.53 MB** | Assinado com chave de produção e otimizado com R8 (`app-release.apk`). |
+| **APK Debug** | **22.73 MB** | Compilado para depuração e testes locais (`app-debug.apk`). |
+| **Distribuição Google Drive** | **Sincronizado** | Copiados para `E:\Meu Drive\Apks\`, `E:\Meu Drive\Scribe\` e `E:\Meu Drive\codex\scribe\`. |
 
 ---
 
-## 3. Distribuição dos Artefatos
+## Estrutura de Arquivos Implementados
 
-1. **Google Drive (Aparelho Físico / S25 Ultra):**
-   - `E:\Meu Drive\Apks\scribe-v0.7.0-release.apk`
-   - `E:\Meu Drive\Apks\scribe-v0.7.0-debug.apk`
-   - `E:\Meu Drive\Scribe\scribe-v0.7.0-release.apk`
-   - `E:\Meu Drive\Scribe\scribe-v0.7.0-debug.apk`
-   - `E:\Meu Drive\codex\scribe\scribe-v0.7.0-release.apk`
-   - `E:\Meu Drive\codex\scribe\scribe-v0.7.0-debug.apk`
-   - Espelho completo do repositório em `E:\Meu Drive\codex\scribe\`
-2. **GitHub:**
-   - Commit e Tag `v0.7.0` sincronizados com `origin/main`.
+### 1. Backup & Restauração
+- [BackupModels.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/expansions/backup/BackupModels.kt): Entidades `BackupManifest`, `BackupSummary`, `BackupImportResult`.
+- [BackupSerializer.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/expansions/backup/BackupSerializer.kt): Serializador puro em Kotlin (sem android.jar) para o manifesto do pacote.
+- [ScribeBackupManager.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/expansions/backup/ScribeBackupManager.kt): Gerenciador ZIP com proteção contra Zip-Slip e movimentação atômica de arquivos.
+
+### 2. Laboratório de Assinaturas
+- [SignatureModels.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/expansions/signature/SignatureModels.kt): Entidades de tentativa, métricas cinemáticas e relatório de repetibilidade.
+- [SignatureConsistencyEngine.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/expansions/signature/SignatureConsistencyEngine.kt): Motor matemático determinístico de avaliação de assinaturas.
+- [SignatureExporter.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/expansions/signature/SignatureExporter.kt): Exportador para código SVG vetorial puro e bitmap PNG transparente em alta resolução.
+- [SignatureCanvasView.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/expansions/signature/SignatureCanvasView.kt): View nativa com pautas de assinatura e elipse de floreio.
+
+### 3. Modo de Cópia de Textos Longos
+- [PassageModels.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/expansions/passage/PassageModels.kt): `PassageItem`, `PassageCategory`, `PassagePacingResult`.
+- [PassageCatalog.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/expansions/passage/PassageCatalog.kt): Catálogo de textos clássicos, pangramas e poemas em português.
+- [PassagePacingEngine.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/expansions/passage/PassagePacingEngine.kt): Motor de cálculo de cadência e WPM deliberado.
+
+### 4. Estilos Históricos & Calibração de Pressão
+- [PressureCalibration.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/expansions/styles/PressureCalibration.kt): Modelagem das curvas Linear, Soft, Firm e Sigmoide para a S Pen.
+- [ExpandedStyles.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/expansions/styles/ExpandedStyles.kt): Definições canônicas de Gótica Textura Quadrata, Itálica Chanceleresca e Uncial Clássica.
+- [StyleEngine.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/style/engine/StyleEngine.kt): Atualizado para disponibilizar e resolver os novos estilos expandidos.
+
+### 5. Adaptador Wear OS / Galaxy Watch
+- [WatchCompanionBridge.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/expansions/watch/WatchCompanionBridge.kt): Interface `IWatchCompanionBridge` e classe `WatchCompanionAdapter`.
+- [AndroidManifest.xml](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/AndroidManifest.xml): Inclusão da permissão `android.permission.VIBRATE`.
+
+### 6. Interface & Navegação Central
+- [ExpansionsViewModel.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/expansions/ui/ExpansionsViewModel.kt): ViewModel com `@JvmOverloads constructor` e gestão de estado reativo.
+- [ExpansionsScreen.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/expansions/ui/ExpansionsScreen.kt): Tela Compose moderna com 4 abas temáticas.
+- [NotebookPracticeScreen.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/notebook/ui/NotebookPracticeScreen.kt): Botão alternador `Estúdio (M8)`.
+- [MainActivity.kt](file:///c:/Users/fael/Documents/Codex/scribe/app/src/main/java/com/scribe/caligrafia/MainActivity.kt): Rota `ScribeScreen.EXPANSIONS` e integração ao ciclo de vida.
+- [app/build.gradle.kts](file:///c:/Users/fael/Documents/Codex/scribe/app/build.gradle.kts): Version bump para `versionCode = 10`, `versionName = "0.8.0"`.

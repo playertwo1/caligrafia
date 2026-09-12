@@ -76,7 +76,8 @@ fun NotebookPracticeScreen(
     onNavigateToLearningHub: () -> Unit = {},
     onNavigateToEvolution: () -> Unit = {},
     onNavigateToAlphabet: () -> Unit = {},
-    onNavigateToTeacher: () -> Unit = {}
+    onNavigateToTeacher: () -> Unit = {},
+    onNavigateToExpansions: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -288,6 +289,18 @@ fun NotebookPracticeScreen(
                         label = { Text("Professor (M7)", fontSize = 11.sp, color = Color.White) },
                         colors = FilterChipDefaults.filterChipColors(
                             containerColor = Color(0xFF059669), // Emerald
+                            labelColor = Color.White
+                        ),
+                        modifier = Modifier.padding(end = 4.dp)
+                    )
+
+                    // Botão alternador para Estúdio de Expansões (M8)
+                    FilterChip(
+                        selected = false,
+                        onClick = onNavigateToExpansions,
+                        label = { Text("Estúdio (M8)", fontSize = 11.sp, color = Color.White) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = Color(0xFFD97706), // Amber
                             labelColor = Color.White
                         ),
                         modifier = Modifier.padding(end = 4.dp)

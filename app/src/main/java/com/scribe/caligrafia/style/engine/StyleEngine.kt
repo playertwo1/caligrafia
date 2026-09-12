@@ -23,10 +23,10 @@ class StyleEngine(
     }
 
     /**
-     * Retorna a lista completa de estilos disponíveis (nativos pré-instalados + fontes customizadas).
+     * Retorna a lista completa de estilos disponíveis (nativos pré-instalados + expandidos M8 + fontes customizadas).
      */
     fun getAvailableStyles(): List<ScribeStyle> {
-        return BuiltInStyles.ALL + customStyles.values.toList()
+        return BuiltInStyles.ALL + com.scribe.caligrafia.expansions.styles.ExpandedStyles.allExpandedStyles + customStyles.values.toList()
     }
 
     /**
@@ -37,9 +37,12 @@ class StyleEngine(
     fun getStyle(styleId: String?): ScribeStyle {
         if (styleId == null) return defaultStyle()
 
-        // 1. Verifica nos estilos pré-instalados
+        // 1. Verifica nos estilos pré-instalados e expandidos
         val builtIn = BuiltInStyles.ALL.firstOrNull { it.id == styleId }
         if (builtIn != null) return builtIn
+
+        val expanded = com.scribe.caligrafia.expansions.styles.ExpandedStyles.allExpandedStyles.firstOrNull { it.id == styleId }
+        if (expanded != null) return expanded
 
         // 2. Verifica nos estilos customizados importados
         val custom = customStyles[styleId]

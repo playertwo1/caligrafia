@@ -49,4 +49,10 @@ class ViewModelInstantiationTest {
         val constructor = com.scribe.caligrafia.teacher.ui.TeacherViewModel::class.java.getConstructor(Application::class.java)
         assertNotNull(constructor)
     }
+
+    @Test
+    fun verifyExpansionsViewModelHasSingleApplicationConstructor() {
+        val constructor = com.scribe.caligrafia.expansions.ui.ExpansionsViewModel::class.java.getConstructor(Application::class.java)
+        assertNotNull(constructor)
+    }
 }

@@ -1,13 +1,13 @@
 # PROJECT_STATE
 
 **Projeto:** Scribe / Caligrafia
-**Versão documental:** v0.7.0
-**Versão do aplicativo:** v0.7.0 (versionCode 9)
-**Estado:** M7_COMPLETED — Milestone M7 (Professor IA & Coaching Inteligente) 100% concluído e verificado. Motor de diagnóstico biomecânico (MotorDiagnosticEngine) avaliando 4 dimensões (Estabilidade Angular, Contenção de Pauta, Ritmo e Cadência, Controle de Pressão da S Pen); Gerador de treino personalizado sob medida (CoachingCurriculumGenerator); Motor de insights pedagógicos em linguagem natural (CoachingFeedbackEngine); Repositório atômico local (LocalTeacherRepository); Tela Compose TeacherScreen com visualização de maturidade, radar biomecânico, card de treino prescrito e dicas ergonômicas da S Pen. 173 testes unitários passando (100% green), lintDebug com 0 erros, Watchdog 4/4 aprovado, APKs v0.7.0 compilados e distribuídos no Google Drive e GitHub. Transição formal para o Milestone M8.
-**Milestone atual:** M8 — Expansões (preparação).
-**Código de produto:** M0 concluído (SCR-001 a SCR-008); M1 concluído (SCR-009 a SCR-014); Hotfix SCR-BUG-001 (v0.1.1); Feature SCR-FEAT-001 (v0.1.2); M2 concluído (SCR-015 a SCR-019); M3 concluído (SCR-020 a SCR-023); M4 concluído (SCR-401 a SCR-404); M5 concluído (SCR-501 a SCR-504); M6 concluído (SCR-601 a SCR-604); M7 concluído (SCR-701 a SCR-704).
+**Versão documental:** v0.8.0
+**Versão do aplicativo:** v0.8.0 (versionCode 10)
+**Estado:** M8_COMPLETED — Milestone M8 (Expansões e Refinamento do Produto) 100% concluído e verificado. Sistema de backup e restauração atômica offline .scribepack (ZIP com manifesto JSON puro); Laboratório de Assinaturas & Monogramas com cálculo determinístico de repetibilidade e exportação vetorial SVG e PNG transparente; Modo Cópia de Textos Longos com catálogo canônico em português e WPM caligráfico deliberado; Três novos estilos históricos expandidos (Gótica Textura Quadrata, Itálica Chanceleresca, Uncial Clássica); Calibração de curvas de pressão da S Pen (Linear, Soft, Firm, Sigmoide); Adaptador Wear OS / Galaxy Watch com alerta postural e haptics de timer; Tela central ExpansionsScreen em Compose integrada ao caderno. 196 testes unitários passando (100% green), lintDebug com 0 erros, Watchdog 4/4 aprovado, APKs v0.8.0 compilados e distribuídos no Google Drive e GitHub. Todos os marcos do Roadmap (M0 a M8) formalmente concluídos.
+**Milestone atual:** Conclusão integral do ciclo de desenvolvimento do Roadmap (M0 a M8).
+**Código de produto:** M0 a M8 concluídos (SCR-001 a SCR-023, SCR-401 a SCR-404, SCR-501 a SCR-504, SCR-601 a SCR-604, SCR-701 a SCR-704, SCR-801 a SCR-806).
 
-## Status de Transição — Gate M0 a Gate M7
+## Status de Transição — Gate M0 a Gate M8
 - **Gate M0 (Stylus Lab):** Aprovado tecnicamente. Resolução de probe defects da auditoria do Codex integrada e validada via testes dedicados.
 - **Gate M1 (Caderno):** Aprovado integralmente com salvamento atômico, persistência .scribe robusta e exportação de PNG em alta resolução.
 - **Gate M2 (Treino Guiado):** Aprovado integralmente com catálogo de 12 exercícios, Ghost Mode (100% a 0%), fluxo Trace/Copiar/Sozinho e avaliação determinística calibrada (52° exato e teste de cobertura).
@@ -16,6 +16,7 @@
 - **Gate M5 (Progress & Evolution):** Aprovado integralmente com comparador Before/After (`AttemptComparator`), slider de sobreposição vetorial (`OverlaySlider`), motor de Dual Replay lado a lado sincronizado (`DualReplayEngine`), repositório de tentativas com salvamento atômico (`LocalPracticeAttemptRepository`), calendário de consistência não-punitivo (`CalendarConsistencyHelper`) e tela Compose unificada `EvolutionScreen` com 4 abas e integração na navegação principal.
 - **Gate M6 (Meu Alfabeto & PersonalStyle):** Aprovado integralmente com catálogo de 68 glifos (`PersonalAlphabet`), versionamento de variantes caligráficas (`GlyphVariant` v1, v2, v3...), repositório com gravação atômica `.tmp` + `ATOMIC_MOVE` e traços vetoriais em `.scribe` dedicado (`LocalPersonalAlphabetRepository`), motor de derivação matemática de estilos (`PersonalStyleCompiler`) e tela interativa `AlphabetScreen` com grade adaptativa, preview vetorial e registro imediato no `StyleEngine`.
 - **Gate M7 (Professor IA & Coaching):** Aprovado integralmente com motor biomecânico determinístico de 4 dimensões (`MotorDiagnosticEngine`), prescrição inteligente de treino (`CoachingCurriculumGenerator`), insights em linguagem clara (`CoachingFeedbackEngine`), persistência atômica (`LocalTeacherRepository`) e interface completa `TeacherScreen` com integração direta ao caderno.
+- **Gate M8 (Expansões & Refinamento):** Aprovado integralmente com backup/restore atômico `.scribepack` (`ScribeBackupManager`), estúdio de assinaturas com export SVG/PNG transparente (`SignatureConsistencyEngine` e `SignatureExporter`), modo cópia de textos (`PassageCatalog` e `PassagePacingEngine`), estilos expandidos (Gótica, Itálica, Uncial) e curvas de pressão S Pen (`PressureCalibration`), adaptador Wear OS / Galaxy Watch (`WatchCompanionAdapter`) e central de expansões `ExpansionsScreen`.
 
 ## Entregas Concluídas
 - **SCR-001 a SCR-008 (Milestone M0 — Stylus Lab):** Bootstrap Android, Device Capability Inspector (Galaxy S25 Ultra + S Pen), Capture Pipeline com raw strokes imutáveis e historical samples, Live Renderer (Android Ink API + Bézier nativo de referência), Palm Rejection com proximidade EMR e modo Stylus Only, Persistence Spike (decisão arquitetural `.scribe` híbrido), Replay vetorial determinístico (0.5x, 1x, 2x) e Lifecycle Edge Cases (flush de traço ativo, contingência e detecção de silo de hardware).
@@ -55,13 +56,20 @@
 - **SCR-702 Gerador de Treino Sob Medida (M7):** Módulo `CoachingCurriculumGenerator` gerando prescrição de treino direcionada à fraqueza prioritária detectada no calígrafo.
 - **SCR-703 Motor de Insights Pedagógicos em Linguagem Clara (M7):** Módulo `CoachingFeedbackEngine` gerando elogios fundamentados, correções técnicas, desafios e dicas ergonômicas da S Pen no S25 Ultra.
 - **SCR-704 Interface do Professor IA e Repositório Atômico (M7):** Tela `TeacherScreen` e `TeacherViewModel` com visualização de maturidade, gráfico das 4 dimensões, card de treino prescrito e atalho "Professor (M7)" no caderno; persistência atômica via `LocalTeacherRepository`.
+- **SCR-801 Sistema de Backup & Restauração Atômica (.scribepack) (M8):** Gerenciador `ScribeBackupManager` com proteção contra Zip-Slip e movimentação atômica de arquivos, empacotando e restaurando cadernos, alfabeto pessoal, histórico de aulas, tentativas e diagnósticos do professor sem nenhuma dependência de nuvem; serializador Kotlin puro `BackupSerializer`.
+- **SCR-802 Laboratório de Assinatura & Monogramas (M8):** Canvas dedicado com pautas específicas de assinatura `SignatureCanvasView`, motor matemático determinístico de avaliação de repetibilidade motora `SignatureConsistencyEngine` e exportação profissional em SVG vetorial puro e PNG de alta resolução com transparência `SignatureExporter`.
+- **SCR-803 Modo Cópia de Textos Longos & Citações (M8):** Catálogo de textos clássicos e pangramas da língua portuguesa `PassageCatalog` e motor de ritmo `PassagePacingEngine` avaliando cadência contínua e palavras por minuto (WPM) sob a ótica da caligrafia deliberada.
+- **SCR-804 Pacotes de Estilos Expandidos & Calibração de Pressão (M8):** Três novos estilos históricos canônicos em `ExpandedStyles` (Gótica Textura Quadrata 90°, Itálica Chanceleresca 85°, Uncial Clássica 90°) integrados dinamicamente ao `StyleEngine`, e modelador de curvas de resposta de pressão da S Pen `PressureCalibration` (Linear, Soft, Firm, Sigmoide Caligráfico).
+- **SCR-805 Adaptador Wear OS / Galaxy Watch (M8):** Ponte desacoplada `WatchCompanionAdapter` com envio de pulsos hápticos em transições de fase e monitoramento ergonômico contínuo disparando alertas posturais a cada 15-20 minutos de escrita para prevenção de DORT/fadiga muscular.
+- **SCR-806 Central de Expansões & Telas Grandes (M8):** Interface Compose `ExpansionsScreen` e `ExpansionsViewModel` com 4 abas especializadas, atalho "Estúdio (M8)" na barra do caderno e compatibilidade adaptativa.
 
 ## Próxima Ação
-- **M8 — Expansões (Preparação):**
-  - Integração opcional com Galaxy Watch para timer e haptics de postura, backup/sync local, laboratório de assinaturas e acessibilidade.
+- **Pós-M8 / Lançamento & Polimento Final:**
+  - Validação em dispositivo físico Samsung Galaxy S25 Ultra dos novos recursos (assinaturas SVG e backup `.scribepack`).
+  - Coleta de feedback de calígrafos profissionais.
 
 ## Gates
-Não iniciar backend, nuvem ou marketplace antes dos milestones correspondentes. Gates M0, M1, M2, M3, M4, M5, M6 e M7 formalmente concluídos e verificados.
+Não iniciar backend, nuvem ou marketplace antes dos milestones correspondentes. Gates M0, M1, M2, M3, M4, M5, M6, M7 e M8 formalmente concluídos e verificados.
 
 ## Decisões já tomadas
 - Kotlin nativo + Jetpack Compose.
@@ -122,10 +130,13 @@ Não iniciar backend, nuvem ou marketplace antes dos milestones correspondentes.
   - *SCR-603 (Repositório Atômico):* `LocalPersonalAlphabetRepository` com `.scribe` dedicado via `DedicatedFileStrategy`, manifesto atômico via `fos.fd.sync()` e sementes iniciais didáticas.
   - *SCR-604 (Interface Meu Alfabeto):* `AlphabetScreen` e `AlphabetViewModel` com grade responsiva auto-escalada, bottom sheet de variantes com atalho de treino e diálogo de compilação.
   - *Qualidade:* 152 testes unitários 100% aprovados, 0 erros de lint, Watchdog 4/4 aprovado. Versão bump para v0.6.0 (versionCode 8). APKs distribuídos no Google Drive e GitHub.
-- 2026-09-12 — Conclusão Integral do Milestone M7 — Professor IA & Coaching Inteligente (SCR-701 a SCR-704 / v0.7.0):
-  - *SCR-701 (Motor de Diagnóstico Biomecânico):* `MotorDiagnosticEngine` calculando estabilidade angular ($\theta$), contenção de pauta, cadência/ritmo com detecção de hesitação, e controle de pressão com detecção de tensão da S Pen.
-  - *SCR-702 (Gerador de Treino Sob Medida):* `CoachingCurriculumGenerator` prescrevendo aquecimento e exercício direcionado à fraqueza prioritária observada.
-  - *SCR-703 (Motor de Insights Pedagógicos):* `CoachingFeedbackEngine` gerando elogios fundamentados, correções técnicas, desafios e dicas ergonômicas da S Pen no S25 Ultra.
-  - *SCR-704 (Interface e Persistência Atômica):* `TeacherScreen` e `TeacherViewModel` com índice de maturidade, radar das 4 dimensões, card de treino prescrito e atalho no caderno; repositório local atômico com serializador Kotlin puro `TeacherSerializer`.
-  - *Qualidade:* 173 testes unitários 100% aprovados, 0 erros de lint, Watchdog 4/4 aprovado. Versão bump para v0.7.0 (versionCode 9). APKs de release assinado e debug compilados e distribuídos no Google Drive e GitHub.
+- 2026-09-12 — Conclusão Integral do Milestone M8 — Expansões e Refinamento do Produto (SCR-801 a SCR-806 / v0.8.0):
+  - *SCR-801 (Backup Atômico):* `ScribeBackupManager` e `BackupSerializer` com pacote `.scribepack` (ZIP offline), integridade de manifesto JSON puro e restauração defensiva contra Zip-Slip.
+  - *SCR-802 (Laboratório de Assinaturas):* Canvas dedicado `SignatureCanvasView` com pautas e elipse de floreio, cálculo determinístico de repetibilidade neuromotora `SignatureConsistencyEngine` e exportação profissional em SVG vetorial e PNG transparente `SignatureExporter`.
+  - *SCR-803 (Cópia de Textos):* Catálogo de clássicos e pangramas em português `PassageCatalog` e motor de cadência e WPM deliberado `PassagePacingEngine`.
+  - *SCR-804 (Estilos Expandidos & Pressão):* Três estilos históricos canônicos (Gótica Textura, Itálica Chanceleresca, Uncial) integrados ao `StyleEngine`, e curvas de pressão da S Pen `PressureCalibration` (Linear, Soft, Firm, Sigmoide).
+  - *SCR-805 (Watch Adapter):* `WatchCompanionAdapter` com envio de pulsos hápticos e monitor de postura para prevenção de DORT na escrita contínua.
+  - *SCR-806 (Central de Expansões):* Tela Compose `ExpansionsScreen` e `ExpansionsViewModel` com 4 abas especializadas e atalho integrado ao caderno.
+  - *Qualidade:* 196 testes unitários 100% aprovados, 0 erros de lint, Watchdog 4/4 aprovado. Versão bump para v0.8.0 (versionCode 10). APKs de release assinado (16.53 MB) e debug (22.73 MB) compilados e distribuídos no Google Drive e GitHub.
+
 
