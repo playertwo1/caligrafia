@@ -43,3 +43,7 @@ Reproduzir pelos deltas de timestamps em 0.5x, 1x e 2x.
 
 ## Gate M0
 Nenhuma quebra em escrita normal; reload sem mudança geométrica relevante; replay mantém ordem/timing; dados ausentes não são inventados; finger não produz tinta em stylus-only.
+
+## Direção do renderer no M0
+
+Avaliar primeiro a Android Ink API em superfície nativa no Galaxy S25 Ultra com S Pen original. Manter o modelo de pontos brutos e timestamps independente da biblioteca; validar que a integração preserva amostras históricas, ordem e timing para persistência e replay. Smoothing e eventuais pontos previstos são apenas derivados visuais e não substituem amostras reais. Comparar latência e estabilidade com uma referência em Compose Canvas ou View customizada; documentar a escolha e recorrer à alternativa se necessário. Telas permanecem em Jetpack Compose.

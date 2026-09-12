@@ -21,6 +21,10 @@ O produto deve ensinar movimento e consistência, não apenas reproduzir fontes 
 7. A avaliação deve orientar, não punir.
 8. A escrita pessoal do usuário é um objetivo válido.
 
+## Direção técnica aprovada
+
+Aparelho-alvo: Samsung Galaxy S25 Ultra com S Pen original. Usar telas em Jetpack Compose e superfície de escrita nativa, avaliando primeiro a Android Ink API no M0. A escolha final depende de benchmark no aparelho e da preservação dos dados brutos, persistência e replay; Compose Canvas ou View customizada são alternativas. SDKs Samsung serão usados quando oficialmente compatíveis e aplicáveis, atrás de adapters.
+
 ## Primeira meta técnica — M0 Stylus Lab
 
 Antes de telas finais, cursos ou IA, provar:
