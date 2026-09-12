@@ -1,14 +1,15 @@
 # PROJECT_STATE
 
 **Projeto:** Scribe / Caligrafia
-**Versão documental:** v0.1
-**Estado:** M1_COMPLETED — Milestone M1 (Caderno) 100% concluído e verificado (73 testes unitários passando, APK 21.12 MB, Watchdog aprovado). Transição formal para o Milestone M2 (Treino Guiado).
+**Versão documental:** v0.1.1
+**Versão do aplicativo:** v0.1.1 (versionCode 2)
+**Estado:** M1_COMPLETED — Milestone M1 (Caderno) 100% concluído e verificado (75 testes unitários passando, APK 16.17 MB release / 22.09 MB debug, Watchdog aprovado). Transição formal para o Milestone M2 (Treino Guiado).
 **Milestone atual:** M2 — Treino Guiado.
-**Código de produto:** M0 concluído (SCR-001 a SCR-008); M1 concluído (SCR-009 a SCR-014).
+**Código de produto:** M0 concluído (SCR-001 a SCR-008); M1 concluído (SCR-009 a SCR-014); Hotfix SCR-BUG-001 (v0.1.1).
 
 ## Status de Transição — Gate M0 & Gate M1
 - **Gate M0 (Stylus Lab):** Aprovado tecnicamente com pendências de auditoria independente pelo Codex e testes físicos no Samsung Galaxy S25 Ultra registradas no `AUDIT_REPORT.md`.
-- **Gate M1 (Caderno):** Aprovado integralmente com 73 testes unitários passando, zero violações arquiteturais e APK operacional.
+- **Gate M1 (Caderno):** Aprovado integralmente com 75 testes unitários passando, zero violações arquiteturais e APK v0.1.1 operacional.
 
 ## Entregas Concluídas
 - **SCR-001 a SCR-008 (Milestone M0 — Stylus Lab):** Bootstrap Android, Device Capability Inspector (Galaxy S25 Ultra + S Pen), Capture Pipeline com raw strokes imutáveis e historical samples, Live Renderer (Android Ink API + Bézier nativo de referência), Palm Rejection com proximidade EMR e modo Stylus Only, Persistence Spike (decisão arquitetural `.scribe` híbrido), Replay vetorial determinístico (0.5x, 1x, 2x) e Lifecycle Edge Cases (flush de traço ativo, contingência e detecção de silo de hardware).
