@@ -5,8 +5,11 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color as AndroidColor
 import android.graphics.Paint
+import android.os.Build
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.view.ViewCompat
+import com.scribe.caligrafia.ink.gesture.EdgeGestureExclusionHelper
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -954,9 +957,28 @@ private class ProbeSurfaceView(
         onFocusLostCallback?.invoke()
     }
 
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        super.onLayout(changed, left, top, right, bottom)
+        updateSystemGestureExclusion()
+    }
+
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
+        updateSystemGestureExclusion()
         invalidate()
+    }
+
+    private fun updateSystemGestureExclusion() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val rects = EdgeGestureExclusionHelper.computeEdgeExclusionRects(
+                width = width,
+                height = height,
+                density = resources.displayMetrics.density
+            )
+            if (rects.isNotEmpty()) {
+                ViewCompat.setSystemGestureExclusionRects(this, rects)
+            }
+        }
     }
 
     private var currentX = -1f
@@ -992,6 +1014,15 @@ private class ProbeSurfaceView(
         // Se estiver em modo de replay, desabilita nova captura de toques para evitar sobreposição
         if (isReplayMode) {
             return false
+        }
+
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                parent?.requestDisallowInterceptTouchEvent(true)
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                parent?.requestDisallowInterceptTouchEvent(false)
+            }
         }
 
         // 1. Ingestão segura pelo pipeline de captura

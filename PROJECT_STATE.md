@@ -1,15 +1,15 @@
 # PROJECT_STATE
 
 **Projeto:** Scribe / Caligrafia
-**Versão documental:** v0.1.1
-**Versão do aplicativo:** v0.1.1 (versionCode 2)
-**Estado:** M1_COMPLETED — Milestone M1 (Caderno) 100% concluído e verificado (75 testes unitários passando, APK 16.17 MB release / 22.09 MB debug, Watchdog aprovado). Transição formal para o Milestone M2 (Treino Guiado).
+**Versão documental:** v0.1.2
+**Versão do aplicativo:** v0.1.2 (versionCode 3)
+**Estado:** M1_COMPLETED / FEATURE_GESTURE_EXCLUSION — Versão v0.1.2 operacional com bloqueio de gestos laterais (estilo Samsung Notes) para escrita em tela cheia sem minimizar o app, navegação inferior preservada, 78 testes unitários 100% aprovados, APK 15.42 MB release / 21.07 MB debug, Watchdog aprovado. Transição formal para o Milestone M2 (Treino Guiado).
 **Milestone atual:** M2 — Treino Guiado.
-**Código de produto:** M0 concluído (SCR-001 a SCR-008); M1 concluído (SCR-009 a SCR-014); Hotfix SCR-BUG-001 (v0.1.1).
+**Código de produto:** M0 concluído (SCR-001 a SCR-008); M1 concluído (SCR-009 a SCR-014); Hotfix SCR-BUG-001 (v0.1.1); Feature SCR-FEAT-001 (v0.1.2).
 
 ## Status de Transição — Gate M0 & Gate M1
 - **Gate M0 (Stylus Lab):** Aprovado tecnicamente com pendências de auditoria independente pelo Codex e testes físicos no Samsung Galaxy S25 Ultra registradas no `AUDIT_REPORT.md`.
-- **Gate M1 (Caderno):** Aprovado integralmente com 75 testes unitários passando, zero violações arquiteturais e APK v0.1.1 operacional.
+- **Gate M1 (Caderno):** Aprovado integralmente com 78 testes unitários passando, zero violações arquiteturais e APK v0.1.2 operacional.
 
 ## Entregas Concluídas
 - **SCR-001 a SCR-008 (Milestone M0 — Stylus Lab):** Bootstrap Android, Device Capability Inspector (Galaxy S25 Ultra + S Pen), Capture Pipeline com raw strokes imutáveis e historical samples, Live Renderer (Android Ink API + Bézier nativo de referência), Palm Rejection com proximidade EMR e modo Stylus Only, Persistence Spike (decisão arquitetural `.scribe` híbrido), Replay vetorial determinístico (0.5x, 1x, 2x) e Lifecycle Edge Cases (flush de traço ativo, contingência e detecção de silo de hardware).
@@ -63,3 +63,4 @@ Não iniciar IA, backend, login, marketplace ou biblioteca avançada de estilos 
 - 2026-09-12 — Formalização do Gate M0 (auditoria Codex e validação S25 Ultra registradas). Início do Milestone M1 — Caderno. Implementação e validação de SCR-009 (Modelo de Caderno, Páginas e Pautas Caligráficas com GuidelineConfig, proporções 1:1:1 / 2:1:2 / 3:2:3, slant lines com tan(θ), GuidelineRenderer nativo e 54 testes unitários).
 - 2026-09-12 — Conclusão do Milestone M1 — Caderno: SCR-010 (LocalNotebookRepository, serializador de manifestos e .scribe dedicado), SCR-011 (ToolConfig, paleta clássica de cores, espessuras e pilha bidirecional de Undo/Redo), SCR-012 (StrokeEraserHelper para varredura e pontos), SCR-013 (PageExporter PNG de alta resolução preservando traços vetoriais), SCR-014 (NotebookPracticeScreen em Compose com folheamento, toolbar e canvas nativo). 73 testes unitários aprovados no Watchdog, APK de 21.12 MB. Transição formal para o Milestone M2 — Treino Guiado.
 - 2026-09-12 — Resolução de Bug de Inicialização no Dispositivo Físico (SCR-BUG-001): Identificada ausência de `@JvmOverloads` no construtor primário de `StylusLabViewModel` provocando `NoSuchMethodException` em `AndroidViewModelFactory` durante o `onResume` da `MainActivity`. Adicionado `@JvmOverloads constructor`, blindagem com `try/catch` no ciclo de vida de `MainActivity`, desregistro defensivo do receptor da S Pen no `onPauseLifecycle` e substituição de ícones estendidos por core (`Clear` e `Delete`). Criado teste automatizado `ViewModelInstantiationTest.kt` (totalizando 75 testes 100% aprovados). APKs de release e debug recompilados e sincronizados no Google Drive e GitHub.
+- 2026-09-12 — Bloqueio de Gestos de Borda Laterais estilo Samsung Notes (SCR-FEAT-001 / v0.1.2): Implementado `EdgeGestureExclusionHelper` utilizando `ViewCompat.setSystemGestureExclusionRects` nas margens esquerda e direita do canvas do caderno (`NotebookCanvasView`) e do lab (`ProbeSurfaceView`), desativando o gesto de Voltar acidental pelas bordas laterais durante a escrita e descanso da palma. Preservada 100% a barra de navegação inferior para alternância de apps e voltar à tela inicial. Adicionado `BackHandler` com proteção contra fechamento acidental (exige confirmação de duplo clique para sair) e `BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE`. 78 testes unitários 100% aprovados. Version bump para v0.1.2 (versionCode 3). APKs compilados e distribuídos no Google Drive e GitHub Releases.

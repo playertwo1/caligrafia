@@ -7,11 +7,14 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.view.MotionEvent
 import android.view.View
+import android.os.Build
+import androidx.core.view.ViewCompat
 import com.scribe.caligrafia.core.model.GuidelineConfig
 import com.scribe.caligrafia.core.model.ToolMode
 import com.scribe.caligrafia.core.model.ToolType
 import com.scribe.caligrafia.ink.capture.InMemoryStrokeRepository
 import com.scribe.caligrafia.ink.capture.StrokeCapturePipeline
+import com.scribe.caligrafia.ink.gesture.EdgeGestureExclusionHelper
 import com.scribe.caligrafia.ink.renderer.GuidelineRenderer
 import com.scribe.caligrafia.ink.renderer.SmoothedReferenceRenderer
 
@@ -99,10 +102,43 @@ class NotebookCanvasView(
         return true
     }
 
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        super.onLayout(changed, left, top, right, bottom)
+        updateSystemGestureExclusion()
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        updateSystemGestureExclusion()
+    }
+
+    private fun updateSystemGestureExclusion() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val rects = EdgeGestureExclusionHelper.computeEdgeExclusionRects(
+                width = width,
+                height = height,
+                density = resources.displayMetrics.density
+            )
+            if (rects.isNotEmpty()) {
+                ViewCompat.setSystemGestureExclusionRects(this, rects)
+            }
+        }
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         currentX = event.x
         currentY = event.y
+
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                // Impede que contêineres pais (Scaffold, Column) furtem toques na borda
+                parent?.requestDisallowInterceptTouchEvent(true)
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                parent?.requestDisallowInterceptTouchEvent(false)
+            }
+        }
 
         val consumed = pipeline.onMotionEvent(event)
         invalidate()
