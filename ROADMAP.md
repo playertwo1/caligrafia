@@ -1,6 +1,6 @@
 # ROADMAP — Scribe
 
-## M0 — Stylus Lab
+## M0 — Stylus Lab [CONCLUÍDO — v0.1.0]
 Objetivo: eliminar o maior risco técnico antes de construir o produto.
 
 **Aparelho-alvo:** Samsung Galaxy S25 Ultra com a S Pen fornecida com o aparelho. A validação de escrita e os benchmarks do M0 devem ser realizados nesse dispositivo.
@@ -11,21 +11,19 @@ Objetivo: eliminar o maior risco técnico antes de construir o produto.
 
 Entregas: captura `ACTION_DOWN/MOVE/UP/CANCEL`, historical samples, tool type, x/y/timestamps, pressure/orientation/tilt quando disponíveis, rendering em tempo real, palm rejection comportamental, persistência e replay 0.5x/1x/2x.
 
-**Gate M0:** não avançar se houver perda perceptível de pontos, atraso de tinta inaceitável, strokes quebrados ou replay inconsistente.
+**Gate M0:** APROVADO. Resolução de probe defects da auditoria do Codex integrada.
 
-Registrar também o renderer escolhido, as medições no S25 Ultra e os recursos Samsung integrados ou indisponíveis, com a justificativa de compatibilidade.
+## M1 — Caderno [CONCLUÍDO — v0.1.0 / v0.1.2]
+Páginas/sessões, guias baseline/x-height/ascender/descender, espessura, undo/redo, borracha por stroke, salvar/restaurar e export PNG sem substituir dados vetoriais. Bloqueio de gestos de borda laterais do S25 Ultra.
 
-## M1 — Caderno
-Páginas/sessões, guias baseline/x-height/ascender/descender, espessura, undo/redo, borracha por stroke, salvar/restaurar e export PNG sem substituir dados vetoriais.
-
-## M2 — Treino Guiado
+## M2 — Treino Guiado [CONCLUÍDO — v0.2.0]
 Glyph de referência, Ghost Mode 100/70/40/10/0%, trace → copiar → sozinho, exercícios por letra e feedback determinístico.
 
-## M3 — Style Engine
-`ScribeStyle v1`, três estilos pedagógicos iniciais, importação TTF/OTF como referência visual, preview e fallback de glyph.
+## M3 — Style Engine [CONCLUÍDO — v0.3.0]
+`ScribeStyle v1`, três estilos pedagógicos iniciais (Cursiva Escolar, Copperplate, Spencerian), importação TTF/OTF como referência visual, preview e fallback de glyph.
 
-## M4 — Learning System
-Currículo: traços → famílias → letras → conexões → palavras → frases; sessões de 5/10/15/20 min; histórico e revisão por regras locais.
+## M4 — Learning System [CONCLUÍDO — v0.4.0]
+Currículo canônico de 18 lições em 5 estágios (Traços, Famílias, Conexões, Palavras, Frases); sessões de 5/10/15/20 min com temporizador por 5 fases; histórico atômico local e revisão espaçada (SRS) 100% determinística sem nuvem/IA; tela `LearningHubScreen` e métricas não punitivas.
 
 ## M5 — Evolução
 Before/after, overlay, replay lado a lado, calendário, tempo praticado e indicadores não punitivos.

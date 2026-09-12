@@ -19,12 +19,15 @@ import com.scribe.caligrafia.inspector.viewmodel.StylusLabViewModel
 import com.scribe.caligrafia.notebook.ui.NotebookPracticeScreen
 import com.scribe.caligrafia.guided.ui.GuidedPracticeScreen
 import com.scribe.caligrafia.guided.ui.GuidedPracticeViewModel
+import com.scribe.caligrafia.learning.ui.LearningHubScreen
+import com.scribe.caligrafia.learning.ui.LearningViewModel
 import com.scribe.caligrafia.notebook.viewmodel.NotebookPracticeViewModel
 import com.scribe.caligrafia.ui.theme.ScribeTheme
 
 enum class ScribeScreen {
     NOTEBOOK,
     GUIDED_PRACTICE,
+    LEARNING_HUB,
     STYLUS_LAB
 }
 
@@ -33,6 +36,7 @@ class MainActivity : ComponentActivity() {
     private val stylusLabViewModel: StylusLabViewModel by viewModels()
     private val notebookViewModel: NotebookPracticeViewModel by viewModels()
     private val guidedPracticeViewModel: GuidedPracticeViewModel by viewModels()
+    private val learningViewModel: LearningViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,6 +59,7 @@ class MainActivity : ComponentActivity() {
                     when (currentScreen) {
                         ScribeScreen.STYLUS_LAB -> currentScreen = ScribeScreen.NOTEBOOK
                         ScribeScreen.GUIDED_PRACTICE -> currentScreen = ScribeScreen.NOTEBOOK
+                        ScribeScreen.LEARNING_HUB -> currentScreen = ScribeScreen.NOTEBOOK
                         ScribeScreen.NOTEBOOK -> {
                             val now = System.currentTimeMillis()
                             if (now - lastBackPressTime < 2000L) {
@@ -72,12 +77,19 @@ class MainActivity : ComponentActivity() {
                         NotebookPracticeScreen(
                             viewModel = notebookViewModel,
                             onNavigateToLab = { currentScreen = ScribeScreen.STYLUS_LAB },
-                            onNavigateToGuidedPractice = { currentScreen = ScribeScreen.GUIDED_PRACTICE }
+                            onNavigateToGuidedPractice = { currentScreen = ScribeScreen.GUIDED_PRACTICE },
+                            onNavigateToLearningHub = { currentScreen = ScribeScreen.LEARNING_HUB }
                         )
                     }
                     ScribeScreen.GUIDED_PRACTICE -> {
                         GuidedPracticeScreen(
                             viewModel = guidedPracticeViewModel,
+                            onNavigateBack = { currentScreen = ScribeScreen.NOTEBOOK }
+                        )
+                    }
+                    ScribeScreen.LEARNING_HUB -> {
+                        LearningHubScreen(
+                            viewModel = learningViewModel,
                             onNavigateBack = { currentScreen = ScribeScreen.NOTEBOOK }
                         )
                     }

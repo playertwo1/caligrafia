@@ -1,13 +1,13 @@
 # Scribe — O Que Foi Feito e O Que Falta (Relatório para Codex e Roadmap)
 
 **Data de Atualização:** 12 de Setembro de 2026  
-**Versão:** 0.3.0 (versionCode 5)  
+**Versão:** 0.4.0 (versionCode 6)  
 **Aparelho-Alvo Principal:** Samsung Galaxy S25 Ultra (com S Pen original)  
 **Repositório GitHub:** https://github.com/playertwo1/caligrafia  
 
 ---
 
-## 1. O Que Foi Feito Até Agora (Marcos M0, M1, M2 e M3 100% Concluídos)
+## 1. O Que Foi Feito Até Agora (Marcos M0, M1, M2, M3 e M4 100% Concluídos)
 
 ### 1.1. Milestone M0 — Stylus Lab (Fundação do Motor de Caneta)
 - **SCR-001 — Bootstrap do Projeto:** Android SDK 35, Min SDK 26, Kotlin 2.2.10, Gradle 9.3.1, AGP 9.1.1, Jetpack Compose com Material 3, aceleração gráfica por hardware ativa.
@@ -104,33 +104,56 @@
 
 ---
 
+### 1.6. Milestone M4 — Learning System (Sessões Deliberadas, Currículo e SRS Local)
+- **SCR-401 — Currículo Pedagógico Canônico (`CurriculumCatalog`):**
+  - 18 lições sequenciais progressivas distribuídas nos 5 estágios canônicos:
+    - *Estágio 1 (Traços):* Inclinação/Pressão, Underturn, Overturn, Curva Composta, Oval, Laçada Alta.
+    - *Estágio 2 (Famílias):* Família Underturn ('i', 't'), Família Oval ('c', 'o', 'a'), Família Laçada ('l').
+    - *Estágio 3 (Conexões):* Ligadura base-base ('it'), Ligadura com ascendente ('al'), Ligadura elevada ('to').
+    - *Estágio 4 (Palavras):* 'lua', 'arte', 'calma'.
+    - *Estágio 5 (Frases):* 'arte e calma', 'o traço revela a alma', 'viva a caligrafia'.
+- **SCR-402 — Temporizador por Fases Pedagógicas (`SessionTimer`):**
+  - Opções pré-programadas de 5, 10, 15 e 20 minutos particionadas nas 5 fases:
+    - Aquecimento (15%) -> Foco da Lição (15%) -> Prática Assistida Ghost (40%) -> Prática Autônoma (20%) -> Conclusão & Resumo (10%).
+  - Suporte a pausa, retomada, avanço manual e método síncrono `tickOneSecond()` para testes automatizados determinísticos.
+- **SCR-403 — Motor de Repetição Espaçada 100% Determinístico (`ReviewScheduler`):**
+  - Algoritmo offline baseado em consolidação neuromotora:
+    - Desempenho < 60%: revisão prioritária em 1 dia.
+    - Desempenho 60% a 79%: expansão moderada de intervalo (1.5x).
+    - Desempenho >= 80%: consolidação motora (2.2x do intervalo).
+  - Recomendação diária inteligente que seleciona automaticamente aquecimento, lição de foco da trilha e lições vencidas com menor pontuação.
+- **SCR-404 — Histórico Local Seguro e Métricas Não-Punitivas (`LocalLearningHistoryRepository`):**
+  - Serializador puro em Kotlin `LearningHistorySerializer` sem dependências do framework Android (zero erros de mock em JVM).
+  - Gravação atômica defensiva `.tmp` + `Files.move(..., ATOMIC_MOVE)` com sincronização física de I/O (`fos.fd.sync()`).
+  - Métricas sem penalização ou "streak fires": tempo total praticado, total de sessões, lições únicas e dias ativos no último mês.
+- **Interface Completa do Hub de Aprendizado (`LearningHubScreen` e `LearningViewModel`):**
+  - Tela rica em Jetpack Compose com cards de progresso, seletor de duração, recomendação diária, acordeão dos 5 estágios e diálogo modal da sessão ativa.
+  - Botão de atalho "Aulas (M4)" integrado na toolbar do caderno e navegação bidirecional na `MainActivity`.
+
+---
+
 ## 2. Cobertura de Testes e Qualidade
 
-- **Testes Unitários Automatizados:** 98 testes passando 100% (incluindo 7 testes dedicados em `AuditFixAcceptanceTest.kt`).
-- **Verificação do Watchdog (`watchdog.ps1`):** Aprovado.
+- **Testes Unitários Automatizados:** 129 testes passando 100% (25 classes de testes unitários cobrindo M0 a M4).
+- **Verificação do Watchdog (`watchdog.ps1`):** Aprovado (4/4 verificações).
   - Zero WebViews.
   - Zero dependências não autorizadas de nuvem/backend.
 - **Análise de Lint (`lintDebug`):** 0 erros.
 - **Compilação:**
-  - APK Debug: `app-debug.apk` (22.21 MB)
-  - APK Release Assinado: `app-release.apk` (16.24 MB)
+  - APK Debug: `app-debug.apk` (22.30 MB)
+  - APK Release Assinado: `app-release.apk` (16.30 MB)
 
 ---
 
-## 3. O Que Falta Implementar nos Próximos Marcos (Roadmap M4 a M8)
+## 3. O Que Falta Implementar nos Próximos Marcos (Roadmap M5 a M8)
 
 Conforme a especificação [ROADMAP.md](file:///c:/Users/fael/Documents/Codex/scribe/ROADMAP.md) e [PRODUCT_SPEC.md](file:///c:/Users/fael/Documents/Codex/scribe/PRODUCT_SPEC.md):
 
-### 3.1. M4 — Learning System (PRÓXIMO MARCO)
-- **SCR-024 — Currículo Progressivo:** Sequenciamento pedagógico completo (traços elementares → famílias morfológicas de letras minúsculas → maiúsculas → conexões → palavras curtas → frases).
-- **SCR-025 — Temporizador de Prática e Ritmo:** Sessões estruturadas de 5, 10, 15 e 20 minutos com feedback de ritmo.
-- **SCR-026 — Histórico Local e Repetição Espaçada:** Algoritmo local de Spaced Repetition (SRS sem nuvem) para sugerir revisão de letras com menor pontuação geométrica.
+### 3.1. M5 — Evolução (PRÓXIMO MARCO)
+- Comparador Before / After, overlay de evolução temporal e replay lado a lado de traços históricos.
+- Calendário de consistência e tempo praticado com métricas não punitivas agregadas.
 
-### 3.2. M5 — Evolução
-- Comparador Before / After, overlay de evolução temporal e replay lado a lado.
-- Calendário de consistência e tempo praticado com métricas não punitivas.
-
-### 3.3. M6 — Meu Alfabeto
+### 3.2. M6 — Meu Alfabeto
 - Salvar melhor tentativa por caractere.
 - Criação e curadoria do "PersonalStyle" próprio do usuário.
 

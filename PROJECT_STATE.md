@@ -1,17 +1,18 @@
 # PROJECT_STATE
 
 **Projeto:** Scribe / Caligrafia
-**Versão documental:** v0.3.0
-**Versão do aplicativo:** v0.3.0 (versionCode 5)
-**Estado:** M3_COMPLETED — Milestone M3 (Style Engine) 100% concluído e verificado. Resolução integral de todas as constatações da auditoria do Codex (A02, A04/A05, A07, A08, A09/A10, A11, A12/A13, A14, A15, A18, A19). 98 testes unitários passando (100% green), lint com 0 erros, Watchdog aprovado, APKs v0.3.0 compilados e distribuídos no Google Drive e GitHub. Transição formal para o Milestone M4 (Learning System).
-**Milestone atual:** M4 — Learning System.
-**Código de produto:** M0 concluído (SCR-001 a SCR-008); M1 concluído (SCR-009 a SCR-014); Hotfix SCR-BUG-001 (v0.1.1); Feature SCR-FEAT-001 (v0.1.2); M2 concluído (SCR-015 a SCR-019); M3 concluído (SCR-020 a SCR-023).
+**Versão documental:** v0.4.0
+**Versão do aplicativo:** v0.4.0 (versionCode 6)
+**Estado:** M4_COMPLETED — Milestone M4 (Learning System) 100% concluído e verificado. Trilha curricular estruturada de 18 lições nos 5 estágios, sessões deliberadas com temporizador por fases, algoritmo de repetição espaçada local determinístico (SRS) e histórico não-punitivo. 129 testes unitários passando (100% green), lintDebug com 0 erros, Watchdog aprovado, APKs v0.4.0 compilados e distribuídos no Google Drive e GitHub. Transição formal para o Milestone M5.
+**Milestone atual:** M5 — Export & Portability (preparação).
+**Código de produto:** M0 concluído (SCR-001 a SCR-008); M1 concluído (SCR-009 a SCR-014); Hotfix SCR-BUG-001 (v0.1.1); Feature SCR-FEAT-001 (v0.1.2); M2 concluído (SCR-015 a SCR-019); M3 concluído (SCR-020 a SCR-023); M4 concluído (SCR-401 a SCR-404).
 
-## Status de Transição — Gate M0, Gate M1, Gate M2 & Gate M3
+## Status de Transição — Gate M0, Gate M1, Gate M2, Gate M3 & Gate M4
 - **Gate M0 (Stylus Lab):** Aprovado tecnicamente. Resolução de probe defects da auditoria do Codex integrada e validada via testes dedicados.
 - **Gate M1 (Caderno):** Aprovado integralmente com salvamento atômico, persistência .scribe robusta e exportação de PNG em alta resolução.
 - **Gate M2 (Treino Guiado):** Aprovado integralmente com catálogo de 12 exercícios, Ghost Mode (100% a 0%), fluxo Trace/Copiar/Sozinho e avaliação determinística calibrada (52° exato e teste de cobertura).
 - **Gate M3 (Style Engine):** Aprovado integralmente com formato canônico `ScribeStyle v1`, 3 famílias formais (Cursiva Escolar, Copperplate e Spencerian), importador seguro de fontes locais TTF/OTF (`StyleFontImporter`), motor de resolução com fallback gracioso (`StyleEngine`) e seletores de estilo com auto-adaptação de pautas no Caderno e no Treino Guiado.
+- **Gate M4 (Learning System):** Aprovado integralmente com catálogo canônico de 18 lições progressivas nos 5 estágios caligráficos (`CurriculumCatalog`), temporizador determinístico por fases pedagógicas (`SessionTimer`), algoritmo local de repetição espaçada (`ReviewScheduler`), persistência atômica de histórico (`LocalLearningHistoryRepository` e `LearningHistorySerializer`) e nova tela Compose `LearningHubScreen` com métricas não-punitivas.
 
 ## Entregas Concluídas
 - **SCR-001 a SCR-008 (Milestone M0 — Stylus Lab):** Bootstrap Android, Device Capability Inspector (Galaxy S25 Ultra + S Pen), Capture Pipeline com raw strokes imutáveis e historical samples, Live Renderer (Android Ink API + Bézier nativo de referência), Palm Rejection com proximidade EMR e modo Stylus Only, Persistence Spike (decisão arquitetural `.scribe` híbrido), Replay vetorial determinístico (0.5x, 1x, 2x) e Lifecycle Edge Cases (flush de traço ativo, contingência e detecção de silo de hardware).
@@ -31,14 +32,20 @@
 - **SCR-022 Importador Visual de Fontes TTF/OTF Locais (M3):** Módulo `StyleFontImporter` capaz de inspecionar assinaturas de cabeçalho (magic bytes), carregar Typefaces de forma segura com fallback e criar estilos visuais derivados, garantindo que fontes externas funcionem estritamente como gabarito estético e nunca adulterem os traços vetoriais brutos do usuário.
 - **SCR-023 Motor de Estilos e Seletores de UI (M3):** Registro unificado `StyleEngine` com varredura de fontes personalizadas, tolerância a arquivos ausentes com fallback gracioso para Cursiva Escolar, integração completa em `NotebookPracticeViewModel` e `GuidedPracticeViewModel`, diálogo de seleção de estilos com pré-visualização de ductus e proporção, e alternância dinâmica de pautas.
 
+- **SCR-401 Currículo Pedagógico Estruturado (M4):** Catálogo `CurriculumCatalog` contendo 18 lições canônicas divididas nos 5 estágios fundamentais (`STAGE_1_STROKES`, `STAGE_2_FAMILIES`, `STAGE_3_CONNECTIONS`, `STAGE_4_WORDS`, `STAGE_5_SENTENCES`), com metadados de ductus, textos-alvo e estilos vinculados.
+- **SCR-402 Sessões Deliberadas & Temporizador por Fases (M4):** Temporizador `SessionTimer` com 4 opções de duração (5, 10, 15 e 20 min) estruturado nas 5 fases pedagógicas sequenciais (Aquecimento 15%, Foco 15%, Prática Assistida 40%, Prática Autônoma 20% e Conclusão 10%), controle de pausa, avanço manual e suporte a testes determinísticos via `tickOneSecond()`.
+- **SCR-403 Motor de Revisão / SRS Local Determinístico (M4):** Algoritmo de repetição espaçada `ReviewScheduler` 100% offline (zero nuvem/IA), adaptado à consolidação neuromotora (<60%: 1 dia, 60-79%: 1.5x, >=80%: 2.2x), gerador de recomendação diária inteligente priorizando aquecimento e lições vencidas por menor pontuação.
+- **SCR-404 Histórico Atômico e Progresso Não-Punitivo (M4):** Repositório `LocalLearningHistoryRepository` com persistência atômica segura via `LearningHistorySerializer` (puro em Kotlin, zero stubs do android.jar), métricas acumulativas sem penalização de streaks (minutos totais, sessões completas, dias ativos nos últimos 30 dias).
+- **Interface do Hub de Aprendizado (M4):** Tela Compose `LearningHubScreen` e `LearningViewModel`, diálogo modal interativo da sessão ativa com barra de progresso por fase e contagem regressiva, e botão de navegação ("Aulas (M4)") integrado no `NotebookPracticeScreen` e roteador central na `MainActivity`.
+
 ## Próxima Ação
-- **M4 — Learning System:**
-  - Currículo pedagógico estruturado: traços elementares → famílias de formas → letras minúsculas → maiúsculas → conexões → palavras curtas → frases.
-  - Sessões de prática com tempo programado (5, 10, 15 e 20 minutos).
-  - Histórico de prática local e regras de espaçamento de repetição (Spaced Repetition / SRS local sem nuvem).
+- **M5 — Export & Portability (Preparação):**
+  - Exportação avançada de cadernos completos em múltiplos formatos (PDF vetorial, SVG de traços, metadados JSON do caderno).
+  - Backup e restauração local transparente de cadernos e histórico de aprendizado.
+  - Otimizações finais de renderização e preparação para integração multimodal de IA futura (M6).
 
 ## Gates
-Não iniciar IA, backend, login, marketplace ou biblioteca avançada de estilos antes dos milestones correspondentes. Gates M0, M1, M2 e M3 formalmente concluídos e verificados.
+Não iniciar IA, backend, login, marketplace antes dos milestones correspondentes. Gates M0, M1, M2, M3 e M4 formalmente concluídos e verificados.
 
 ## Decisões já tomadas
 - Kotlin nativo + Jetpack Compose.
@@ -79,3 +86,11 @@ Não iniciar IA, backend, login, marketplace ou biblioteca avançada de estilos 
   - *Auditoria do Codex:* Correção de 6 probe defects e discrepâncias (A02 salvamento atômico, A04/A05 isolamento de borracha sem gerar traços espúrios, A07 preservação de valores zero de sensores, A08 coleta em ACTION_POINTER_UP, A09/A10 escala de exportação PNG real, A11 replay de estilo/cor/espessura, A12/A13 calibração a 52.0° exato e teste de cobertura, A14 anulação de avaliação em novos traços, A15 sincronização de cache de pautas, A18 lint Android Q para isExternal, A19 remoção de senhas hardcoded). 7 testes dedicados em `AuditFixAcceptanceTest.kt`.
   - *Milestone M3 (Style Engine):* Formato canônico `ScribeStyle v1` (`ScribeStyle`, `DuctusRule`, `PressureBehavior`), catálogo de 3 famílias formais (`BuiltInStyles`: Cursiva Escolar 1:1:1 68°, Copperplate 3:2:3 52°, Spencerian 2:1:2 52°), importador de referências visuais de fontes locais TTF/OTF (`StyleFontImporter`), registro central tolerante a falhas com fallback gracioso (`StyleEngine`), diálogo de seleção e auto-adaptação dinâmica de pautas no Caderno e no Treino Guiado.
   - *Qualidade:* 98 testes unitários passando 100%, lintDebug aprovado com 0 erros, Watchdog 100% aprovado. Versão bump para v0.3.0 (versionCode 5). APKs compilados e distribuídos no Google Drive e GitHub Releases.
+- 2026-09-12 — Conclusão Integral do Milestone M4 — Learning System (SCR-401 a SCR-404 / v0.4.0):
+  - *SCR-401 (Currículo):* 18 lições canônicas estruturadas nos 5 estágios progressivos (Traços, Famílias, Conexões, Palavras, Frases) com metadados e estilos caligráficos correspondentes (`CurriculumCatalog`).
+  - *SCR-402 (Sessões Deliberadas):* Temporizador `SessionTimer` com durações de 5, 10, 15 e 20 minutos particionadas nas 5 fases pedagógicas (Aquecimento 15%, Foco 15%, Prática Assistida 40%, Prática Autônoma 20%, Resumo 10%), pausa/retomada, avanço manual e suporte a testes determinísticos sem delay.
+  - *SCR-403 (SRS Local Determinístico):* Algoritmo de repetição espaçada `ReviewScheduler` 100% offline (zero nuvem/IA) adaptado à consolidação neuromotora (<60%: 1 dia, 60-79%: 1.5x, >=80%: 2.2x), com gerador de recomendação diária priorizando aquecimento e lições com menor retenção.
+  - *SCR-404 (Histórico e Progresso Não-Punitivo):* Repositório `LocalLearningHistoryRepository` com gravação atômica segura `.tmp` + `ATOMIC_MOVE`, serializador puro em Kotlin `LearningHistorySerializer` (zero dependências ou stubs do android.jar), métricas acumulativas sem streaks punitivos.
+  - *Interface Compose do Hub de Aprendizado:* `LearningHubScreen` e `LearningViewModel`, diálogo modal da sessão com barra de progresso por fase e contagem regressiva, botão seletor de duração, acordeão da trilha caligráfica e atalho "Aulas (M4)" integrado no caderno e no roteador principal.
+  - *Qualidade:* 129 testes unitários 100% aprovados, lintDebug aprovado com 0 erros, Watchdog 4/4 aprovado. Versão bump para v0.4.0 (versionCode 6). APKs de release (16.3 MB) e debug (22.3 MB) compilados e sincronizados no Google Drive e GitHub.
+

@@ -72,7 +72,8 @@ import com.scribe.caligrafia.notebook.viewmodel.NotebookPracticeViewModel
 fun NotebookPracticeScreen(
     viewModel: NotebookPracticeViewModel,
     onNavigateToLab: () -> Unit,
-    onNavigateToGuidedPractice: () -> Unit = {}
+    onNavigateToGuidedPractice: () -> Unit = {},
+    onNavigateToLearningHub: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -236,6 +237,18 @@ fun NotebookPracticeScreen(
                         label = { Text("Treino (M2)", fontSize = 11.sp, color = Color.White) },
                         colors = FilterChipDefaults.filterChipColors(
                             containerColor = Color(0xFF3F51B5), // Indigo
+                            labelColor = Color.White
+                        ),
+                        modifier = Modifier.padding(end = 4.dp)
+                    )
+
+                    // Botão alternador para Trilha de Aulas (M4)
+                    FilterChip(
+                        selected = false,
+                        onClick = onNavigateToLearningHub,
+                        label = { Text("Aulas (M4)", fontSize = 11.sp, color = Color.White) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = Color(0xFF0D9488), // Teal
                             labelColor = Color.White
                         ),
                         modifier = Modifier.padding(end = 4.dp)
