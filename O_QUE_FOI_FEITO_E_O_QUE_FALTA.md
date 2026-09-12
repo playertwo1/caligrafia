@@ -1,13 +1,13 @@
 # Scribe — O Que Foi Feito e O Que Falta (Relatório para Codex e Roadmap)
 
 **Data de Atualização:** 12 de Setembro de 2026  
-**Versão:** 0.5.0 (versionCode 7)  
+**Versão:** 0.6.0 (versionCode 8)  
 **Aparelho-Alvo Principal:** Samsung Galaxy S25 Ultra (com S Pen original)  
 **Repositório GitHub:** https://github.com/playertwo1/caligrafia  
 
 ---
 
-## 1. O Que Foi Feito Até Agora (Marcos M0, M1, M2, M3, M4 e M5 100% Concluídos)
+## 1. O Que Foi Feito Até Agora (Marcos M0, M1, M2, M3, M4, M5 e M6 100% Concluídos)
 
 ### 1.1. Milestone M0 — Stylus Lab (Fundação do Motor de Caneta)
 - **SCR-001 — Bootstrap do Projeto:** Android SDK 35, Min SDK 26, Kotlin 2.2.10, Gradle 9.3.1, AGP 9.1.1, Jetpack Compose com Material 3, aceleração gráfica por hardware ativa.
@@ -162,32 +162,53 @@
 
 ---
 
+### 1.8. Milestone M6 — Meu Alfabeto & PersonalStyle (Construção da Escrita Própria)
+- **SCR-601 — Modelo de Domínio do Alfabeto Pessoal & Variantes:**
+  - Entidades `PersonalGlyph`, `GlyphVariant` (v1, v2, v3...), `PersonalAlphabet` e `AlphabetCategoryStats`.
+  - Catálogo de 68 caracteres e ligaduras canônicas: minúsculas (`'a'` a `'z'`), maiúsculas (`'A'` a `'Z'`), algarismos (`'0'` a `'9'`) e conexões/símbolos (`"it"`, `"al"`, `"to"`, `"&"`, `"?"`, `"!"`).
+  - Suporte a versionamento progressivo por caractere, eleição de variantes favoritas e histórico vetorial preservado.
+- **SCR-602 — Motor de Compilação de Estilo Pessoal (`PersonalStyleCompiler`):**
+  - Análise matemática puramente determinística e offline sobre os traços das variantes favoritas do usuário:
+    - *Inclinação Média ($\theta_{médio}$):* ponderação dos eixos descendentes da escrita do usuário.
+    - *Proporção de Pauta:* detecção da relação ascender/corpo para seleção de `Ratio111`, `Ratio212` ou `Ratio323`.
+    - *Espessura e Contraste:* cálculo de modulação de pressão e espessura base recomendada.
+  - Geração de `ScribeStyle` com categoria `StyleCategory.PERSONAL` e auto-registro no `StyleEngine` para uso imediato no Caderno e Treino Guiado.
+- **SCR-603 — Repositório Local com Persistência Atômica Segura (`LocalPersonalAlphabetRepository`):**
+  - Gravação defensiva `.tmp` + `ATOMIC_MOVE` + `fos.fd.sync()` para o manifesto `personal_alphabet_manifest.json`.
+  - Armazenamento de traços vetoriais brutos imutáveis em arquivos dedicados compactados `.scribe` via `DedicatedFileStrategy`.
+  - Serializador puro em Kotlin `PersonalAlphabetSerializer` sem dependência de stubs do `android.jar`.
+  - Pré-carregamento com sementes caligráficas prévias para experiência rica imediata.
+- **SCR-604 — Interface "Meu Alfabeto" em Jetpack Compose (`AlphabetScreen` e `AlphabetViewModel`):**
+  - Grade responsiva de glifos com pré-visualização vetorial em tempo real auto-escalada com pautas clássicas.
+  - Barra de progresso de curadoria do alfabeto e botão de destaque para compilação do estilo próprio.
+  - Bottom sheet de inspeção com histórico completo de versões gravadas, botão de favorito (estrela) e atalho para praticar no Treino Guiado.
+  - Diálogo comemorativo com resumo dos parâmetros calculados do estilo e atalho "Usar no Caderno".
+  - Botão de acesso rápido "Alfabeto (M6)" na toolbar do caderno e rota central na `MainActivity`.
+
+---
+
 ## 2. Cobertura de Testes e Qualidade
 
-- **Testes Unitários Automatizados:** 137 testes passando 100% (29 classes de testes unitários cobrindo M0 a M5).
+- **Testes Unitários Automatizados:** 149 testes passando 100% (33 classes de testes unitários cobrindo M0 a M6).
 - **Verificação do Watchdog (`watchdog.ps1`):** Aprovado (4/4 verificações).
   - Zero WebViews.
   - Zero dependências não autorizadas de nuvem/backend.
 - **Análise de Lint (`lintDebug`):** 0 erros.
 - **Compilação:**
-  - APK Debug: `app-debug.apk` (22.40 MB)
-  - APK Release Assinado: `app-release.apk` (16.36 MB)
+  - APK Debug: `app-debug.apk` (22.52 MB)
+  - APK Release Assinado: `app-release.apk` (16.42 MB)
 
 ---
 
-## 3. O Que Falta Implementar nos Próximos Marcos (Roadmap M6 a M8)
+## 3. O Que Falta Implementar nos Próximos Marcos (Roadmap M7 e M8)
 
 Conforme a especificação [ROADMAP.md](file:///c:/Users/fael/Documents/Codex/scribe/ROADMAP.md) e [PRODUCT_SPEC.md](file:///c:/Users/fael/Documents/Codex/scribe/PRODUCT_SPEC.md):
 
-### 3.1. M6 — Meu Alfabeto (PRÓXIMO MARCO)
-- Salvar melhor tentativa por caractere/glifo individual (maiúsculas, minúsculas, números e ligaduras).
-- Curadoria e seleção de variantes favoritas com versionamento histórico (v1, v2, v3).
-- Compilação e exportação do estilo pessoal do usuário (`PersonalStyle`).
+### 3.1. M7 — Professor IA (PRÓXIMO MARCO)
+- Somente após volume suficiente de sessões e variantes reais: modelagem local e segura para interpretação de padrões de escrita e sugestões de treino sem inventar métricas.
+- Respeito absoluto à privacidade do usuário e aos dados vetoriais locais (zero nuvem obrigatória).
 
-### 3.2. M7 — Professor IA
-- Modelagem local / segura para diagnóstico de caligrafia (somente após base motora consolidada).
-
-### 3.3. M8 — Expansões
+### 3.2. M8 — Expansões
 - Integração de relógio para haptics/ritmo (Galaxy Watch), backup opcional e exportação avançada.
 
 ---

@@ -18,7 +18,10 @@ enum class StyleCategory {
     ORNAMENTAL,
 
     /** Estilo visual importado de arquivo de fonte TTF / OTF local. */
-    CUSTOM_FONT
+    CUSTOM_FONT,
+
+    /** Estilo pessoal derivado da curadoria das melhores variantes do usuário (M6 — Meu Alfabeto). */
+    PERSONAL
 }
 
 /**

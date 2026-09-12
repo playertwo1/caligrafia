@@ -1,19 +1,20 @@
 # PROJECT_STATE
 
 **Projeto:** Scribe / Caligrafia
-**Versão documental:** v0.5.0
-**Versão do aplicativo:** v0.5.0 (versionCode 7)
-**Estado:** M5_COMPLETED — Milestone M5 (Progress & Evolution) 100% concluído e verificado. Comparador Before / After com deltas matemáticos de score, alinhamento de inclinação e cadência; Slider de sobreposição vetorial (Overlay) com cross-fade 0-100% em Coral (#E11D48) e Azul Royal (#2563EB); Motor de Dual Replay lado a lado sincronizado com controles de reprodução (Play, Pause, Stop, Seek) e velocidades (0.5x, 1.0x, 2.0x); Calendário de consistência com badges suaves de tempo praticado 100% não-punitivo (zero streaks/penalidades). Repositório local com persistência atômica segura .scribe. 137 testes unitários passando (100% green), lintDebug com 0 erros, Watchdog aprovado, APKs v0.5.0 compilados e distribuídos no Google Drive e GitHub. Transição formal para o Milestone M6.
-**Milestone atual:** M6 — Meu Alfabeto (preparação).
-**Código de produto:** M0 concluído (SCR-001 a SCR-008); M1 concluído (SCR-009 a SCR-014); Hotfix SCR-BUG-001 (v0.1.1); Feature SCR-FEAT-001 (v0.1.2); M2 concluído (SCR-015 a SCR-019); M3 concluído (SCR-020 a SCR-023); M4 concluído (SCR-401 a SCR-404); M5 concluído (SCR-501 a SCR-504).
+**Versão documental:** v0.6.0
+**Versão do aplicativo:** v0.6.0 (versionCode 8)
+**Estado:** M6_COMPLETED — Milestone M6 (Meu Alfabeto & PersonalStyle) 100% concluído e verificado. Catálogo de escrita pessoal com 68 glifos canônicos (A-Z, a-z, 0-9, ligaduras/símbolos), curadoria de versões (v1, v2, v3...) com eleição de variantes favoritas, persistência atômica segura em disco via manifesto JSON e arquivos vetoriais brutos dedicados .scribe; Motor de compilação de estilo pessoal (PersonalStyleCompiler) calculando inclinação média ponderada, proporção de pauta e modulação de contraste em ScribeStyle próprio; Tela Compose AlphabetScreen com grade de caracteres, pré-visualização vetorial em tempo real, bottom sheet de inspeção e diálogo comemorativo de estilo. 149 testes unitários passando (100% green), lintDebug com 0 erros, Watchdog 4/4 aprovado, APKs v0.6.0 compilados e distribuídos no Google Drive e GitHub. Transição formal para o Milestone M7.
+**Milestone atual:** M7 — Professor IA (preparação).
+**Código de produto:** M0 concluído (SCR-001 a SCR-008); M1 concluído (SCR-009 a SCR-014); Hotfix SCR-BUG-001 (v0.1.1); Feature SCR-FEAT-001 (v0.1.2); M2 concluído (SCR-015 a SCR-019); M3 concluído (SCR-020 a SCR-023); M4 concluído (SCR-401 a SCR-404); M5 concluído (SCR-501 a SCR-504); M6 concluído (SCR-601 a SCR-604).
 
-## Status de Transição — Gate M0, Gate M1, Gate M2, Gate M3, Gate M4 & Gate M5
+## Status de Transição — Gate M0 a Gate M6
 - **Gate M0 (Stylus Lab):** Aprovado tecnicamente. Resolução de probe defects da auditoria do Codex integrada e validada via testes dedicados.
 - **Gate M1 (Caderno):** Aprovado integralmente com salvamento atômico, persistência .scribe robusta e exportação de PNG em alta resolução.
 - **Gate M2 (Treino Guiado):** Aprovado integralmente com catálogo de 12 exercícios, Ghost Mode (100% a 0%), fluxo Trace/Copiar/Sozinho e avaliação determinística calibrada (52° exato e teste de cobertura).
 - **Gate M3 (Style Engine):** Aprovado integralmente com formato canônico `ScribeStyle v1`, 3 famílias formais (Cursiva Escolar, Copperplate e Spencerian), importador seguro de fontes locais TTF/OTF (`StyleFontImporter`), motor de resolução com fallback gracioso (`StyleEngine`) e seletores de estilo com auto-adaptação de pautas no Caderno e no Treino Guiado.
 - **Gate M4 (Learning System):** Aprovado integralmente com catálogo canônico de 18 lições progressivas nos 5 estágios caligráficos (`CurriculumCatalog`), temporizador determinístico por fases pedagógicas (`SessionTimer`), algoritmo local de repetição espaçada (`ReviewScheduler`), persistência atômica de histórico (`LocalLearningHistoryRepository` e `LearningHistorySerializer`) e nova tela Compose `LearningHubScreen` com métricas não-punitivas.
 - **Gate M5 (Progress & Evolution):** Aprovado integralmente com comparador Before/After (`AttemptComparator`), slider de sobreposição vetorial (`OverlaySlider`), motor de Dual Replay lado a lado sincronizado (`DualReplayEngine`), repositório de tentativas com salvamento atômico (`LocalPracticeAttemptRepository`), calendário de consistência não-punitivo (`CalendarConsistencyHelper`) e tela Compose unificada `EvolutionScreen` com 4 abas e integração na navegação principal.
+- **Gate M6 (Meu Alfabeto & PersonalStyle):** Aprovado integralmente com catálogo de 68 glifos (`PersonalAlphabet`), versionamento de variantes caligráficas (`GlyphVariant` v1, v2, v3...), repositório com gravação atômica `.tmp` + `ATOMIC_MOVE` e traços vetoriais em `.scribe` dedicado (`LocalPersonalAlphabetRepository`), motor de derivação matemática de estilos (`PersonalStyleCompiler`) e tela interativa `AlphabetScreen` com grade adaptativa, preview vetorial e registro imediato no `StyleEngine`.
 
 ## Entregas Concluídas
 - **SCR-001 a SCR-008 (Milestone M0 — Stylus Lab):** Bootstrap Android, Device Capability Inspector (Galaxy S25 Ultra + S Pen), Capture Pipeline com raw strokes imutáveis e historical samples, Live Renderer (Android Ink API + Bézier nativo de referência), Palm Rejection com proximidade EMR e modo Stylus Only, Persistence Spike (decisão arquitetural `.scribe` híbrido), Replay vetorial determinístico (0.5x, 1x, 2x) e Lifecycle Edge Cases (flush de traço ativo, contingência e detecção de silo de hardware).
@@ -45,14 +46,18 @@
 - **SCR-504 Calendário de Consistência e Métricas Agregadas Não-Punitivas (M5):** Repositório `LocalPracticeAttemptRepository` com gravação atômica de manifestos `.tmp` + `ATOMIC_MOVE` e serialização `.scribe` por tentativa; `CalendarConsistencyHelper` gerando grade mensal com intensidade suave de calor por tempo praticado (sem punição ou quebra de streak); resumo com minutos totais e exercícios com maior salto evolutivo.
 - **Interface de Evolução e Progresso (M5):** Tela Jetpack Compose `EvolutionScreen` e `EvolutionViewModel` com 4 abas temáticas ("Antes / Depois", "Sobreposição", "Replay Duplo", "Consistência"), seletores de exercício e tentativas, pré-visualizações vetoriais em Canvas e atalho integrado "Evolução (M5)" no caderno e roteador central da `MainActivity`.
 
+- **SCR-601 Modelo de Domínio do Alfabeto Pessoal & Variantes (M6):** Entidades `PersonalGlyph`, `GlyphVariant` (v1, v2, v3...) e `PersonalAlphabet` para os 68 caracteres e ligaduras canônicas (minúsculas, maiúsculas, algarismos, conexões e pontuações), com eleição de variantes favoritas e histórico vetorial imutável.
+- **SCR-602 Motor de Compilação de Estilo Pessoal (M6):** Algoritmo determinístico `PersonalStyleCompiler` calculando inclinação média observada nos traços ($\theta$), proporção caligráfica (1:1:1, 2:1:2, 3:2:3), contraste de modulação de pressão e geração de `ScribeStyle` (`category = StyleCategory.PERSONAL`) com auto-registro no `StyleEngine`.
+- **SCR-603 Repositório Local com Persistência Atômica Segura (M6):** Módulo `LocalPersonalAlphabetRepository` com gravação atômica de manifesto `.tmp` + `ATOMIC_MOVE` + `fos.fd.sync()` e armazenamento de traços em arquivos compactados `.scribe` individuais via `DedicatedFileStrategy`; serializador puro em Kotlin `PersonalAlphabetSerializer`.
+- **SCR-604 Interface "Meu Alfabeto" em Jetpack Compose (M6):** Tela `AlphabetScreen` e `AlphabetViewModel` com visualização em grade adaptativa, pré-visualização vetorial em tempo real auto-escalada, bottom sheet de inspeção com eleição de favorito e atalho para Treino Guiado, diálogo de compilação de estilo e atalho "Alfabeto (M6)" na toolbar do caderno e roteador principal da `MainActivity`.
+
 ## Próxima Ação
-- **M6 — Meu Alfabeto (Preparação):**
-  - Salvar melhor tentativa por caractere/glifo individual.
-  - Curadoria e seleção de variantes favoritas (maiúsculas, minúsculas, números).
-  - Versionamento de variantes (v1, v2, v3) e compilação do estilo pessoal do usuário (`PersonalStyle`).
+- **M7 — Professor IA (Preparação):**
+  - Somente após volume suficiente de sessões e variantes reais: modelagem local e segura para interpretação de padrões de escrita e sugestões de treino sem inventar métricas.
+  - Princípio inviolável: zero nuvem obrigatória, respeito absoluto à privacidade do usuário e aos dados vetoriais locais.
 
 ## Gates
-Não iniciar IA, backend, login, marketplace antes dos milestones correspondentes. Gates M0, M1, M2, M3, M4 e M5 formalmente concluídos e verificados.
+Não iniciar IA, backend, login, marketplace antes dos milestones correspondentes. Gates M0, M1, M2, M3, M4, M5 e M6 formalmente concluídos e verificados.
 
 ## Decisões já tomadas
 - Kotlin nativo + Jetpack Compose.

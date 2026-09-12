@@ -28,8 +28,8 @@ Currículo canônico de 18 lições em 5 estágios (Traços, Famílias, Conexõe
 ## M5 — Evolução [CONCLUÍDO — v0.5.0]
 Before/after com deltas de precisão/inclinação/cadência (`AttemptComparator`), slider de sobreposição com cross-fade (`OverlaySlider`), replay lado a lado sincronizado (`DualReplayEngine`), calendário de consistência com tempo praticado e indicadores não punitivos (`CalendarConsistencyHelper`), repositório com persistência atômica segura `.scribe` (`LocalPracticeAttemptRepository`) e tela unificada `EvolutionScreen`.
 
-## M6 — Meu Alfabeto
-Salvar melhor tentativa por glyph, variantes favoritas, versões v1/v2/v3 e PersonalStyle local.
+## M6 — Meu Alfabeto [CONCLUÍDO — v0.6.0]
+Catálogo de 68 glifos canônicos (`PersonalAlphabet`), versionamento de variantes (`GlyphVariant` v1, v2, v3...) com eleição de favoritas, repositório local atômico `.scribe` (`LocalPersonalAlphabetRepository`), motor de compilação de estilo pessoal (`PersonalStyleCompiler`), tela `AlphabetScreen` em Compose com grade adaptativa, preview vetorial e integração imediata com o `StyleEngine`.
 
 ## M7 — Professor IA
 Somente após volume suficiente de sessões reais: interpretar padrões, recomendar foco e gerar próximo treino sem inventar métricas.

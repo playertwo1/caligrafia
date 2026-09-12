@@ -37,4 +37,10 @@ class ViewModelInstantiationTest {
         val constructor = com.scribe.caligrafia.evolution.ui.EvolutionViewModel::class.java.getConstructor(Application::class.java)
         assertNotNull(constructor)
     }
+
+    @Test
+    fun verifyAlphabetViewModelHasSingleApplicationConstructor() {
+        val constructor = com.scribe.caligrafia.alphabet.ui.AlphabetViewModel::class.java.getConstructor(Application::class.java)
+        assertNotNull(constructor)
+    }
 }

@@ -79,6 +79,13 @@ class StyleEngine(
     }
 
     /**
+     * Registra ou atualiza um estilo customizado (ex: estilo compilado pelo PersonalStyleCompiler).
+     */
+    fun registerCustomStyle(style: ScribeStyle) {
+        customStyles[style.id] = style
+    }
+
+    /**
      * Remove um estilo customizado importado.
      */
     fun removeCustomStyle(styleId: String): Boolean {
