@@ -1,0 +1,66 @@
+[
+  {
+    "test": "s08_emptyDiagnosticDoesNotClaimMasteryInPrescription",
+    "failure": "java.lang.AssertionError"
+  },
+  {
+    "test": "r17_attemptRoundTripPreservesStyleContext",
+    "failure": "java.lang.AssertionError: expected:<uncial> but was:<null>"
+  },
+  {
+    "test": "r03_existingReaderSeesNewAttempt",
+    "failure": "java.lang.AssertionError: Teacher/Evolution instances must see guided writes expected:<1> but was:<0>"
+  },
+  {
+    "test": "r06_equalMtimeDoesNotLoseSession",
+    "failure": "java.lang.AssertionError: seed, a and b must survive expected:<3> but was:<2>"
+  },
+  {
+    "test": "s24_manifestEscapesRoundTrip",
+    "failure": "org.junit.ComparisonFailure: expected:<Device [\"quoted\" \\ path\nUnicode ç]> but was:<Device [\\]>"
+  },
+  {
+    "test": "s04_rejectsNonJsonManifest",
+    "failure": "java.lang.AssertionError: Non-JSON must not become a valid manifest expected null, but was:<BackupManifest(formatVersion=1.0, appVersion=0.8.0, appVersionCode=10, createdAtMs=1789303025543, deviceInfo=Android, notebookCount=0, pageCount=0, personalGlyphCount=0, lessonHistoryCount=0, practiceAttemptCount=0, hasTeacherDiagnostic=false)>"
+  },
+  {
+    "test": "s04_rejectsUnsupportedManifestVersion",
+    "failure": "java.lang.AssertionError: expected null, but was:<BackupManifest(formatVersion=999.0, appVersion=0.8.0, appVersionCode=10, createdAtMs=1789303025544, deviceInfo=Android, notebookCount=0, pageCount=0, personalGlyphCount=0, lessonHistoryCount=0, practiceAttemptCount=0, hasTeacherDiagnostic=false)>"
+  },
+  {
+    "test": "r07_evolutionInputMustNotTruncateAtTwentySessions",
+    "failure": "java.lang.AssertionError: expected:<21> but was:<20>"
+  },
+  {
+    "test": "r14_denseReferenceStillMeasuresSlant",
+    "failure": "java.lang.AssertionError: Dense straight downstroke must still be measured"
+  },
+  {
+    "test": "s16_oppositeDiagonalsDoNotClaimIdenticalMuscularDynamics",
+    "failure": "java.lang.AssertionError: Score=100.0"
+  },
+  {
+    "test": "s09_denseAndSparseSlantHaveSameObservation",
+    "failure": "java.lang.AssertionError: Same straight path and duration expected:<45.0> but was:<null>"
+  },
+  {
+    "test": "s15_svgFramesNegativeCoordinates",
+    "failure": "java.lang.AssertionError: Fixed positive viewport with unchanged negative coordinates clips whole signature"
+  },
+  {
+    "test": "s03_rollbackRemovesNewRootsAfterMidCopyFailure",
+    "failure": "java.lang.AssertionError: Rollback left new notebook data behind: Falha durante a restauração dos arquivos; dados anteriores preservados: C:\\Users\\fael\\AppData\\Local\\Temp\\scribe-independent-v4-198859516307744817\\temp_restore_1789303025630\\teacher\\diagnostic.json -> C:\\Users\\fael\\AppData\\Local\\Temp\\scribe-independent-v4-198859516307744817\\teacher\\diagnostic.json"
+  },
+  {
+    "test": "r04_newAlphabetContainsNoSyntheticVariants",
+    "failure": "java.lang.AssertionError: New user's a must not already have scored writing expected:<0> but was:<1>"
+  },
+  {
+    "test": "s02_backupIncludesStyleEngineRootFile",
+    "failure": "java.lang.AssertionError: StyleEngine reads this root file"
+  },
+  {
+    "test": "s04_invalidManifestCannotOverwriteActiveData",
+    "failure": "org.junit.ComparisonFailure: Invalid manifest changed active bytes; success=true expected:<[ORIGINAL]> but was:<[REPLACED]>"
+  }
+]

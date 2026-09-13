@@ -1,0 +1,28 @@
+Audit V4 - local evidence
+2026-09-13T09:45:55.5402242-03:00
+eec0b6bdbec2c0cdcfb0371366e92a3b3aa2102f
+main
+
+------------------------------------------------------------
+Gradle 9.3.1
+------------------------------------------------------------
+
+Build time:    2026-01-29 14:15:01 UTC
+Revision:      44f4e8d3122ee6e7cbf5a248d7e20b4ca666bda3
+
+Kotlin:        2.2.21
+Groovy:        4.0.29
+Ant:           Apache Ant(TM) version 1.10.15 compiled on August 25 2024
+Launcher JVM:  17.0.20.1 (Eclipse Adoptium 17.0.20.1+1)
+Daemon JVM:    C:\Program Files\Eclipse Adoptium\jdk-17.0.20.101-hotspot (no Daemon JVM specified, using current Java home)
+OS:            Windows 11 10.0 amd64
+
+ANDROID_HOME used: C:/Users/fael/AppData/Local/Android/Sdk
+List of devices attached
+
+
+Algorithm : SHA256
+Hash      : 53CEBAFC0F01771706256C70CEAF5932556532CED9B5F4EEAFCB083575BABD2E
+Path      : C:\Users\fael\Documents\Codex\2026-09-13\puxe-o-github-https-github-com\app\build\outputs\apk\debug\app-debug.apk
+
+

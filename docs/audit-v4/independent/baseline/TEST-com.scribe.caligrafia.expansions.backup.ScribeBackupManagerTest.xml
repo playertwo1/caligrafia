@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.expansions.backup.ScribeBackupManagerTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-09-13T12:33:47.389Z" hostname="DESTKTOPFAEL" time="0.135">
+  <properties/>
+  <testcase name="importCorruptedZip_returnsFailureResult" classname="com.scribe.caligrafia.expansions.backup.ScribeBackupManagerTest" time="0.003"/>
+  <testcase name="exportAndImport_restoresAllFilesAndPreservesStructure" classname="com.scribe.caligrafia.expansions.backup.ScribeBackupManagerTest" time="0.051"/>
+  <testcase name="exportBackup_producesZipWithValidCentralDirectory_openableByZipFile" classname="com.scribe.caligrafia.expansions.backup.ScribeBackupManagerTest" time="0.007"/>
+  <testcase name="exportAndImport_withRealRepositoryPaths_packsAndRestoresAllCanonicalEntities" classname="com.scribe.caligrafia.expansions.backup.ScribeBackupManagerTest" time="0.061"/>
+  <testcase name="importBackup_atomicRollbackOnFailure_preservesOriginalData" classname="com.scribe.caligrafia.expansions.backup.ScribeBackupManagerTest" time="0.006"/>
+  <testcase name="backupSerializer_serializesAndDeserializesCorrectly" classname="com.scribe.caligrafia.expansions.backup.ScribeBackupManagerTest" time="0.001"/>
+  <testcase name="importBackup_withZipSlipMaliciousPath_isSafelyRejected" classname="com.scribe.caligrafia.expansions.backup.ScribeBackupManagerTest" time="0.005"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

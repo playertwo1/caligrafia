@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.ink.replay.StrokeReplayEngineTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-09-13T12:33:47.661Z" hostname="DESTKTOPFAEL" time="0.001">
+  <properties/>
+  <testcase name="testSpeedConfiguration" classname="com.scribe.caligrafia.ink.replay.StrokeReplayEngineTest" time="0.0"/>
+  <testcase name="testFrameAtStart" classname="com.scribe.caligrafia.ink.replay.StrokeReplayEngineTest" time="0.0"/>
+  <testcase name="testSeekToFraction" classname="com.scribe.caligrafia.ink.replay.StrokeReplayEngineTest" time="0.0"/>
+  <testcase name="testFrameAtEnd" classname="com.scribe.caligrafia.ink.replay.StrokeReplayEngineTest" time="0.0"/>
+  <testcase name="testFrameDuringPauseBetweenStrokes" classname="com.scribe.caligrafia.ink.replay.StrokeReplayEngineTest" time="0.0"/>
+  <testcase name="testEmptyStrokesHandling" classname="com.scribe.caligrafia.ink.replay.StrokeReplayEngineTest" time="0.0"/>
+  <testcase name="testFrameMidwayFirstStroke" classname="com.scribe.caligrafia.ink.replay.StrokeReplayEngineTest" time="0.001"/>
+  <testcase name="testTotalDurationComputation" classname="com.scribe.caligrafia.ink.replay.StrokeReplayEngineTest" time="0.0"/>
+  <testcase name="testFrameMidwaySecondStroke" classname="com.scribe.caligrafia.ink.replay.StrokeReplayEngineTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

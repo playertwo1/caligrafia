@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.viewmodel.ViewModelInstantiationTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-09-13T12:33:47.869Z" hostname="DESTKTOPFAEL" time="0.004">
+  <properties/>
+  <testcase name="verifyNotebookPracticeViewModelHasSingleApplicationConstructor" classname="com.scribe.caligrafia.viewmodel.ViewModelInstantiationTest" time="0.0"/>
+  <testcase name="verifyGuidedPracticeViewModelHasSingleApplicationConstructor" classname="com.scribe.caligrafia.viewmodel.ViewModelInstantiationTest" time="0.0"/>
+  <testcase name="verifyTeacherViewModelHasSingleApplicationConstructor" classname="com.scribe.caligrafia.viewmodel.ViewModelInstantiationTest" time="0.001"/>
+  <testcase name="verifyStylusLabViewModelHasSingleApplicationConstructor" classname="com.scribe.caligrafia.viewmodel.ViewModelInstantiationTest" time="0.001"/>
+  <testcase name="verifyLearningViewModelHasSingleApplicationConstructor" classname="com.scribe.caligrafia.viewmodel.ViewModelInstantiationTest" time="0.001"/>
+  <testcase name="verifyExpansionsViewModelHasSingleApplicationConstructor" classname="com.scribe.caligrafia.viewmodel.ViewModelInstantiationTest" time="0.0"/>
+  <testcase name="verifyAlphabetViewModelHasSingleApplicationConstructor" classname="com.scribe.caligrafia.viewmodel.ViewModelInstantiationTest" time="0.001"/>
+  <testcase name="verifyEvolutionViewModelHasSingleApplicationConstructor" classname="com.scribe.caligrafia.viewmodel.ViewModelInstantiationTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

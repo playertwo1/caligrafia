@@ -1,5 +1,11 @@
 # PROJECT_STATE
 
+> **Parecer independente vigente — V4 (2026-09-13): NÃO APROVADO o fechamento das Ondas 0–3 e M0–M8.** Código auditado: `eec0b6bdbec2c0cdcfb0371366e92a3b3aa2102f`. Os status históricos de conclusão abaixo são alegações do implementador, não aprovação. Consulte [parecer V4](docs/ANTIGRAVITY_AUDIT_REVIEW_V4.md) e [matriz independente dos 66 IDs](docs/audit-v4/INDEPENDENT_COMPLIANCE_MATRIX.md).
+>
+> Reprodução: 33 aceites submetidos passaram; suíte original **227 testes / 45 classes / 0 falhas**; assembleDebug passou; lint **0 erros / 48 warnings**. **16 aceites independentes adicionais falharam**, reproduzindo pendências de integridade, estado e métricas. Nenhum aparelho conectado; sem aprovação visual/física dos 12 fluxos. Código de produto não alterado nesta auditoria.
+>
+> Próxima tarefa: corrigir validação/transação de restore e unificar caminhos/estado de alfabeto, com recuperação demonstrada e sem dados artificiais; seguir as pendências por ID. Evidências e reprodutor em `docs/audit-v4/independent/`.
+
 **Projeto:** Scribe / Caligrafia
 **Versão documental:** v0.8.0
 **Versão do aplicativo:** v0.8.0 (versionCode 10)

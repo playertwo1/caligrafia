@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" tests="33" skipped="0" failures="0" errors="0" timestamp="2026-09-13T12:33:45.438Z" hostname="DESTKTOPFAEL" time="1.928">
+  <properties/>
+  <testcase name="incompleteAttemptFailsAndReferenceSlantMatches52Degrees" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.01"/>
+  <testcase name="r09_fsyncExecutesOnOpenValidFileDescriptorAcrossRepositories" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.029"/>
+  <testcase name="s12_signatureCanvasCallbacksDeliverImmutableListsAndPreventAliasing" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.006"/>
+  <testcase name="r11_compilerCalculates52DegreesUnderCanonicalConventionAndMonotonicRatio" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.0"/>
+  <testcase name="a03_notebookPageSavesAreOrderedAndNonConflicting" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.063"/>
+  <testcase name="r01_sessionTimerTicksInRealTimeWithDefaultScope" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="1.268"/>
+  <testcase name="r06_multipleLearningHistoryInstancesStaySynchronized" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.066"/>
+  <testcase name="r05_personalStyleSurvivesEngineLookupAndAppliesToNotebookGuidelines" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.045"/>
+  <testcase name="s15_s16_signatureExporterWritesSvgFileAndHandlesNegativeCoordinates" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.009"/>
+  <testcase name="r03_practiceEvaluationPersistsRealAttemptAndCreatesBeforeAfter" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.031"/>
+  <testcase name="r07_calendarConsistencyComputesExactDurationWithoutOneMinuteInflation" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.001"/>
+  <testcase name="s02_backupIncludesAllCanonicalProductionPaths" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.02"/>
+  <testcase name="r04_alphabetNavigationSelectsGlyphAndSavedVariantUpdatesRepository" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.247"/>
+  <testcase name="s09_motorDiagnosticHonorsCanonicalSlantAndMarksInsufficientData" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.004"/>
+  <testcase name="zeroSensorValuesArePreserved" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.001"/>
+  <testcase name="r14_completenessEvaluationIsSamplingDensityIndependent" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.001"/>
+  <testcase name="replayPreservesStyleDuringActiveStroke" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.001"/>
+  <testcase name="r10_alphabetOperationsAreTransactionalAndConcurrentSafe" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.058"/>
+  <testcase name="s07_zeroAttemptsProducesZeroScoreAndBeginnerMaturity" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.0"/>
+  <testcase name="r16_pageExporterMaintainsCanvasAspectRatioWithoutDistortion" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.005"/>
+  <testcase name="r12_dualReplayPreservesRealTimeRelativeSpeedAndSupportsNormalizedMode" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.002"/>
+  <testcase name="r17_guidedPracticeAdaptsTargetSlantToSelectedStyle" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.006"/>
+  <testcase name="eraserBridgesAcrossEventsAndErasesCrossingStroke" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.002"/>
+  <testcase name="s01_exportedZipHasValidCentralDirectory_andCanBeReadByZipFile" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.006"/>
+  <testcase name="s04_zipSlipVulnerabilityIsPrevented" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.005"/>
+  <testcase name="r02_realPracticeAttemptFeedsLearningSessionScore" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.018"/>
+  <testcase name="r18_attemptComparatorComputesPathVelocity" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.001"/>
+  <testcase name="s03_importAtomicRollbackPreservesOriginalUserDataOnFailure" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.005"/>
+  <testcase name="failedSavePreservesPreviousValidFile" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.01"/>
+  <testcase name="exportDoesNotReturnFakeEightByteFile" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.003"/>
+  <testcase name="eraserNeverDeliversCompletedStrokeOrPreview" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.001"/>
+  <testcase name="s18_teacherPrescriptionNavigatesToTargetExercise" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.003"/>
+  <testcase name="r08_sessionTimerCompletes300SecondsOn300thTick" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

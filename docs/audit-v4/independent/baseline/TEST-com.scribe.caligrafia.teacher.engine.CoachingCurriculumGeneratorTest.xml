@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.teacher.engine.CoachingCurriculumGeneratorTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-09-13T12:33:47.807Z" hostname="DESTKTOPFAEL" time="0.001">
+  <properties/>
+  <testcase name="prescribes mastery challenge when user reaches MASTER_OF_STROKE" classname="com.scribe.caligrafia.teacher.engine.CoachingCurriculumGeneratorTest" time="0.0"/>
+  <testcase name="prescribes slant practice when weakness is SLANT_STABILITY" classname="com.scribe.caligrafia.teacher.engine.CoachingCurriculumGeneratorTest" time="0.001"/>
+  <testcase name="prescribes cadence practice when weakness is RHYTHM_AND_CADENCE" classname="com.scribe.caligrafia.teacher.engine.CoachingCurriculumGeneratorTest" time="0.0"/>
+  <testcase name="prescribes containment practice when weakness is GUIDELINE_CONTAINMENT" classname="com.scribe.caligrafia.teacher.engine.CoachingCurriculumGeneratorTest" time="0.0"/>
+  <testcase name="prescribes pressure modulation practice when weakness is PRESSURE_CONTROL" classname="com.scribe.caligrafia.teacher.engine.CoachingCurriculumGeneratorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
