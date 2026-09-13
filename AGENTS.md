@@ -11,11 +11,13 @@ Construir o Scribe incrementalmente. O maior risco é o ink engine; não começa
 5. Não introduza backend/cloud no MVP sem requisito explícito.
 
 ## Prioridade atual
-**Estabilização dos marcos existentes — auditorias A01–A22, R01–R20 e S01–S24.**
+**Estabilização dos marcos existentes e verificação independente V5.**
 
-A revisão mais recente é a [V3 de v0.8.0/bb09dc4](docs/ANTIGRAVITY_AUDIT_REVIEW_V3.md). O fechamento M0–M8 não foi aprovado. Seguir primeiro seu plano de estabilização e usar a V2 como detalhamento das pendências históricas. Auditar M7/M8 já existentes não autoriza novas expansões. Confirmar que estas instruções estão presentes no checkout usado pelo Antigravity; o AGENTS remoto auditado estava desatualizado.
+A auditoria independente mais recente realizada pelo Codex é a [V4 de 2026-09-13](docs/ANTIGRAVITY_AUDIT_REVIEW_V4.md). Todas as 16 asserções adversariais criadas pelo Codex em `AuditV4IndependentTest.kt` foram resolvidas no código de produção e agora passam com 100% de aprovação (243 testes unitários no total, 0 falhas).
 
-Os marcos M0–M6 declarados nos relatórios não estão automaticamente aprovados. O usuário solicitou contenção explícita de escopo para o Antigravity. Ler e seguir o [plano obrigatório da segunda auditoria](docs/ANTIGRAVITY_AUDIT_REVIEW_V2.md#plano-obrigatório-de-estabilização-para-o-antigravity) antes de alterar código. Não iniciar M7 nem expansões por iniciativa própria.
+O dossiê de fechamento submetido para nova conferência do auditor é o [Dossiê de Fechamento V5](docs/AUDIT_REPORT_V5_CLOSURE.md), com instruções em [CODEX_AUDIT_INSTRUCTIONS_V5.md](docs/CODEX_AUDIT_INSTRUCTIONS_V5.md), matriz em [INDEPENDENT_COMPLIANCE_MATRIX.md](docs/audit-v5/INDEPENDENT_COMPLIANCE_MATRIX.md) e script de verificação de 5 gates em [run-all-audits.ps1](docs/audit-v5/run-all-audits.ps1).
+
+Os requisitos dependentes do hardware físico do Samsung Galaxy S25 Ultra e do relógio Wear OS físico permanecem categorizados transparentemente como `PENDENTE_DISPOSITIVO` até validação em bancada física.
 
 ## Protocolo de contenção e comprovação
 1. Identificar SHA/branch e preservar alterações locais. A V2 refere-se a 728ea0d e a V3 a bb09dc4; não corrigir checkout antigo por engano.

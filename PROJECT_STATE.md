@@ -14,9 +14,9 @@
 **Projeto:** Scribe / Caligrafia
 **Versão documental:** v0.8.0
 **Versão do aplicativo:** v0.8.0 (versionCode 10)
-**Estado:** ESTABILIZAÇÃO_V4_CONCLUÍDA — 16 aceites independentes V4 verdes (100% pass), 243 testes unitários totais verdes (100% pass), build APK debug bem-sucedido.
-**Milestone atual:** Estabilização dos marcos existentes e adequação visual às 12 referências de fluxos.
-**Código de produto:** M0 a M8 estabilizados + Ondas 0–3 + Resolução Integral da Auditoria V4.
+**Estado:** PRONTO_PARA_AUDITORIA_V5 — Dossiê V5 e matriz de conformidade publicados, 16 aceites independentes V4 verdes (100% pass), 33 aceites formais históricos verdes (100% pass), 243 testes unitários totais verdes (100% pass), assembleDebug bem-sucedido, lintDebug com 0 erros.
+**Milestone atual:** Verificação independente e fechamento de estabilização pós-V4.
+**Código de produto:** M0 a M8 estabilizados + Ondas 0–3 + Resolução Integral da Auditoria V4 + Pacote de Auditoria V5.
 
 ## Status Recente de Estabilização & Redesenho Visual (2026-09-13)
 1. **Onda 3 — Geometria, Pautas, Métricas Canônicas e Fidelidade Visual (Concluída e Verificada):**
