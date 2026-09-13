@@ -3,6 +3,7 @@ package com.scribe.caligrafia.expansions.backup
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -244,5 +245,43 @@ class ScribeBackupManagerTest {
         assertEquals("ORIGINAL_PAGE_CONTENT", originalPage.readText())
         assertTrue(originalLearning.exists())
         assertEquals("ORIGINAL_HISTORY", originalLearning.readText())
+    }
+
+    @Test
+    fun backupSerializer_rejectsMissingValue_f08() {
+        assertNull(BackupSerializer.deserializeManifest("{\"formatVersion\":\"1.0\",\"x\":}"))
+        assertNull(BackupSerializer.parseJsonObject("{\"a\":}"))
+    }
+
+    @Test
+    fun backupSerializer_rejectsTrailingComma_f08() {
+        assertNull(BackupSerializer.deserializeManifest("{\"formatVersion\":\"1.0\",}"))
+        assertNull(BackupSerializer.parseJsonObject("{\"a\":1,}"))
+        assertNull(BackupSerializer.parseJsonObject("{\"arr\":[1, 2,]}"))
+    }
+
+    @Test
+    fun backupSerializer_rejectsInvalidNumbers_f08() {
+        assertNull(BackupSerializer.parseJsonObject("{\"n\": 12.}"))
+        assertNull(BackupSerializer.parseJsonObject("{\"n\": 12e}"))
+        assertNull(BackupSerializer.parseJsonObject("{\"n\": 12e+}"))
+    }
+
+    @Test
+    fun backupSerializer_rejectsUnescapedControlChars_f08() {
+        assertNull(BackupSerializer.parseJsonObject("{\"s\": \"bad\u0000char\"}"))
+        assertNull(BackupSerializer.parseJsonObject("{\"s\": \"bad\u0007bell\"}"))
+    }
+
+    @Test
+    fun backupSerializer_rejectsContentAfterTopLevelObject_f08() {
+        assertNull(BackupSerializer.deserializeManifest("{\"formatVersion\":\"1.0\"} trailing content"))
+        assertNull(BackupSerializer.parseJsonObject("{\"a\": 1} trailing"))
+    }
+
+    @Test
+    fun backupSerializer_rejectsIncompatibleFormatVersion_f08() {
+        assertNull(BackupSerializer.deserializeManifest("{\"formatVersion\":\"99.0\"}"))
+        assertNull(BackupSerializer.deserializeManifest("{\"formatVersion\":\"2.0\"}"))
     }
 }

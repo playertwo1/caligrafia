@@ -166,6 +166,7 @@ class LocalPracticeAttemptRepository(
     private fun loadManifest() {
         if (!manifestFile.exists()) {
             cachedMetadata.clear()
+            strokeCache.clear()
             lastKnownModified = 0L
             lastKnownLength = -1L
             lastKnownHash = 0
@@ -177,6 +178,7 @@ class LocalPracticeAttemptRepository(
         val bytes = try { manifestFile.readBytes() } catch (_: Throwable) { ByteArray(0) }
         lastKnownHash = bytes.contentHashCode()
         cachedMetadata.clear()
+        strokeCache.clear()
         try {
             val lines = bytes.toString(StandardCharsets.UTF_8).lines()
             for (line in lines) {

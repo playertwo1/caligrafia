@@ -65,6 +65,8 @@ object BackupSerializer {
     private class JsonParser(private val trimmed: String) {
         private var index = 0
 
+        private class ParsedValue(val value: Any?)
+
         fun parseTopLevelObject(): Map<String, Any?>? {
             val map = parseObject() ?: return null
             skipWhitespace()
@@ -88,8 +90,8 @@ object BackupSerializer {
                 if (index >= trimmed.length || trimmed[index] != ':') return null
                 index++ // skip :
                 skipWhitespace()
-                val value = parseValue()
-                map[key] = value
+                val parsed = parseValue() ?: return null
+                map[key] = parsed.value
                 skipWhitespace()
                 if (index >= trimmed.length) return null
                 if (trimmed[index] == ',') {
@@ -164,46 +166,66 @@ object BackupSerializer {
             if (index < trimmed.length && trimmed[index] == '.') {
                 isDouble = true
                 index++
+                var hasFractionDigits = false
                 while (index < trimmed.length && trimmed[index].isDigit()) {
                     index++
+                    hasFractionDigits = true
                 }
+                if (!hasFractionDigits) return null
             }
             if (index < trimmed.length && (trimmed[index] == 'e' || trimmed[index] == 'E')) {
                 isDouble = true
                 index++
                 if (index < trimmed.length && (trimmed[index] == '-' || trimmed[index] == '+')) index++
-                while (index < trimmed.length && trimmed[index].isDigit()) index++
+                var hasExpDigits = false
+                while (index < trimmed.length && trimmed[index].isDigit()) {
+                    index++
+                    hasExpDigits = true
+                }
+                if (!hasExpDigits) return null
             }
             val numStr = trimmed.substring(start, index)
             return if (isDouble) numStr.toDoubleOrNull() else numStr.toLongOrNull()
         }
 
-        fun parseValue(): Any? {
+        private fun parseValue(): ParsedValue? {
             skipWhitespace()
             if (index >= trimmed.length) return null
             return when (trimmed[index]) {
-                '"' -> parseString()
-                '{' -> parseObject()
-                '[' -> parseArray()
+                '"' -> {
+                    val s = parseString() ?: return null
+                    ParsedValue(s)
+                }
+                '{' -> {
+                    val o = parseObject() ?: return null
+                    ParsedValue(o)
+                }
+                '[' -> {
+                    val a = parseArray() ?: return null
+                    ParsedValue(a)
+                }
                 't' -> {
                     if (trimmed.startsWith("true", index)) {
                         index += 4
-                        true
+                        ParsedValue(true)
                     } else null
                 }
                 'f' -> {
                     if (trimmed.startsWith("false", index)) {
                         index += 5
-                        false
+                        ParsedValue(false)
                     } else null
                 }
                 'n' -> {
                     if (trimmed.startsWith("null", index)) {
                         index += 4
-                        null
+                        ParsedValue(null)
                     } else null
                 }
-                '-', in '0'..'9' -> parseNumber()
+                '-', in '0'..'9' -> {
+                    val n = parseNumber() ?: return null
+                    ParsedValue(n)
+                }
                 else -> null
             }
         }
@@ -218,13 +240,14 @@ object BackupSerializer {
                 return list
             }
             while (index < trimmed.length) {
-                val value = parseValue()
-                list.add(value)
+                val parsed = parseValue() ?: return null
+                list.add(parsed.value)
                 skipWhitespace()
                 if (index >= trimmed.length) return null
                 if (trimmed[index] == ',') {
                     index++
                     skipWhitespace()
+                    if (index < trimmed.length && trimmed[index] == ']') return null
                 } else if (trimmed[index] == ']') {
                     index++
                     return list

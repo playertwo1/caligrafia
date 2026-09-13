@@ -35,23 +35,23 @@ Começar na primeira caixa desmarcada. Se o código já atende, verificar e anex
 
 Arquivos principais: `BackupSerializer`, `ScribeBackupManager`, `LocalPracticeAttemptRepository`, histórico e fábricas de repositórios. Dependência: nenhuma. Saída: base segura para desenvolver os fluxos.
 
-- [ ] F0.01 Registrar branch, HEAD, upstream e arquivos modificados em `docs/product-delivery/BASELINE.md`; preservar alterações existentes.
-- [ ] F0.02 Ler este checklist, roadmap funcional e parecer `ANTIGRAVITY_AUDIT_REVIEW_V5_RECHECK.md`; registrar a primeira tarefa selecionada.
-- [ ] F0.03 Executar runner de auditoria vigente e salvar log; contar testes/classes/falhas pelos XML, não pelo texto fixo do script.
-- [ ] F0.04 Criar `ROUTE_ACTION_MATRIX.md` com colunas ID, origem, botão, destino, argumentos, handler, repositório, teste e estado.
-- [ ] F0.05 Inventariar os arquivos reais gravados por cada repositório e suas versões; registrar caminhos em `DATA_CONTRACT.md`.
-- [ ] F0.06 Incorporar as contraprovas de `docs/audit-v5/recheck/AuditV5RecheckTest.kt` à suíte permanente sem enfraquecer asserções.
-- [ ] F0.07 Corrigir parser: distinguir valor null válido de erro; rejeitar valor ausente antes de alterar arquivos ativos.
-- [ ] F0.08 Testar JSON com valor ausente, vírgula final, número inválido, controle não escapado, versão/tipo incompatível e conteúdo após objeto.
-- [ ] F0.09 Testar ZIP inválido sobre dados existentes e comprovar bytes originais preservados; não testar apenas o retorno do parser.
-- [ ] F0.10 Corrigir invalidação de strokes quando o manifesto ou seu conjunto é substituído; não atualizar apenas metadados.
-- [ ] F0.11 Testar leitor já aberto após outro escritor substituir strokes do mesmo ID; conferir os pontos novos e o contexto.
-- [ ] F0.12 Definir proprietário compartilhado dos repositórios por armazenamento; substituir instâncias divergentes nos consumidores afetados.
-- [ ] F0.13 Garantir erro observável de leitura/save; arquivo corrupto não deve ser sobrescrito com estado vazio como recuperação silenciosa.
-- [ ] F0.14 Definir vínculo de IDs entre sessão, tentativa, exercício, estilo, variante, prescrição e texto; preservar leitura de registros antigos.
-- [ ] F0.15 Definir espaço lógico/pauta/versão da referência por tentativa e página; migração não inventa medidas ausentes.
-- [ ] F0.16 Registrar resultado de cada contraprova e da suíte relevante em EVIDENCE; classificar falhas anteriores e novas separadamente.
-- [ ] F0.G Confirmar que manifesto inválido não modifica ativos e leitor aberto recebe strokes substituídos; submeter F0 à revisão Codex.
+- [x] F0.01 Registrar branch, HEAD, upstream e arquivos modificados em `docs/product-delivery/BASELINE.md`; preservar alterações existentes.
+- [x] F0.02 Ler este checklist, roadmap funcional e parecer `ANTIGRAVITY_AUDIT_REVIEW_V5_RECHECK.md`; registrar a primeira tarefa selecionada.
+- [x] F0.03 Executar runner de auditoria vigente e salvar log; contar testes/classes/falhas pelos XML, não pelo texto fixo do script.
+- [x] F0.04 Criar `ROUTE_ACTION_MATRIX.md` com colunas ID, origem, botão, destino, argumentos, handler, repositório, teste e estado.
+- [x] F0.05 Inventariar os arquivos reais gravados por cada repositório e suas versões; registrar caminhos em `DATA_CONTRACT.md`.
+- [x] F0.06 Incorporar as contraprovas de `docs/audit-v5/recheck/AuditV5RecheckTest.kt` à suíte permanente sem enfraquecer asserções.
+- [x] F0.07 Corrigir parser: distinguir valor null válido de erro; rejeitar valor ausente antes de alterar arquivos ativos.
+- [x] F0.08 Testar JSON com valor ausente, vírgula final, número inválido, controle não escapado, versão/tipo incompatível e conteúdo após objeto.
+- [x] F0.09 Testar ZIP inválido sobre dados existentes e comprovar bytes originais preservados; não testar apenas o retorno do parser.
+- [x] F0.10 Corrigir invalidação de strokes quando o manifesto ou seu conjunto é substituído; não atualizar apenas metadados.
+- [x] F0.11 Testar leitor já aberto após outro escritor substituir strokes do mesmo ID; conferir os pontos novos e o contexto.
+- [x] F0.12 Definir proprietário compartilhado dos repositórios por armazenamento; substituir instâncias divergentes nos consumidores afetados.
+- [x] F0.13 Garantir erro observável de leitura/save; arquivo corrupto não deve ser sobrescrito com estado vazio como recuperação silenciosa.
+- [x] F0.14 Definir vínculo de IDs entre sessão, tentativa, exercício, estilo, variante, prescrição e texto; preservar leitura de registros antigos.
+- [x] F0.15 Definir espaço lógico/pauta/versão da referência por tentativa e página; migração não inventa medidas ausentes.
+- [x] F0.16 Registrar resultado de cada contraprova e da suíte relevante em EVIDENCE; classificar falhas anteriores e novas separadamente.
+- [x] F0.G Confirmar que manifesto inválido não modifica ativos e leitor aberto recebe strokes substituídos; submeter F0 à revisão Codex.
 
 ## F1 — Navegação, biblioteca e caderno completos
 
