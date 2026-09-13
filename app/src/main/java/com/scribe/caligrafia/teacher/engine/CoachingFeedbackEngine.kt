@@ -1,23 +1,31 @@
 package com.scribe.caligrafia.teacher.engine
 
+import com.scribe.caligrafia.evolution.model.PracticeAttemptRecord
 import com.scribe.caligrafia.teacher.model.BiomechanicalDiagnostic
 import com.scribe.caligrafia.teacher.model.BiomechanicalDimension
 import com.scribe.caligrafia.teacher.model.InsightType
 import com.scribe.caligrafia.teacher.model.TeacherInsight
 
 /**
- * Motor de Insights Pedagógicos em Linguagem Natural do Professor IA (SCR-703).
+ * Motor de Insights Pedagógicos em Linguagem Natural do Professor IA (SCR-703, F4.03, F4.04).
  *
- * Gera observações e recomendações técnicas, ergonômicas e motivadoras
- * 100% fundamentadas em dados observados do calígrafo.
+ * Gera observações e recomendações técnicas e pedagógicas
+ * 100% fundamentadas em dados observados do calígrafo e vinculadas às tentativas reais.
  */
 class CoachingFeedbackEngine {
 
     /**
-     * Gera um conjunto estruturado de insights pedagógicos a partir do diagnóstico.
+     * Gera um conjunto estruturado de insights pedagógicos a partir do diagnóstico
+     * e das tentativas de escrita que o sustentam.
      */
-    fun generateInsights(diagnostic: BiomechanicalDiagnostic): List<TeacherInsight> {
+    fun generateInsights(
+        diagnostic: BiomechanicalDiagnostic,
+        attempts: List<PracticeAttemptRecord> = emptyList()
+    ): List<TeacherInsight> {
         val insights = mutableListOf<TeacherInsight>()
+
+        val bestAttempt = attempts.maxByOrNull { it.scorePercent }
+        val worstAttempt = attempts.minByOrNull { it.scorePercent }
 
         // 1. Elogio Fundamentado (PRAISE)
         diagnostic.primaryStrength?.let { strength ->
@@ -33,12 +41,12 @@ class CoachingFeedbackEngine {
                     "Excelente domínio do espaço de escrita! Você ancora a linha de base e respeita a altura-x com firmeza e sem transbordos."
                 )
                 BiomechanicalDimension.RHYTHM_AND_CADENCE -> Pair(
-                    "Fluidez e Confiança",
-                    "Seu movimento de escrita é contínuo e rítmico. A ausência de paradas intermediárias demonstra memória muscular consolidada."
+                    "Fluidez e Regularidade",
+                    "Seu movimento de escrita é contínuo e rítmico. A ausência de paradas intermediárias demonstra coordenação motora consolidada."
                 )
                 BiomechanicalDimension.PRESSURE_CONTROL -> Pair(
                     "Toque Caligráfico Maduro",
-                    "Sua S Pen desliza com leveza onde deve e marca presença nas descidas. Esse contraste é a marca registrada dos grandes calígrafos."
+                    "Sua S Pen desliza com leveza onde deve e marca presença nas descidas. Esse contraste dinâmico enriquece o traçado."
                 )
             }
 
@@ -48,7 +56,10 @@ class CoachingFeedbackEngine {
                     title = title,
                     message = msg,
                     relatedDimension = strength,
-                    metricDelta = "%.0f%%".format(scoreVal)
+                    metricDelta = "%.0f%%".format(scoreVal),
+                    relatedAttemptId = bestAttempt?.attemptId,
+                    relatedTargetTitle = bestAttempt?.targetTitle,
+                    relatedScore = bestAttempt?.scorePercent
                 )
             )
         }
@@ -59,19 +70,19 @@ class CoachingFeedbackEngine {
             val (title, msg) = when (weakness) {
                 BiomechanicalDimension.SLANT_STABILITY -> Pair(
                     "Ajuste de Ângulo e Paralelismo",
-                    "Alguns traços verticais estão variando de inclinação. Lembre-se de apoiar o antebraço na mesa e mover o braço inteiro ao descer a caneta, em vez de dobrar apenas o polegar."
+                    "Alguns traços verticais estão variando de inclinação. Mantenha o punho estável e deslize o antebraço ao traçar as descidas."
                 )
                 BiomechanicalDimension.GUIDELINE_CONTAINMENT -> Pair(
                     "Atenção aos Limites da Pauta",
-                    "As curvas estão ultrapassando ligeiramente a altura-x. Desacelere sutilmente 2mm antes da linha guia para arredondar a curva com perfeição."
+                    "As curvas estão ultrapassando ligeiramente a altura-x. Desacelere sutilmente antes da linha guia para arredondar a curva nos limites."
                 )
                 BiomechanicalDimension.RHYTHM_AND_CADENCE -> Pair(
                     "Evite Hesitações no Meio da Letra",
-                    "Detectamos micro-paradas na transição entre o corpo da letra e a ligadura. Pratique o gesto no ar uma vez antes de tocar a tela para executar em fluxo único."
+                    "Detectamos micro-paradas na transição entre o corpo do traço e a saída. Pratique executar o movimento em fluxo contínuo."
                 )
                 BiomechanicalDimension.PRESSURE_CONTROL -> Pair(
-                    "Alívio de Tensão na S Pen",
-                    "Você está segurando a caneta com força excessiva. Afrouxe a pegada nos dedos: a S Pen do S25 Ultra é ultrassensível e não requer força física para marcar o traço."
+                    "Modulação da Pressão na S Pen",
+                    "Foi registrada pressão contínua elevada na ponta da caneta. A S Pen do S25 Ultra é sensível: alivie a força de contato com o vidro nas subidas."
                 )
             }
 
@@ -81,7 +92,10 @@ class CoachingFeedbackEngine {
                     title = title,
                     message = msg,
                     relatedDimension = weakness,
-                    metricDelta = eval?.shortDiagnosis
+                    metricDelta = eval?.shortDiagnosis,
+                    relatedAttemptId = worstAttempt?.attemptId,
+                    relatedTargetTitle = worstAttempt?.targetTitle,
+                    relatedScore = worstAttempt?.scorePercent
                 )
             )
         }
@@ -102,8 +116,8 @@ class CoachingFeedbackEngine {
         return when (weakness) {
             BiomechanicalDimension.PRESSURE_CONTROL -> TeacherInsight(
                 type = InsightType.ERGONOMIC_TIP,
-                title = "Empunhadura Relaxada (Tripod Grip)",
-                message = "Segure a S Pen cerca de 2 cm acima da ponta. Imagine que você está segurando uma folha fina sem amassá-la: seus nós dos dedos não devem ficar brancos de aperto.",
+                title = "Empunhadura Funcional (Tripod Grip)",
+                message = "Segure a S Pen confortavelmente cerca de 2 cm acima da ponta. Aplique contato leve sobre a superfície da tela sem pressionar em excesso.",
                 relatedDimension = BiomechanicalDimension.PRESSURE_CONTROL
             )
             BiomechanicalDimension.SLANT_STABILITY -> TeacherInsight(
@@ -115,7 +129,7 @@ class CoachingFeedbackEngine {
             else -> TeacherInsight(
                 type = InsightType.ERGONOMIC_TIP,
                 title = "Postura e Descanso da Palma",
-                message = "Com a rejeição de palma ativa do Scribe, você pode descansar confortavelmente a mão espalmada sobre a tela do S25 Ultra, exatamente como faria no papel de linho.",
+                message = "Com a rejeição de palma ativa do Scribe, você pode descansar confortavelmente a mão espalmada sobre a tela do S25 Ultra, exatamente como faria no papel.",
                 relatedDimension = BiomechanicalDimension.GUIDELINE_CONTAINMENT
             )
         }
@@ -127,7 +141,7 @@ class CoachingFeedbackEngine {
             TeacherInsight(
                 type = InsightType.CHALLENGE,
                 title = "Desafio Solo: Modo Marca d'Água",
-                message = "Seu domínio técnico está alto! Na sua próxima sessão, reduza o Ghost Mode para 10% e escreva a palavra inteira sem olhar para o gabarito."
+                message = "Seu domínio técnico está alto! Na sua próxima sessão, reduza o Ghost Mode para 10% e escreva a forma inteira com orientação apenas das pautas."
             )
         } else {
             TeacherInsight(

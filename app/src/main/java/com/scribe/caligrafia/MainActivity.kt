@@ -106,9 +106,14 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                LaunchedEffect(guidedPracticeViewModel, learningViewModel) {
+                LaunchedEffect(guidedPracticeViewModel, learningViewModel, teacherViewModel) {
                     guidedPracticeViewModel.onAttemptEvaluated = { _, scorePercent ->
                         learningViewModel.recordAttempt(scorePercent)
+                    }
+                    guidedPracticeViewModel.onPrescriptionEvaluated = { _, scorePercent ->
+                        learningViewModel.recordAttempt(scorePercent)
+                        teacherViewModel.markPrescriptionCompleted()
+                        teacherViewModel.reanalyzeAllData()
                     }
                 }
 
@@ -221,9 +226,17 @@ class MainActivity : ComponentActivity() {
                                     alphabetViewModel = alphabetViewModel,
                                     stylusLabViewModel = stylusLabViewModel,
                                     onBack = { currentTab = ScribeTab.NOTEBOOK },
-                                    onNavigateToPracticeWithText = { passage ->
-                                        notebookViewModel.selectStyle(passage.recommendedStyleId, adaptPageGuidelines = true)
+                                    onNavigateToPracticeWithText = { passage, styleId ->
+                                        notebookViewModel.startTextCopyPractice(passage, styleId)
                                         currentTab = ScribeTab.NOTEBOOK
+                                    },
+                                    onOpenCopyRecord = { record ->
+                                        notebookViewModel.openExistingCopyRecord(record)
+                                        currentTab = ScribeTab.NOTEBOOK
+                                    },
+                                    onStartPrescribedPractice = { prescription ->
+                                        guidedPracticeViewModel.startPrescribedPractice(prescription)
+                                        currentTab = ScribeTab.PRACTICE
                                     },
                                     onNavigateToPractice = { targetId ->
                                         guidedPracticeViewModel.selectGlyphBySymbolOrId(targetId)

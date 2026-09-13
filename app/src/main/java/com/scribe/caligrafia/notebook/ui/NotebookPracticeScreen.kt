@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -57,6 +58,17 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Timer
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.zIndex
+import com.scribe.caligrafia.expansions.passage.ActiveTextCopySession
+import kotlinx.coroutines.launch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -120,6 +132,7 @@ fun NotebookPracticeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var canvasViewRef by remember { mutableStateOf<NotebookCanvasView?>(null) }
@@ -352,6 +365,29 @@ fun NotebookPracticeScreen(
                         .onSizeChanged { size ->
                             viewModel.updateCanvasDimensions(size.width.toFloat(), size.height.toFloat())
                         }
+                )
+            }
+
+            // Card Flutuante e Recolhível de Cópia de Texto (F4.13)
+            uiState.activeTextCopy?.let { copySession ->
+                ActiveTextCopyOverlayCard(
+                    session = copySession,
+                    onToggleCollapse = { viewModel.toggleTextCopyCollapse() },
+                    onTogglePause = {
+                        if (copySession.isPaused) viewModel.resumeTextCopy()
+                        else viewModel.pauseTextCopy()
+                    },
+                    onFinish = {
+                        coroutineScope.launch {
+                            viewModel.finishTextCopyPractice()
+                            canvasViewRef?.requestRedraw()
+                        }
+                    },
+                    onCancel = { viewModel.cancelTextCopyPractice() },
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                        .zIndex(10f)
                 )
             }
 
@@ -842,6 +878,179 @@ private fun PagesQuickNavigationCard(
                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
                 Text("Nova")
+            }
+        }
+    }
+}
+
+/**
+ * Card recolhível com o texto para cópia, timer em tempo real e controle de pausa (F4.13).
+ */
+@Composable
+private fun ActiveTextCopyOverlayCard(
+    session: ActiveTextCopySession,
+    onToggleCollapse: () -> Unit,
+    onTogglePause: () -> Unit,
+    onFinish: () -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFAFAFA)),
+        border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Linha de Cabeçalho / Controles
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .background(Color(0xFFEFF6FF), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Timer,
+                                contentDescription = null,
+                                tint = Color(0xFF2563EB),
+                                modifier = Modifier.size(14.dp)
+                            )
+                            val minutes = session.elapsedSeconds / 60
+                            val seconds = session.elapsedSeconds % 60
+                            Text(
+                                text = "%02d:%02d".format(minutes, seconds),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1E3A8A)
+                            )
+                        }
+                    }
+
+                    Column {
+                        Text(
+                            text = session.passage.title,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            maxLines = 1,
+                            color = ScribeTextPrimary
+                        )
+                        Text(
+                            text = session.passage.author,
+                            fontSize = 11.sp,
+                            maxLines = 1,
+                            color = ScribeTextMuted
+                        )
+                    }
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    IconButton(
+                        onClick = onTogglePause,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (session.isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
+                            contentDescription = if (session.isPaused) "Retomar" else "Pausar",
+                            tint = Color(0xFF2563EB),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = onToggleCollapse,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (session.isCollapsed) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
+                            contentDescription = if (session.isCollapsed) "Expandir" else "Recolher",
+                            tint = ScribeTextSecondary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Button(
+                        onClick = onFinish,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF059669)),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.height(30.dp)
+                    ) {
+                        Text("Concluir", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    IconButton(
+                        onClick = onCancel,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Cancelar cópia",
+                            tint = Color.Gray,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+
+            // Conteúdo do Texto (quando não recolhido)
+            if (!session.isCollapsed) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.White, RoundedCornerShape(8.dp))
+                        .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(8.dp))
+                        .padding(10.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        session.passage.lines.forEach { line ->
+                            Text(
+                                text = line,
+                                fontSize = 14.sp,
+                                lineHeight = 20.sp,
+                                fontFamily = FontFamily.Serif,
+                                color = Color(0xFF1E293B)
+                            )
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Meta: ${session.passage.targetWpm} WPM • Estilo: ${session.styleId}",
+                        fontSize = 10.sp,
+                        color = ScribeTextMuted
+                    )
+                    Text(
+                        text = "Escreva na pauta abaixo. Use '+' para novas páginas.",
+                        fontSize = 10.sp,
+                        color = Color(0xFF2563EB)
+                    )
+                }
             }
         }
     }

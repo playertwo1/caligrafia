@@ -1,5 +1,8 @@
 package com.scribe.caligrafia.expansions.passage
 
+import com.scribe.caligrafia.core.model.Stroke
+import java.util.UUID
+
 /**
  * Categorias temáticas de textos para prática contínua de caligrafia.
  */
@@ -39,4 +42,38 @@ data class PassagePacingResult(
     val pacingScore: Float, // 0.0f a 100.0f
     val diagnosis: String,
     val recommendation: String
+)
+
+/**
+ * Registro persistido de uma cópia de texto com texto vinculado, strokes e tempo real (F4.14, F4.15).
+ * Mede velocidade (WPM), cadência e strokes reais sem alegações infundadas de OCR textual.
+ */
+data class PassageCopyRecord(
+    val id: String = UUID.randomUUID().toString(),
+    val textId: String,
+    val title: String,
+    val author: String,
+    val textContent: String,
+    val styleId: String,
+    val timestampMs: Long = System.currentTimeMillis(),
+    val durationMs: Long,
+    val strokeCount: Int,
+    val pageCount: Int = 1,
+    val strokesByPage: Map<Int, List<Stroke>> = emptyMap(),
+    val isCompleted: Boolean = false,
+    val actualWpm: Float = 0f,
+    val targetWpm: Int = 14
+)
+
+/**
+ * Sessão ativa de cópia de texto no canvas do Caderno (F4.12, F4.13).
+ */
+data class ActiveTextCopySession(
+    val passage: PassageItem,
+    val styleId: String,
+    val isCollapsed: Boolean = false,
+    val isPaused: Boolean = false,
+    val elapsedSeconds: Long = 0L,
+    val recordId: String = UUID.randomUUID().toString(),
+    val strokesByPage: Map<Int, List<Stroke>> = emptyMap()
 )

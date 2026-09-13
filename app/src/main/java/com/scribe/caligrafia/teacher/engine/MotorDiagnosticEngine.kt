@@ -353,10 +353,10 @@ class MotorDiagnosticEngine(
         val avgUp = if (upPressures.isNotEmpty()) upPressures.average().toFloat() else avgPressure
         val contrastRatio = if (avgUp > 0.05f) avgDown / avgUp else 1.0f
 
-        // Penalidade por pressão excessiva (tensão da mão) ou falta de contraste
-        val tensionPenalty = if (avgPressure > 0.85f) 25.0f else 0.0f
+        // Penalidade por pressão excessiva na tela ou falta de contraste
+        val highPressurePenalty = if (avgPressure > 0.85f) 25.0f else 0.0f
         val contrastBonus = if (contrastRatio >= 1.25f) 15.0f else 0.0f
-        val score = (75.0f + contrastBonus - tensionPenalty).coerceIn(0.0f, 100.0f)
+        val score = (75.0f + contrastBonus - highPressurePenalty).coerceIn(0.0f, 100.0f)
 
         val status = when {
             score >= 85.0f -> EvaluationStatus.EXCELLENT
@@ -366,7 +366,7 @@ class MotorDiagnosticEngine(
         }
 
         val shortDiagnosis = when {
-            tensionPenalty > 0f -> "Tensão excessiva na mão (pressão média %.2f). Alivie o aperto na S Pen.".format(avgPressure)
+            highPressurePenalty > 0f -> "Pressão elevada na ponta da caneta (média %.2f). Alivie a força de contato com o vidro.".format(avgPressure)
             contrastRatio >= 1.25f -> "Ótima modulação de pressão: subidas leves e descidas expressivas (contraste %.1fx).".format(contrastRatio)
             else -> "Pressão uniforme e controlada (média %.2f). Para estilos sombreados, alivie na subida.".format(avgPressure)
         }

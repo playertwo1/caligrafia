@@ -354,5 +354,12 @@ object ReferenceGlyphCatalog {
         LETTER_O
     )
 
-    fun findById(id: String): ReferenceGlyph? = ALL_GLYPHS.find { it.id == id }
+    fun findById(id: String): ReferenceGlyph? = ALL_GLYPHS.find {
+        it.id == id ||
+        it.id == "basic_$id" ||
+        id == "basic_${it.id}" ||
+        (id == "underturn" && it.id == "basic_underturn") ||
+        (id == "overturn" && it.id == "basic_overturn") ||
+        (id == "compound_curve" && it.id == "basic_compound")
+    }
 }

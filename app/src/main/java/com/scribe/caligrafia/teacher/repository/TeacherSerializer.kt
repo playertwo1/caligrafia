@@ -103,6 +103,7 @@ object TeacherSerializer {
     }
 
     fun serializePrescription(presc: PrescribedPracticeSession): String {
+        val stagesJson = presc.stages.joinToString(separator = ", ") { "\"${escapeJson(it)}\"" }
         return """
         {
           "id": "${presc.id}",
@@ -115,6 +116,8 @@ object TeacherSerializer {
           "focusExerciseId": "${presc.focusExerciseId}",
           "recommendedGhostLevel": ${presc.recommendedGhostLevel},
           "targetGoalDescription": "${escapeJson(presc.targetGoalDescription)}",
+          "seriesCount": ${presc.seriesCount},
+          "stages": [$stagesJson],
           "isCompleted": ${presc.isCompleted}
         }
         """.trimIndent()
@@ -130,9 +133,19 @@ object TeacherSerializer {
             val targetDimension = runCatching { BiomechanicalDimension.valueOf(dimStr) }.getOrDefault(BiomechanicalDimension.SLANT_STABILITY)
             val minutes = extractInt(json, "recommendedMinutes") ?: 10
             val warmup = extractString(json, "warmupExerciseId") ?: "basic_slant"
-            val focus = extractString(json, "focusExerciseId") ?: "t"
+            val focus = extractString(json, "focusExerciseId") ?: "basic_slant"
             val ghost = extractFloat(json, "recommendedGhostLevel") ?: 0.7f
             val goal = extractString(json, "targetGoalDescription") ?: ""
+            val series = extractInt(json, "seriesCount") ?: 3
+            val stages = mutableListOf<String>()
+            val stagesBlock = extractArrayBlock(json, "stages")
+            if (stagesBlock != null) {
+                val strRegex = "\"([^\"]*)\"".toRegex()
+                for (match in strRegex.findAll(stagesBlock)) {
+                    stages.add(match.groupValues[1])
+                }
+            }
+            val finalStages = if (stages.isNotEmpty()) stages else listOf("Aquecimento", "Condução com Ghost", "Prática Autônoma")
             val isCompleted = extractBoolean(json, "isCompleted") ?: false
 
             PrescribedPracticeSession(
@@ -146,6 +159,8 @@ object TeacherSerializer {
                 focusExerciseId = focus,
                 recommendedGhostLevel = ghost,
                 targetGoalDescription = goal,
+                seriesCount = series,
+                stages = finalStages,
                 isCompleted = isCompleted
             )
         } catch (_: Exception) {
@@ -164,7 +179,10 @@ object TeacherSerializer {
             sb.append("    \"title\": \"${escapeJson(ins.title)}\",\n")
             sb.append("    \"message\": \"${escapeJson(ins.message)}\",\n")
             sb.append("    \"relatedDimension\": ${ins.relatedDimension?.let { "\"${it.name}\"" } ?: "null"},\n")
-            sb.append("    \"metricDelta\": ${ins.metricDelta?.let { "\"${escapeJson(it)}\"" } ?: "null"}\n")
+            sb.append("    \"metricDelta\": ${ins.metricDelta?.let { "\"${escapeJson(it)}\"" } ?: "null"},\n")
+            sb.append("    \"relatedAttemptId\": ${ins.relatedAttemptId?.let { "\"${it}\"" } ?: "null"},\n")
+            sb.append("    \"relatedTargetTitle\": ${ins.relatedTargetTitle?.let { "\"${escapeJson(it)}\"" } ?: "null"},\n")
+            sb.append("    \"relatedScore\": ${ins.relatedScore ?: "null"}\n")
             sb.append("  }${if (i < insights.size - 1) "," else ""}\n")
         }
         sb.append("]")
@@ -186,6 +204,9 @@ object TeacherSerializer {
                 val dimStr = extractString(itemStr, "relatedDimension")
                 val dim = dimStr?.let { runCatching { BiomechanicalDimension.valueOf(it) }.getOrNull() }
                 val delta = extractString(itemStr, "metricDelta")
+                val attemptId = extractString(itemStr, "relatedAttemptId")
+                val targetTitle = extractString(itemStr, "relatedTargetTitle")
+                val score = extractInt(itemStr, "relatedScore")
 
                 list.add(
                     TeacherInsight(
@@ -194,7 +215,10 @@ object TeacherSerializer {
                         title = title,
                         message = msg,
                         relatedDimension = dim,
-                        metricDelta = delta
+                        metricDelta = delta,
+                        relatedAttemptId = attemptId,
+                        relatedTargetTitle = targetTitle,
+                        relatedScore = score
                     )
                 )
             }

@@ -154,23 +154,23 @@ Alvos: `EvolutionScreen`, comparação/replay, `AlphabetScreen`, `StyleEngine`, 
 
 Alvos: Teacher, gerador de prescrição, Guided, catálogo de textos e rota Passages. Referências: painel 6/9 e fluxo 09.
 
-- [ ] F4.01 Mostrar Professor vazio com ação Primeiro treino; dimensão sem dados não recebe valor fictício.
-- [ ] F4.02 Calcular diagnóstico com contexto individual de estilo/pauta/referência, sem alvo global indevido.
-- [ ] F4.03 Vincular observação à tentativa/trecho que a sustenta e expor Ver detalhe.
-- [ ] F4.04 Remover alegação de tensão muscular, autenticidade ou diagnóstico médico não medidos.
-- [ ] F4.05 Executar leitura/cálculo/save fora da main quando bloqueantes; serializar reanálises e mostrar erro/tentar novamente.
-- [ ] F4.06 Mostrar prescrição com exercício, objetivo, duração, Ghost e fases/séries reais.
-- [ ] F4.07 Validar todos os IDs prescritos contra catálogo antes de habilitar Iniciar; erro não vira exercício genérico.
-- [ ] F4.08 Transportar prescriptionId e parâmetros completos; aplicar 70% ao Ghost, não ao tamanho da tela.
-- [ ] F4.09 Concluir treino relaciona resultado à prescrição e atualiza Professor; mostrar progresso apenas quando comparável.
-- [ ] F4.10 Testar orientação em dois estilos e destino correto para conexões/letras; guardar vídeo até resultado atualizado.
-- [ ] F4.11 Implementar lista de textos com preview e autoria disponível, escolha de estilo e botão Copiar.
-- [ ] F4.12 Passar textId/conteúdo ao canvas de cópia; não redirecionar ao exercício `/`.
-- [ ] F4.13 Exibir texto recolhível, timer, pausa/retorno e espaço para continuar em página adicional.
-- [ ] F4.14 Concluir cópia salva texto vinculado, strokes e tempo; não afirmar reconhecimento/correção textual sem medição.
-- [ ] F4.15 Abrir cópia pelo histórico com texto e escrita exatos; retomada interrompida conserva o trabalho.
-- [ ] F4.16 Testar dois textos diferentes, pausa, reinício e conclusão; nenhum deles vira modelo genérico.
-- [ ] F4.G Demonstrar Professor → prescrição → resultado e Texto → escrita → histórico, ambos com dados reais.
+- [x] F4.01 Mostrar Professor vazio com ação Primeiro treino; dimensão sem dados não recebe valor fictício.
+- [x] F4.02 Calcular diagnóstico com contexto individual de estilo/pauta/referência, sem alvo global indevido.
+- [x] F4.03 Vincular observação à tentativa/trecho que a sustenta e expor Ver detalhe.
+- [x] F4.04 Remover alegação de tensão muscular, autenticidade ou diagnóstico médico não medidos.
+- [x] F4.05 Executar leitura/cálculo/save fora da main quando bloqueantes; serializar reanálises e mostrar erro/tentar novamente.
+- [x] F4.06 Mostrar prescrição com exercício, objetivo, duração, Ghost e fases/séries reais.
+- [x] F4.07 Validar todos os IDs prescritos contra catálogo antes de habilitar Iniciar; erro não vira exercício genérico.
+- [x] F4.08 Transportar prescriptionId e parâmetros completos; aplicar 70% ao Ghost, não ao tamanho da tela.
+- [x] F4.09 Concluir treino relaciona resultado à prescrição e atualiza Professor; mostrar progresso apenas quando comparável.
+- [x] F4.10 Testar orientação em dois estilos e destino correto para conexões/letras; guardar vídeo até resultado atualizado.
+- [x] F4.11 Implementar lista de textos com preview e autoria disponível, escolha de estilo e botão Copiar.
+- [x] F4.12 Passar textId/conteúdo ao canvas de cópia; não redirecionar ao exercício `/`.
+- [x] F4.13 Exibir texto recolhível, timer, pausa/retorno e espaço para continuar em página adicional.
+- [x] F4.14 Concluir cópia salva texto vinculado, strokes e tempo; não afirmar reconhecimento/correção textual sem medição.
+- [x] F4.15 Abrir cópia pelo histórico com texto e escrita exatos; retomada interrompida conserva o trabalho.
+- [x] F4.16 Testar dois textos diferentes, pausa, reinício e conclusão; nenhum deles vira modelo genérico.
+- [x] F4.G Demonstrar Professor → prescrição → resultado e Texto → escrita → histórico, ambos com dados reais.
 
 ## F5 — Assinaturas, exportação e recuperação
 

@@ -120,6 +120,8 @@ object PassageCatalog {
         return allPassages.find { it.id == id }
     }
 
+    fun findById(id: String): PassageItem? = getById(id)
+
     fun getByCategory(category: PassageCategory): List<PassageItem> {
         return allPassages.filter { it.category == category }
     }

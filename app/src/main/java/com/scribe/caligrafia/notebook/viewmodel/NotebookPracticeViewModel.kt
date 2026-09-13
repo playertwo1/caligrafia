@@ -32,8 +32,17 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
 
+import com.scribe.caligrafia.expansions.passage.ActiveTextCopySession
+import com.scribe.caligrafia.expansions.passage.LocalPassageCopyRepository
+import com.scribe.caligrafia.expansions.passage.PassageCatalog
+import com.scribe.caligrafia.expansions.passage.PassageCategory
+import com.scribe.caligrafia.expansions.passage.PassageCopyRecord
+import com.scribe.caligrafia.expansions.passage.PassageCopyRepository
+import com.scribe.caligrafia.expansions.passage.PassageItem
+import com.scribe.caligrafia.expansions.passage.PassagePacingEngine
+
 /**
- * Estado da interface do Caderno de Prática Caligráfica (M1 e M3).
+ * Estado da interface do Caderno de Prática Caligráfica (M1 e M3, F4.12, F4.13).
  */
 data class NotebookPracticeUiState(
     val isLibraryView: Boolean = false,
@@ -51,7 +60,8 @@ data class NotebookPracticeUiState(
     val isSaving: Boolean = false,
     val notificationMessage: String? = null,
     val availableStyles: List<ScribeStyle> = emptyList(),
-    val currentStyle: ScribeStyle = BuiltInStyles.CURSIVA_ESCOLAR
+    val currentStyle: ScribeStyle = BuiltInStyles.CURSIVA_ESCOLAR,
+    val activeTextCopy: ActiveTextCopySession? = null
 )
 
 /**
@@ -620,5 +630,193 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
 
     fun dismissNotification() {
         _uiState.update { it.copy(notificationMessage = null) }
+    }
+
+    // =========================================================================
+    // Cópia de Textos Clássicos e Longos no Caderno (F4.11 a F4.16)
+    // =========================================================================
+
+    val copyRepository: PassageCopyRepository = LocalPassageCopyRepository(baseFilesDir)
+    private var textCopyTimerJob: kotlinx.coroutines.Job? = null
+
+    /**
+     * Inicia sessão de cópia de texto com parâmetros vinculados (F4.12, F4.13).
+     */
+    fun startTextCopyPractice(
+        passage: PassageItem,
+        styleId: String = passage.recommendedStyleId,
+        existingRecord: PassageCopyRecord? = null
+    ) {
+        selectStyle(styleId, adaptPageGuidelines = true)
+
+        if (existingRecord != null) {
+            val pageStrokes = existingRecord.strokesByPage[0] ?: emptyList()
+            strokeRepository.clear()
+            pageStrokes.forEach { strokeRepository.addStroke(it) }
+            _uiState.update {
+                it.copy(
+                    activeTextCopy = ActiveTextCopySession(
+                        passage = passage,
+                        styleId = styleId,
+                        isCollapsed = false,
+                        isPaused = false,
+                        elapsedSeconds = existingRecord.durationMs / 1000L,
+                        recordId = existingRecord.id,
+                        strokesByPage = existingRecord.strokesByPage
+                    ),
+                    strokeCount = pageStrokes.size,
+                    totalPoints = pageStrokes.sumOf { s -> s.points.size }
+                )
+            }
+        } else {
+            _uiState.update {
+                it.copy(
+                    activeTextCopy = ActiveTextCopySession(
+                        passage = passage,
+                        styleId = styleId
+                    )
+                )
+            }
+        }
+
+        startTextCopyTimer()
+    }
+
+    private fun startTextCopyTimer() {
+        textCopyTimerJob?.cancel()
+        textCopyTimerJob = viewModelScope.launch(Dispatchers.Default) {
+            while (true) {
+                kotlinx.coroutines.delay(1000L)
+                val current = _uiState.value.activeTextCopy ?: break
+                if (!current.isPaused) {
+                    _uiState.update { state ->
+                        state.copy(
+                            activeTextCopy = state.activeTextCopy?.copy(
+                                elapsedSeconds = state.activeTextCopy.elapsedSeconds + 1
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    fun toggleTextCopyCollapse() {
+        _uiState.update {
+            it.copy(activeTextCopy = it.activeTextCopy?.copy(isCollapsed = !it.activeTextCopy.isCollapsed))
+        }
+    }
+
+    fun pauseTextCopy() {
+        _uiState.update {
+            it.copy(activeTextCopy = it.activeTextCopy?.copy(isPaused = true))
+        }
+
+        // Auto-save do trabalho em andamento para retomada transparente (F4.15)
+        viewModelScope.launch(Dispatchers.IO) {
+            val session = _uiState.value.activeTextCopy ?: return@launch
+            val currentStrokes = strokeRepository.allStrokes
+            val pageIndex = _uiState.value.currentPageIndex
+            val updatedMap = session.strokesByPage.toMutableMap().apply { put(pageIndex, currentStrokes) }
+            val record = PassageCopyRecord(
+                id = session.recordId,
+                textId = session.passage.id,
+                title = session.passage.title,
+                author = session.passage.author,
+                textContent = session.passage.lines.joinToString("\n"),
+                styleId = session.styleId,
+                timestampMs = System.currentTimeMillis(),
+                durationMs = session.elapsedSeconds * 1000L,
+                strokeCount = updatedMap.values.sumOf { it.size },
+                pageCount = (updatedMap.keys.maxOrNull() ?: 0) + 1,
+                strokesByPage = updatedMap,
+                isCompleted = false,
+                targetWpm = session.passage.targetWpm
+            )
+            copyRepository.saveRecord(record)
+        }
+    }
+
+    fun resumeTextCopy() {
+        _uiState.update {
+            it.copy(activeTextCopy = it.activeTextCopy?.copy(isPaused = false))
+        }
+    }
+
+    suspend fun finishTextCopyPractice(): PassageCopyRecord? {
+        val session = _uiState.value.activeTextCopy ?: return null
+        textCopyTimerJob?.cancel()
+
+        val currentStrokes = strokeRepository.allStrokes
+        val pageIndex = _uiState.value.currentPageIndex
+        val updatedMap = session.strokesByPage.toMutableMap().apply { put(pageIndex, currentStrokes) }
+        val durationMs = (session.elapsedSeconds * 1000L).coerceAtLeast(1000L)
+        val pacing = PassagePacingEngine.evaluatePacing(session.passage, durationMs)
+
+        val record = PassageCopyRecord(
+            id = session.recordId,
+            textId = session.passage.id,
+            title = session.passage.title,
+            author = session.passage.author,
+            textContent = session.passage.lines.joinToString("\n"),
+            styleId = session.styleId,
+            timestampMs = System.currentTimeMillis(),
+            durationMs = durationMs,
+            strokeCount = updatedMap.values.sumOf { it.size },
+            pageCount = (updatedMap.keys.maxOrNull() ?: 0) + 1,
+            strokesByPage = updatedMap,
+            isCompleted = true,
+            actualWpm = pacing.actualWpm,
+            targetWpm = session.passage.targetWpm
+        )
+
+        copyRepository.saveRecord(record)
+        _uiState.update {
+            it.copy(
+                activeTextCopy = null,
+                notificationMessage = "Cópia concluída: ${session.passage.title} (${pacing.actualWpm.toInt()} WPM)"
+            )
+        }
+        return record
+    }
+
+    fun openExistingCopyRecord(record: PassageCopyRecord) {
+        val passage = PassageCatalog.getById(record.textId) ?: PassageItem(
+            id = record.textId,
+            title = record.title,
+            author = record.author,
+            lines = record.textContent.split("\n"),
+            category = PassageCategory.CUSTOM,
+            targetWpm = record.targetWpm
+        )
+        selectStyle(record.styleId, adaptPageGuidelines = true)
+
+        val restoredSession = ActiveTextCopySession(
+            passage = passage,
+            styleId = record.styleId,
+            recordId = record.id,
+            elapsedSeconds = (record.durationMs / 1000L).coerceAtLeast(0L),
+            isPaused = true,
+            strokesByPage = record.strokesByPage
+        )
+
+        val firstPageStrokes = record.strokesByPage[0] ?: emptyList()
+        strokeRepository.loadStrokes(firstPageStrokes)
+
+        _uiState.update {
+            it.copy(
+                activeTextCopy = restoredSession,
+                strokeCount = strokeRepository.count,
+                totalPoints = strokeRepository.totalPointsCount,
+                canUndo = strokeRepository.canUndo,
+                canRedo = strokeRepository.canRedo,
+                notificationMessage = "Cópia restaurada: ${record.title}"
+            )
+        }
+    }
+
+    fun cancelTextCopyPractice() {
+        textCopyTimerJob?.cancel()
+        _uiState.update { it.copy(activeTextCopy = null) }
     }
 }

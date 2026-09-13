@@ -8,8 +8,11 @@ import com.scribe.caligrafia.core.model.Stroke
 import com.scribe.caligrafia.expansions.backup.BackupImportResult
 import com.scribe.caligrafia.expansions.backup.BackupSummary
 import com.scribe.caligrafia.expansions.backup.ScribeBackupManager
+import com.scribe.caligrafia.expansions.passage.LocalPassageCopyRepository
 import com.scribe.caligrafia.expansions.passage.PassageCatalog
 import com.scribe.caligrafia.expansions.passage.PassageCategory
+import com.scribe.caligrafia.expansions.passage.PassageCopyRecord
+import com.scribe.caligrafia.expansions.passage.PassageCopyRepository
 import com.scribe.caligrafia.expansions.passage.PassageItem
 import com.scribe.caligrafia.expansions.passage.PassagePacingEngine
 import com.scribe.caligrafia.expansions.passage.PassagePacingResult
@@ -55,6 +58,8 @@ data class ExpansionsUiState(
     // Textos
     val selectedCategory: PassageCategory = PassageCategory.PANGRAMS,
     val selectedPassage: PassageItem = PassageCatalog.allPassages.first(),
+    val selectedCopyStyleId: String = "cursiva_escolar_br",
+    val copyHistory: List<PassageCopyRecord> = emptyList(),
     val passagePacingResult: PassagePacingResult? = null,
     val passageStartTimeMs: Long = 0L,
     // Backup
@@ -81,7 +86,10 @@ class ExpansionsViewModel @JvmOverloads constructor(
     private val backupManager: ScribeBackupManager = ScribeBackupManager(
         application.filesDir ?: File(System.getProperty("java.io.tmpdir", "."), "scribe_test_files")
     ),
-    private val watchBridge: IWatchCompanionBridge = WatchCompanionAdapter(application)
+    private val watchBridge: IWatchCompanionBridge = WatchCompanionAdapter(application),
+    private val copyRepository: PassageCopyRepository = LocalPassageCopyRepository(
+        File(application.filesDir ?: File(System.getProperty("java.io.tmpdir", "."), "scribe_test_files"), "passage_copies")
+    )
 ) : AndroidViewModel(application) {
 
     private val signaturesDir = File(
@@ -95,6 +103,7 @@ class ExpansionsViewModel @JvmOverloads constructor(
 
     init {
         loadBaselineSignature()
+        loadCopyHistory()
         val savedCurve = try {
             val prefs = application.getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
             prefs.getString("pressure_curve", null)?.let { PressureCurveType.valueOf(it) }
@@ -346,6 +355,17 @@ class ExpansionsViewModel @JvmOverloads constructor(
     fun evaluatePassage(durationMs: Long) {
         val result = PassagePacingEngine.evaluatePacing(_uiState.value.selectedPassage, durationMs)
         _uiState.update { it.copy(passagePacingResult = result) }
+    }
+
+    fun selectCopyStyle(styleId: String) {
+        _uiState.update { it.copy(selectedCopyStyleId = styleId) }
+    }
+
+    fun loadCopyHistory() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val records = copyRepository.listAllRecords()
+            _uiState.update { it.copy(copyHistory = records) }
+        }
     }
 
     // --- Backup & Restauração ---

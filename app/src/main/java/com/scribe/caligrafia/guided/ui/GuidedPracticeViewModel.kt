@@ -37,8 +37,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
 
+import com.scribe.caligrafia.teacher.model.PrescribedPracticeSession
+
 /**
- * Estado observável da tela de Treino Guiado (M2 e M3).
+ * Estado observável da tela de Treino Guiado (M2 e M3, F4.08, F4.09).
  */
 data class GuidedPracticeState(
     val selectedGlyph: ReferenceGlyph = ReferenceGlyphCatalog.BASIC_SLANT,
@@ -52,7 +54,9 @@ data class GuidedPracticeState(
     val currentStyle: ScribeStyle = BuiltInStyles.COPPERPLATE,
     val elapsedSeconds: Long = 0L,
     val isTimerRunning: Boolean = true,
-    val feedbackMessage: String? = null
+    val feedbackMessage: String? = null,
+    val activePrescription: PrescribedPracticeSession? = null,
+    val activePrescriptionId: String? = null
 )
 
 /**
@@ -79,6 +83,7 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
         )
 
     var onAttemptEvaluated: ((glyphId: String, scorePercent: Int) -> Unit)? = null
+    var onPrescriptionEvaluated: ((prescriptionId: String, scorePercent: Int) -> Unit)? = null
 
     private val _state = MutableStateFlow(
         GuidedPracticeState(
@@ -278,9 +283,31 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
             )
             attemptRepository.saveAttempt(attemptRecord)
             onAttemptEvaluated?.invoke(currentGlyph.id, eval.scorePercent)
+
+            // F4.09: Se o treino veio de uma prescrição do Professor IA, relaciona o resultado
+            _state.value.activePrescription?.let { presc ->
+                onPrescriptionEvaluated?.invoke(presc.id, eval.scorePercent)
+            }
         }
 
         return eval
+    }
+
+    /**
+     * Inicia uma sessão de treino prescrita pelo Professor IA (F4.08).
+     * Transporta prescriptionId e parâmetros completos, aplicando 70% (ou outro nível)
+     * à opacidade do Ghost Mode, e não à escala da tela.
+     */
+    fun startPrescribedPractice(prescription: PrescribedPracticeSession) {
+        val ghostLevel = GhostModeLevel.fromAlpha(prescription.recommendedGhostLevel)
+        _state.update {
+            it.copy(
+                activePrescription = prescription,
+                activePrescriptionId = prescription.id,
+                ghostModeLevel = ghostLevel
+            )
+        }
+        selectGlyphBySymbolOrId(prescription.focusExerciseId)
     }
 
     /**

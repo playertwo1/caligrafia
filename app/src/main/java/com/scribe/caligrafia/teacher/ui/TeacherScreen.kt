@@ -45,6 +45,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,6 +68,7 @@ fun TeacherScreen(
     viewModel: TeacherViewModel,
     onBack: () -> Unit,
     onStartPractice: (exerciseId: String) -> Unit,
+    onStartPrescribedPractice: ((PrescribedPracticeSession) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -134,6 +136,17 @@ fun TeacherScreen(
             val diagnostic = state.diagnostic
             val prescription = state.prescription
             val scrollState = rememberScrollState()
+            var selectedEvidenceInsight by androidx.compose.runtime.remember {
+                androidx.compose.runtime.mutableStateOf<TeacherInsight?>(null)
+            }
+
+            // Diálogo de Evidência da Observação (F4.03)
+            selectedEvidenceInsight?.let { insight ->
+                InsightEvidenceDialog(
+                    insight = insight,
+                    onDismiss = { selectedEvidenceInsight = null }
+                )
+            }
 
             Column(
                 modifier = Modifier
@@ -143,22 +156,75 @@ fun TeacherScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // 1. Card de Maturidade Caligráfica
-                diagnostic?.let { diag ->
-                    MaturityHeaderCard(
-                        diagnostic = diag
-                    )
+                // Banner de Erro com Tentar Novamente (F4.05)
+                state.errorMessage?.let { error ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFCA5A5))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = Color(0xFFDC2626)
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Erro no Diagnóstico",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF991B1B)
+                                )
+                                Text(
+                                    text = error,
+                                    fontSize = 12.sp,
+                                    color = Color(0xFFB91C1C)
+                                )
+                            }
+                            Button(
+                                onClick = { viewModel.reanalyzeAllData() },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Text("Tentar", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 }
 
-                // 2. Card de Treino Prescrito pelo Professor
+                // 1. Estado Vazio Transparente (F4.01) ou Card de Maturidade
+                if (diagnostic == null || diagnostic.totalAttemptsAnalyzed == 0) {
+                    TeacherEmptyCard(
+                        onStartFirstPractice = { onStartPractice("basic_slant") }
+                    )
+                } else {
+                    MaturityHeaderCard(diagnostic = diagnostic)
+                }
+
+                // 2. Card de Treino Prescrito pelo Professor (F4.06, F4.07, F4.08)
                 prescription?.let { presc ->
                     PrescriptionCard(
                         prescription = presc,
-                        onStartPractice = { onStartPractice(presc.focusExerciseId) }
+                        isCatalogValid = state.isPrescriptionValid,
+                        onStartPractice = {
+                            if (onStartPrescribedPractice != null) {
+                                onStartPrescribedPractice(presc)
+                            } else {
+                                onStartPractice(presc.focusExerciseId)
+                            }
+                        }
                     )
                 }
 
-                // 3. Seção das 4 Dimensões Biomecânicas
+                // 3. Seção das 4 Dimensões Biomecânicas (F4.01: sem valores inventados)
                 diagnostic?.let { diag ->
                     Text(
                         text = "Dimensões Biomecânicas do Traço",
@@ -176,7 +242,7 @@ fun TeacherScreen(
                     }
                 }
 
-                // 4. Seção de Insights Pedagógicos
+                // 4. Seção de Insights Pedagógicos com "Ver detalhe" (F4.03)
                 if (state.insights.isNotEmpty()) {
                     Text(
                         text = "Observações e Dicas do Mestre",
@@ -185,7 +251,10 @@ fun TeacherScreen(
                     )
 
                     state.insights.forEach { insight ->
-                        InsightCard(insight = insight)
+                        InsightCard(
+                            insight = insight,
+                            onViewDetail = { selectedEvidenceInsight = insight }
+                        )
                     }
                 }
 
@@ -296,8 +365,73 @@ private fun MaturityHeaderCard(
 }
 
 @Composable
+private fun TeacherEmptyCard(
+    onStartFirstPractice: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFF8FAFC)
+        ),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFEFF6FF)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = null,
+                    tint = Color(0xFF2563EB),
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+
+            Text(
+                text = "Professor IA Aguardando Primeiro Treino",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                color = Color(0xFF0F172A)
+            )
+
+            Text(
+                text = "O Professor avalia suas dimensões motoras (inclinação, contenção de pauta, cadência e modulação de pressão) exclusivamente a partir de traços reais de caneta sem inventar valores. Complete sua primeira sessão prática para gerar o diagnóstico biomecânico.",
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                color = Color(0xFF64748B),
+                lineHeight = 20.sp
+            )
+
+            Button(
+                onClick = onStartFirstPractice,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+            ) {
+                Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Fazer Primeiro Treino", fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
 private fun PrescriptionCard(
     prescription: PrescribedPracticeSession,
+    isCatalogValid: Boolean,
     onStartPractice: () -> Unit
 ) {
     Card(
@@ -353,9 +487,10 @@ private fun PrescriptionCard(
                 InfoBadge(label = "Duração", value = "${prescription.recommendedMinutes} min")
                 InfoBadge(label = "Aquecimento", value = prescription.warmupExerciseId)
                 InfoBadge(label = "Foco", value = prescription.focusExerciseId)
-                InfoBadge(label = "Ghost Mode", value = "${(prescription.recommendedGhostLevel * 100).toInt()}%")
+                InfoBadge(label = "Ghost Opacidade", value = "${(prescription.recommendedGhostLevel * 100).toInt()}%")
             }
 
+            // Fases / Séries reais (F4.06)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -363,16 +498,42 @@ private fun PrescriptionCard(
                     .background(MaterialTheme.colorScheme.surface)
                     .padding(10.dp)
             ) {
-                Text(
-                    text = "🎯 Meta: ${prescription.targetGoalDescription}",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "📋 ${prescription.seriesCount} séries: ${prescription.stages.joinToString(" → ")}",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "🎯 Meta: ${prescription.targetGoalDescription}",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+
+            // Validação de catálogo (F4.07)
+            if (!isCatalogValid) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFFFEF2F2))
+                        .padding(10.dp)
+                ) {
+                    Text(
+                        text = "⚠️ O exercício prescrito (${prescription.focusExerciseId}) não foi encontrado no catálogo canônico.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFFDC2626)
+                    )
+                }
             }
 
             Button(
                 onClick = onStartPractice,
+                enabled = isCatalogValid,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -386,7 +547,7 @@ private fun PrescriptionCard(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Iniciar Treino com o Professor",
+                    text = if (isCatalogValid) "Iniciar Treino com o Professor" else "Exercício Indisponível",
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -471,7 +632,11 @@ private fun DimensionCard(
                         .padding(horizontal = 8.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = "${evaluation.status.label} (%.0f%%)".format(evaluation.score),
+                        text = if (evaluation.status == EvaluationStatus.INSUFFICIENT_DATA) {
+                            evaluation.status.label
+                        } else {
+                            "${evaluation.status.label} (%.0f%%)".format(evaluation.score)
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = statusColor
@@ -501,7 +666,10 @@ private fun DimensionCard(
 }
 
 @Composable
-private fun InsightCard(insight: TeacherInsight) {
+private fun InsightCard(
+    insight: TeacherInsight,
+    onViewDetail: () -> Unit
+) {
     val (iconColor, containerColor, iconVector) = when (insight.type) {
         InsightType.PRAISE -> Triple(Color(0xFF16A34A), Color(0xFF16A34A).copy(alpha = 0.1f), Icons.Default.CheckCircle)
         InsightType.CORRECTION -> Triple(Color(0xFFD97706), Color(0xFFD97706).copy(alpha = 0.1f), Icons.Default.Warning)
@@ -559,7 +727,90 @@ private fun InsightCard(insight: TeacherInsight) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+
+                // Botão "Ver detalhe" quando vinculado a uma tentativa real (F4.03)
+                if (insight.relatedAttemptId != null || insight.relatedTargetTitle != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = onViewDetail,
+                        shape = RoundedCornerShape(6.dp),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "Ver detalhe",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = iconColor
+                        )
+                    }
+                }
             }
         }
     }
+}
+
+@Composable
+private fun InsightEvidenceDialog(
+    insight: TeacherInsight,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text("Entendido")
+            }
+        },
+        title = {
+            Text(
+                text = "Evidência da Avaliação",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "A observação pedagógica '${insight.title}' é sustentada pela seguinte tentativa registrada:",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                insight.relatedTargetTitle?.let { title ->
+                    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Text("Exercício:", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text(title, fontSize = 12.sp)
+                    }
+                }
+
+                insight.relatedScore?.let { score ->
+                    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Text("Nota Real Obtida:", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text("$score%", fontWeight = FontWeight.Bold, color = Color(0xFF2563EB), fontSize = 12.sp)
+                    }
+                }
+
+                insight.metricDelta?.let { delta ->
+                    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Text("Métrica Observada:", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text(delta, fontSize = 12.sp)
+                    }
+                }
+
+                insight.relatedAttemptId?.let { id ->
+                    Text(
+                        text = "ID da Tentativa: ${id.take(12)}...",
+                        fontSize = 10.sp,
+                        color = Color.Gray
+                    )
+                }
+
+                Text(
+                    text = insight.message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    )
 }

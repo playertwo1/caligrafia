@@ -87,6 +87,8 @@ import com.scribe.caligrafia.expansions.passage.PassageCategory
 import com.scribe.caligrafia.expansions.passage.PassageItem
 import com.scribe.caligrafia.expansions.signature.SignatureCanvasView
 import com.scribe.caligrafia.expansions.styles.PressureCurveType
+import com.scribe.caligrafia.expansions.passage.PassageCopyRecord
+import com.scribe.caligrafia.teacher.model.PrescribedPracticeSession
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -97,7 +99,9 @@ fun ExpansionsScreen(
     alphabetViewModel: com.scribe.caligrafia.alphabet.ui.AlphabetViewModel? = null,
     stylusLabViewModel: com.scribe.caligrafia.inspector.viewmodel.StylusLabViewModel? = null,
     onBack: () -> Unit,
-    onNavigateToPracticeWithText: ((PassageItem) -> Unit)? = null,
+    onNavigateToPracticeWithText: ((PassageItem, String) -> Unit)? = null,
+    onOpenCopyRecord: ((PassageCopyRecord) -> Unit)? = null,
+    onStartPrescribedPractice: ((PrescribedPracticeSession) -> Unit)? = null,
     onNavigateToPractice: ((String) -> Unit)? = null,
     onNavigateToNotebookWithStyle: ((String) -> Unit)? = null
 ) {
@@ -209,7 +213,8 @@ fun ExpansionsScreen(
                             onBack = onBack,
                             onStartPractice = { exerciseId ->
                                 onNavigateToPractice?.invoke(exerciseId)
-                            }
+                            },
+                            onStartPrescribedPractice = onStartPrescribedPractice
                         )
                     } else {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -223,7 +228,8 @@ fun ExpansionsScreen(
                 ExpansionsTab.SIGNATURE -> SignatureStudioContent(viewModel = viewModel)
                 ExpansionsTab.TEXTS -> PassagesContent(
                     viewModel = viewModel,
-                    onNavigateToPracticeWithText = onNavigateToPracticeWithText
+                    onNavigateToPracticeWithText = onNavigateToPracticeWithText,
+                    onOpenCopyRecord = onOpenCopyRecord
                 )
                 ExpansionsTab.BACKUP -> BackupContent(viewModel = viewModel)
                 ExpansionsTab.SPEN_SETTINGS -> SpenAndWatchContent(viewModel = viewModel)
@@ -499,7 +505,8 @@ private fun SignatureStudioContent(viewModel: ExpansionsViewModel) {
 @Composable
 private fun PassagesContent(
     viewModel: ExpansionsViewModel,
-    onNavigateToPracticeWithText: ((PassageItem) -> Unit)?
+    onNavigateToPracticeWithText: ((PassageItem, String) -> Unit)?,
+    onOpenCopyRecord: ((PassageCopyRecord) -> Unit)?
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var passageStartTime by remember { mutableStateOf(0L) }
@@ -633,6 +640,37 @@ private fun PassagesContent(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
+                    // Seletor de estilo para pauta do caderno (F4.11)
+                    Text(
+                        text = "Estilo Caligráfico para o Caderno",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        color = Color(0xFF0F172A)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val styles = listOf(
+                            "cursiva_escolar_br" to "Cursiva Escolar",
+                            "copperplate_script" to "Copperplate",
+                            "spencerian_script" to "Spencerian",
+                            "gothic_textura" to "Gótica Textura"
+                        )
+                        items(styles) { (sId, sLabel) ->
+                            val isSelected = uiState.selectedCopyStyleId == sId
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = { viewModel.selectCopyStyle(sId) },
+                                label = { Text(sLabel, fontSize = 11.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Color(0xFF2563EB),
+                                    selectedLabelColor = Color.White
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -648,7 +686,7 @@ private fun PassagesContent(
                             ) {
                                 Icon(Icons.Default.Timer, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Iniciar Cronômetro de Cópia", fontSize = 12.sp)
+                                Text("Cronômetro de Leitura", fontSize = 12.sp)
                             }
                         } else {
                             Button(
@@ -669,13 +707,14 @@ private fun PassagesContent(
 
                     if (onNavigateToPracticeWithText != null) {
                         Spacer(modifier = Modifier.height(10.dp))
-                        OutlinedButton(
-                            onClick = { onNavigateToPracticeWithText(uiState.selectedPassage) },
-                            modifier = Modifier.fillMaxWidth()
+                        Button(
+                            onClick = { onNavigateToPracticeWithText(uiState.selectedPassage, uiState.selectedCopyStyleId) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
                         ) {
                             Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Praticar Texto no Caderno", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Copiar Texto no Caderno com Pauta", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -716,6 +755,83 @@ private fun PassagesContent(
                                 fontSize = 12.sp,
                                 color = Color(0xFF334155)
                             )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Histórico de Cópias & Retomada (F4.15)
+        item {
+            Text(
+                text = "Histórico de Cópias de Textos",
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                color = Color(0xFF0F172A)
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            if (uiState.copyHistory.isEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Box(modifier = Modifier.padding(16.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = "Nenhuma cópia de texto gravada ainda. Inicie sua primeira sessão de cópia acima!",
+                            fontSize = 12.sp,
+                            color = Color(0xFF64748B)
+                        )
+                    }
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    uiState.copyHistory.forEach { record ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = record.title,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF0F172A)
+                                    )
+                                    Text(
+                                        text = "${record.author} • ${record.styleId}",
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF64748B)
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Duração: ${record.durationMs / 1000}s • Traços: ${record.strokeCount} • Págs: ${record.pageCount} • ${if (record.isCompleted) "Concluído (%.1f WPM)".format(record.actualWpm) else "Em andamento"}",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = if (record.isCompleted) Color(0xFF16A34A) else Color(0xFFD97706)
+                                    )
+                                }
+                                OutlinedButton(
+                                    onClick = { onOpenCopyRecord?.invoke(record) },
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        text = if (record.isCompleted) "Rever" else "Retomar",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -1060,7 +1176,7 @@ private fun SpenAndWatchContent(viewModel: ExpansionsViewModel) {
                                 color = Color(0xFF0F172A)
                             )
                             Text(
-                                text = "Prevenção ergonômica de tensão e DORT no pulso",
+                                text = "Lembretes periódicos para pausas de descanso na escrita",
                                 fontSize = 11.sp,
                                 color = Color(0xFF64748B)
                             )

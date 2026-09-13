@@ -38,13 +38,13 @@ class CoachingCurriculumGenerator {
         if (diagnostic.maturityLevel == MaturityLevel.MASTER_OF_STROKE) {
             return PrescribedPracticeSession(
                 title = "Treino de Refinamento e Mestria",
-                rationale = "Seu traço apresenta maturidade caligráfica superior. Este treino desafia sua memória muscular com assistência visual mínima.",
+                rationale = "Seu traço apresenta maturidade caligráfica superior. Este treino exercita a coordenação motora fina com assistência visual mínima de ghost.",
                 targetDimension = BiomechanicalDimension.RHYTHM_AND_CADENCE,
                 recommendedMinutes = 15,
-                warmupExerciseId = "ascending_loop",
-                focusExerciseId = "to",
+                warmupExerciseId = "basic_ascending_loop",
+                focusExerciseId = "letter_o",
                 recommendedGhostLevel = 0.10f,
-                targetGoalDescription = "Executar conexões clássicas em modo quase autônomo com precisão acima de 88%."
+                targetGoalDescription = "Executar formas clássicas com autonomia motora e precisão geométrica acima de 88%."
             )
         }
 
@@ -52,13 +52,13 @@ class CoachingCurriculumGenerator {
         if (weakness == null) {
             return PrescribedPracticeSession(
                 title = "Treino de Manutenção e Fluidez",
-                rationale = "Seus traços estão estáveis e equilibrados. Pratique para manter a consistência neuromuscular.",
+                rationale = "Seus traços estão regulares e equilibrados. Pratique para manter a consistência e estabilidade do traço.",
                 targetDimension = BiomechanicalDimension.RHYTHM_AND_CADENCE,
                 recommendedMinutes = 10,
-                warmupExerciseId = "ascending_loop",
-                focusExerciseId = "to",
+                warmupExerciseId = "basic_ascending_loop",
+                focusExerciseId = "letter_o",
                 recommendedGhostLevel = 0.40f,
-                targetGoalDescription = "Manter o ritmo e a fluidez em sequências completas."
+                targetGoalDescription = "Manter o ritmo e a fluidez em sequências completas de traçado."
             )
         }
 
@@ -66,11 +66,11 @@ class CoachingCurriculumGenerator {
             BiomechanicalDimension.SLANT_STABILITY -> {
                 PrescribedPracticeSession(
                     title = "Treino de Alinhamento e Paralelismo",
-                    rationale = "O Professor IA identificou oscilação angular nos traços descendentes. Esta sessão ancora a memória motora no ângulo formal da pauta.",
+                    rationale = "O Professor IA identificou oscilação angular nos traços descendentes. Esta sessão ancora a referência motora no ângulo formal da pauta.",
                     targetDimension = BiomechanicalDimension.SLANT_STABILITY,
                     recommendedMinutes = 10,
                     warmupExerciseId = "basic_slant",
-                    focusExerciseId = "t",
+                    focusExerciseId = "letter_t",
                     recommendedGhostLevel = 0.70f,
                     targetGoalDescription = "Manter todos os traços descendentes rigorosamente paralelos com desvio angular menor que 4°."
                 )
@@ -83,7 +83,7 @@ class CoachingCurriculumGenerator {
                     targetDimension = BiomechanicalDimension.GUIDELINE_CONTAINMENT,
                     recommendedMinutes = 10,
                     warmupExerciseId = "underturn",
-                    focusExerciseId = "a",
+                    focusExerciseId = "letter_a",
                     recommendedGhostLevel = 0.70f,
                     targetGoalDescription = "Conter as curvas perfeitamente entre a waistline e a baseline sem transbordos."
                 )
@@ -96,20 +96,20 @@ class CoachingCurriculumGenerator {
                     targetDimension = BiomechanicalDimension.RHYTHM_AND_CADENCE,
                     recommendedMinutes = 15,
                     warmupExerciseId = "compound_curve",
-                    focusExerciseId = "it",
+                    focusExerciseId = "letter_i",
                     recommendedGhostLevel = 0.40f,
-                    targetGoalDescription = "Escrever o glifo e sua ligadura em movimento único e contínuo a cerca de 0.4 px/ms."
+                    targetGoalDescription = "Escrever o glifo e sua saída em movimento único e contínuo a cerca de 0.4 px/ms."
                 )
             }
 
             BiomechanicalDimension.PRESSURE_CONTROL -> {
                 PrescribedPracticeSession(
                     title = "Treino de Modulação e Toque da S Pen",
-                    rationale = "O Professor IA detectou pressão constante ou aperto excessivo na caneta. Este treino desenvolve o contraste claro/escuro.",
+                    rationale = "O Professor IA detectou pressão constante ou contato excessivo no vidro. Este treino desenvolve o contraste dinâmico claro/escuro.",
                     targetDimension = BiomechanicalDimension.PRESSURE_CONTROL,
                     recommendedMinutes = 10,
                     warmupExerciseId = "basic_slant",
-                    focusExerciseId = "l",
+                    focusExerciseId = "letter_l",
                     recommendedGhostLevel = 0.70f,
                     targetGoalDescription = "Aliviar a pressão nas subidas finas e aplicar peso controlado apenas nas descidas."
                 )

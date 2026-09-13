@@ -29,11 +29,13 @@ enum class GhostModeLevel(
         OFF -> OFF
     }
 
-    fun nextHigherLevel(): GhostModeLevel = when (this) {
-        FULL -> FULL
-        CLEAR -> FULL
-        FAINT -> CLEAR
-        WATERMARK -> FAINT
-        OFF -> WATERMARK
+    companion object {
+        fun fromAlpha(alpha: Float): GhostModeLevel = when {
+            alpha >= 0.85f -> FULL
+            alpha >= 0.55f -> CLEAR
+            alpha >= 0.25f -> FAINT
+            alpha > 0.05f -> WATERMARK
+            else -> OFF
+        }
     }
 }

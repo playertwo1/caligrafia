@@ -20,7 +20,7 @@ enum class BiomechanicalDimension(val displayName: String, val description: Stri
     ),
     PRESSURE_CONTROL(
         "Controle de Pressão",
-        "Modulação entre descidas com pressão e subidas leves na S Pen sem tensão manual excessiva."
+        "Modulação de pressão na S Pen entre descidas expressivas e subidas leves sem força excessiva sobre a tela."
     )
 }
 
@@ -93,6 +93,7 @@ enum class InsightType(val label: String) {
 
 /**
  * Observação pedagógica individual em linguagem natural fundamentada em dados.
+ * Vinculada opcionalmente à tentativa real que a sustenta para verificação de evidência (F4.03).
  */
 data class TeacherInsight(
     val id: String = UUID.randomUUID().toString(),
@@ -100,11 +101,14 @@ data class TeacherInsight(
     val title: String,
     val message: String,
     val relatedDimension: BiomechanicalDimension? = null,
-    val metricDelta: String? = null
+    val metricDelta: String? = null,
+    val relatedAttemptId: String? = null,
+    val relatedTargetTitle: String? = null,
+    val relatedScore: Int? = null
 )
 
 /**
- * Sessão de treino prescrita especificamente para o perfil motor atual do calígrafo.
+ * Sessão de treino prescrita especificamente para o perfil motor atual do calígrafo (F4.06).
  */
 data class PrescribedPracticeSession(
     val id: String = UUID.randomUUID().toString(),
@@ -117,5 +121,7 @@ data class PrescribedPracticeSession(
     val focusExerciseId: String,
     val recommendedGhostLevel: Float = 0.7f,
     val targetGoalDescription: String,
+    val seriesCount: Int = 3,
+    val stages: List<String> = listOf("Aquecimento", "Condução com Ghost", "Prática Autônoma"),
     val isCompleted: Boolean = false
 )

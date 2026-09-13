@@ -6,19 +6,20 @@ Por solicitação do usuário, o planejamento foi convertido em [ordens detalhad
 
 Os status históricos de fechamento abaixo não anulam as duas falhas reproduzidas no [parecer V5 de revalidação](docs/ANTIGRAVITY_AUDIT_REVIEW_V5_RECHECK.md). O checklist exige verificar a base atual antes de corrigir ou marcar qualquer requisito. Validação desta entrega: IDs únicos, cobertura F0–F7, links e diff; testes Android não se aplicam à alteração documental.
 
-> **Status de Execução Supervisionada — Fases F0, F1, F2 e F3 Concluídas (2026-09-13):**
+> **Status de Execução Supervisionada — Fases F0, F1, F2, F3 e F4 Concluídas (2026-09-13):**
 > - **Fase F0 (Integridade de Dados e Contratos):** Concluída com 100% de aprovação. BASELINE, DATA_CONTRACT e ROUTE_ACTION_MATRIX documentados; parser JSON estrito (rejeição de sintaxe quebrada/valores omitidos) e invalidação de cache de traços integrados.
 > - **Fase F1 (Navegação, Biblioteca e Caderno):** Concluída com 100% de aprovação. Busca insensível a caixa/acentos na biblioteca, validação de criação (1–40 caracteres com erro inline), renomeação e exclusão com diálogo de confirmação, duplicação e exclusão de páginas com isolamento total de traços vetoriais, e Menu Mais completo com 9 destinos mapeados e badges PARCIAL documentados.
 > - **Fase F2 (Aula e Treino com Resultado Real):** Concluída com 100% de aprovação. 18 lições em 5 estágios com IDs estritamente canônicos e resolvíveis; resumo pré-início com seleção de 5/10/15/20 min e estilo; transporte de IDs sem fallback genérico; card proeminente de sessão ativa recuperável; diálogo de conflito ao tentar iniciar outra sessão; pausa manual preservada no retorno do app; persistência atômica da sessão interrompida; pautas ajustadas em telas comprimidas; invalidação de avaliação ao tocar a caneta; finalização idempotente contra cliques duplos; tentativa limpa no retry preservando anterior; suíte dedicada `PhaseF2AcceptanceTest` cobrindo todos os cenários adversariais.
 > - **Fase F3 (Evolução, Alfabeto e Estilos Utilizáveis):** Concluída com 100% de aprovação. Calendário de consistência sem limite artificial de 20 sessões; Replay Duplo com suporte a `REAL_TIME` e `NORMALIZED`, duração física e bounding box estável; Single Replay Dialog modal com controles completos; filtros por alvo e estilo e validação explícita de alvos divergentes na comparação; repositório de alfabeto com renomeação, duplicação isolada de vetores e deleção transacional invalidando compilação prévia; compilador de estilo pessoal com validação de requisitos mínimos e exclusão de sementes sintéticas; matriz canônica de 6 estilos com adaptação por cisalhamento sem triângulo genérico de fallback; importador de fontes TTF/OTF com validação de magic bytes, cópia atômica offline e classificação de referência visual sem ducto; suíte dedicada `PhaseF3AcceptanceTest`.
-> - **Suíte Completa:** **281 testes unitários / 0 falhas / 0 erros**; `assembleDebug` construído com sucesso em 30s.
+> - **Fase F4 (Professor e Cópia de Textos):** Concluída com 100% de aprovação (F4.01 a F4.16 e F4.G). Estado vazio do Professor transparente com CTA "Fazer Primeiro Treino" (`basic_slant`) e sem notas artificiais; diagnóstico biomecânico respeita contexto individual de pauta/estilo sem forçar ângulo fixo global de 52°; observações pedagógicas com vínculo explícito a tentativas reais (`relatedAttemptId`, `relatedTargetTitle`, `relatedScore`) e diálogo de detalhes; remoção total de alegações de "tensão muscular", "DORT" ou termos médicos em favor de métricas físicas auditáveis da S Pen; reanálise assíncrona serializada via `Mutex` com tratamento de erro e retentativa na UI; prescrição sob medida com validação estrita contra o catálogo canônico (`ReferenceGlyphCatalog`), Ghost em 70% de opacidade (não tamanho de tela!), 3 séries e estágios pedagógicos; integração com `GuidedPractice` e atualização automática do Professor na conclusão; catálogo canônico de textos clássicos (`PassageCatalog`) com metadados completos; cópia de textos contínua em páginas pautadas do caderno (`NotebookPracticeScreen`) com card colapsável, cronômetro, pausa/retomada e persistência atômica vetorial multitelas (`PassageCopyRecord` em arquivos `.scribe` dedicados + manifesto); histórico de cópias com visualização e retomada transparente; suíte dedicada `PhaseF4AcceptanceTest`.
+> - **Suíte Completa:** **297 testes unitários / 0 falhas / 0 erros**; `assembleDebug` construído com sucesso em 40s.
 
 **Projeto:** Scribe / Caligrafia
-**Versão documental:** v0.8.4
-**Versão do aplicativo:** v0.8.4 (versionCode 14)
-**Estado:** F0_F1_F2_F3_CONCLUIDOS — 281 testes unitários verdes (100% pass), assembleDebug bem-sucedido, F0, F1, F2 e F3 concluídas e testadas de ponta a ponta.
-**Milestone atual:** Fase F4 — Professor e cópia de textos (Roadmap Funcional).
-**Código de produto:** F0, F1, F2 e F3 100% integradas, testadas e auditadas.
+**Versão documental:** v0.8.5
+**Versão do aplicativo:** v0.8.5 (versionCode 15)
+**Estado:** F0_F1_F2_F3_F4_CONCLUIDOS — 297 testes unitários verdes (100% pass), assembleDebug bem-sucedido, F0, F1, F2, F3 e F4 concluídas e testadas de ponta a ponta.
+**Milestone atual:** Fase F5 — Assinaturas, exportação e recuperação (Roadmap Funcional).
+**Código de produto:** F0, F1, F2, F3 e F4 100% integradas, testadas e auditadas.
 
 ## Status Recente de Estabilização & Redesenho Visual (2026-09-13)
 1. **Onda 3 — Geometria, Pautas, Métricas Canônicas e Fidelidade Visual (Concluída e Verificada):**

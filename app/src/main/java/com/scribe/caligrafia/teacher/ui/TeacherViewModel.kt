@@ -19,9 +19,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.scribe.caligrafia.guided.catalog.ReferenceGlyphCatalog
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
- * Estado da interface do Professor IA (SCR-704).
+ * Estado da interface do Professor IA (SCR-704, F4.01, F4.05, F4.07).
  */
 data class TeacherUiState(
     val isLoading: Boolean = true,
@@ -29,7 +34,9 @@ data class TeacherUiState(
     val prescription: PrescribedPracticeSession? = null,
     val insights: List<TeacherInsight> = emptyList(),
     val selectedDimension: BiomechanicalDimension? = null,
-    val isAnalyzing: Boolean = false
+    val isAnalyzing: Boolean = false,
+    val errorMessage: String? = null,
+    val isPrescriptionValid: Boolean = false
 )
 
 /**
@@ -40,12 +47,20 @@ data class TeacherUiState(
  */
 class TeacherViewModel @JvmOverloads constructor(
     application: Application,
-    private val teacherRepository: TeacherRepository = LocalTeacherRepository(application.filesDir),
-    private val attemptRepository: PracticeAttemptRepository = LocalPracticeAttemptRepository(application.filesDir),
+    private val teacherRepository: TeacherRepository = LocalTeacherRepository(
+        application.filesDir ?: java.io.File(System.getProperty("java.io.tmpdir", "."), "scribe_teacher_test")
+    ),
+    private val attemptRepository: PracticeAttemptRepository = LocalPracticeAttemptRepository(
+        application.filesDir ?: java.io.File(System.getProperty("java.io.tmpdir", "."), "scribe_teacher_test")
+    ),
     private val diagnosticEngine: MotorDiagnosticEngine = MotorDiagnosticEngine(),
     private val curriculumGenerator: CoachingCurriculumGenerator = CoachingCurriculumGenerator(),
-    private val feedbackEngine: CoachingFeedbackEngine = CoachingFeedbackEngine()
+    private val feedbackEngine: CoachingFeedbackEngine = CoachingFeedbackEngine(),
+    externalScope: CoroutineScope? = null
 ) : AndroidViewModel(application) {
+
+    private val scope = externalScope ?: viewModelScope
+    private val reanalysisMutex = Mutex()
 
     private val _uiState = MutableStateFlow(TeacherUiState())
     val uiState: StateFlow<TeacherUiState> = _uiState.asStateFlow()
@@ -55,53 +70,91 @@ class TeacherViewModel @JvmOverloads constructor(
     }
 
     fun loadData() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            val diagnostic = teacherRepository.getLatestDiagnostic()
-            val prescription = teacherRepository.getLatestPrescription()
-            val insights = teacherRepository.getRecentInsights()
+        scope.launch(Dispatchers.Default) {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            try {
+                val diagnostic = kotlinx.coroutines.withContext(Dispatchers.IO) {
+                    teacherRepository.getLatestDiagnostic()
+                }
+                val prescription = kotlinx.coroutines.withContext(Dispatchers.IO) {
+                    teacherRepository.getLatestPrescription()
+                }
+                val insights = kotlinx.coroutines.withContext(Dispatchers.IO) {
+                    teacherRepository.getRecentInsights()
+                }
 
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    diagnostic = diagnostic,
-                    prescription = prescription,
-                    insights = insights,
-                    selectedDimension = diagnostic.primaryWeakness ?: BiomechanicalDimension.SLANT_STABILITY
-                )
+                val isValid = prescription?.let {
+                    ReferenceGlyphCatalog.findById(it.focusExerciseId) != null &&
+                    ReferenceGlyphCatalog.findById(it.warmupExerciseId) != null
+                } ?: false
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        diagnostic = diagnostic,
+                        prescription = prescription,
+                        insights = insights,
+                        selectedDimension = diagnostic.primaryWeakness ?: BiomechanicalDimension.SLANT_STABILITY,
+                        isPrescriptionValid = isValid,
+                        errorMessage = null
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "Falha ao carregar dados do Professor: ${e.message}"
+                    )
+                }
             }
         }
     }
 
     /**
      * Reavalia todo o histórico de tentativas com o motor biomecânico do Professor IA.
+     * Serializado via Mutex para evitar condições de corrida (F4.05).
      */
     fun reanalyzeAllData() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isAnalyzing = true) }
-            try {
-                val attempts = attemptRepository.getAllAttempts()
-                val (newDiagnostic, newPrescription, newInsights) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-                    val diag = diagnosticEngine.diagnoseAttempts(attempts)
-                    val presc = curriculumGenerator.generatePrescription(diag)
-                    val ins = feedbackEngine.generateInsights(diag)
-                    Triple(diag, presc, ins)
-                }
+        scope.launch(Dispatchers.Default) {
+            reanalysisMutex.withLock {
+                _uiState.update { it.copy(isAnalyzing = true, errorMessage = null) }
+                try {
+                    val attempts = kotlinx.coroutines.withContext(Dispatchers.IO) {
+                        attemptRepository.getAllAttempts()
+                    }
+                    val (newDiagnostic, newPrescription, newInsights) = kotlinx.coroutines.withContext(Dispatchers.Default) {
+                        val diag = diagnosticEngine.diagnoseAttempts(attempts)
+                        val presc = curriculumGenerator.generatePrescription(diag)
+                        val ins = feedbackEngine.generateInsights(diag, attempts)
+                        Triple(diag, presc, ins)
+                    }
 
-                teacherRepository.saveDiagnostic(newDiagnostic)
-                teacherRepository.savePrescription(newPrescription)
-                teacherRepository.saveInsights(newInsights)
+                    kotlinx.coroutines.withContext(Dispatchers.IO) {
+                        teacherRepository.saveDiagnostic(newDiagnostic)
+                        teacherRepository.savePrescription(newPrescription)
+                        teacherRepository.saveInsights(newInsights)
+                    }
 
-                _uiState.update {
-                    it.copy(
-                        diagnostic = newDiagnostic,
-                        prescription = newPrescription,
-                        insights = newInsights,
-                        selectedDimension = newDiagnostic.primaryWeakness ?: BiomechanicalDimension.SLANT_STABILITY
-                    )
+                    val isValid = ReferenceGlyphCatalog.findById(newPrescription.focusExerciseId) != null &&
+                                  ReferenceGlyphCatalog.findById(newPrescription.warmupExerciseId) != null
+
+                    _uiState.update {
+                        it.copy(
+                            diagnostic = newDiagnostic,
+                            prescription = newPrescription,
+                            insights = newInsights,
+                            selectedDimension = newDiagnostic.primaryWeakness ?: BiomechanicalDimension.SLANT_STABILITY,
+                            isPrescriptionValid = isValid,
+                            errorMessage = null
+                        )
+                    }
+                } catch (e: Exception) {
+                    _uiState.update {
+                        it.copy(errorMessage = "Erro ao processar análise biomecânica: ${e.message}")
+                    }
+                } finally {
+                    _uiState.update { it.copy(isAnalyzing = false) }
                 }
-            } finally {
-                _uiState.update { it.copy(isAnalyzing = false) }
             }
         }
     }
@@ -110,10 +163,16 @@ class TeacherViewModel @JvmOverloads constructor(
         _uiState.update { it.copy(selectedDimension = dimension) }
     }
 
+    fun clearError() {
+        _uiState.update { it.copy(errorMessage = null) }
+    }
+
     fun markPrescriptionCompleted() {
-        viewModelScope.launch {
+        scope.launch(Dispatchers.Default) {
             val currentPrescription = _uiState.value.prescription ?: return@launch
-            teacherRepository.markPrescriptionCompleted(currentPrescription.id)
+            kotlinx.coroutines.withContext(Dispatchers.IO) {
+                teacherRepository.markPrescriptionCompleted(currentPrescription.id)
+            }
             _uiState.update {
                 it.copy(prescription = currentPrescription.copy(isCompleted = true))
             }
