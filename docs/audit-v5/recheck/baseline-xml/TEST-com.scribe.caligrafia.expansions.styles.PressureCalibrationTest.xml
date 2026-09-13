@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.expansions.styles.PressureCalibrationTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-09-13T18:10:36.467Z" hostname="DESTKTOPFAEL" time="0.001">
+  <properties/>
+  <testcase name="sigmoidCurve_preservesBoundariesAndMaintainsMonotonicity" classname="com.scribe.caligrafia.expansions.styles.PressureCalibrationTest" time="0.0"/>
+  <testcase name="linearCurve_preservesRawPressure" classname="com.scribe.caligrafia.expansions.styles.PressureCalibrationTest" time="0.0"/>
+  <testcase name="softCurve_amplifiesLowPressureForLightTouch" classname="com.scribe.caligrafia.expansions.styles.PressureCalibrationTest" time="0.0"/>
+  <testcase name="firmCurve_reducesLowPressureForHeavyTouch" classname="com.scribe.caligrafia.expansions.styles.PressureCalibrationTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

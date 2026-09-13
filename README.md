@@ -1,6 +1,6 @@
 # Scribe — Caligrafia com S Pen / Stylus
 
-> **Status:** Pedra fundamental — documentação inicial pronta; implementação ainda não iniciada.
+> **Status:** MVP Android existente; prioridade atual é entregar os percursos funcionais dos mockups. Consulte o [roadmap executável para o Antigravity](docs/ANTIGRAVITY_FUNCTIONAL_ROADMAP.md). Funcionalidade existente não equivale a aprovação integral dos gates históricos.
 
 Scribe é um aplicativo Android para prática de caligrafia diretamente na tela com S Pen ou stylus. O diferencial é preservar a escrita como **strokes vetoriais temporais**, permitindo replay, comparação, Ghost Mode, estilos pedagógicos e, futuramente, um professor de IA.
 

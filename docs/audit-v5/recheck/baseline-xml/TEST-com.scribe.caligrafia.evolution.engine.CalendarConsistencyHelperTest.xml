@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.evolution.engine.CalendarConsistencyHelperTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-09-13T18:10:36.282Z" hostname="DESTKTOPFAEL" time="0.001">
+  <properties/>
+  <testcase name="buildMonthDays_zeroSecondSession_doesNotTurnIntoOneMinute" classname="com.scribe.caligrafia.evolution.engine.CalendarConsistencyHelperTest" time="0.0"/>
+  <testcase name="computeSummary_calculatesTotalsWithoutPunitiveStreaks" classname="com.scribe.caligrafia.evolution.engine.CalendarConsistencyHelperTest" time="0.001"/>
+  <testcase name="buildMonthDays_aggregatesMinutesCorrectly" classname="com.scribe.caligrafia.evolution.engine.CalendarConsistencyHelperTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

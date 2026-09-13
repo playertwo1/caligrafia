@@ -1,0 +1,15 @@
+ .../repository/LocalPersonalAlphabetRepository.kt  | 25 -------
+ .../repository/LocalPracticeAttemptRepository.kt   | 47 +++++++++++--
+ .../expansions/backup/BackupSerializer.kt          | 80 ++++++++++++++++++----
+ .../expansions/backup/ScribeBackupManager.kt       | 33 +++++++--
+ .../signature/SignatureConsistencyEngine.kt        | 42 ++++++++++--
+ .../expansions/signature/SignatureExporter.kt      | 41 +++++++++--
+ .../expansions/signature/SignatureModels.kt        |  3 +-
+ .../expansions/ui/ExpansionsViewModel.kt           | 38 +++++++++-
+ .../guided/evaluator/GeometricFeedbackEvaluator.kt | 16 ++++-
+ .../guided/ui/GuidedPracticeViewModel.kt           | 10 +--
+ .../history/LocalLearningHistoryRepository.kt      | 14 +++-
+ .../teacher/engine/CoachingCurriculumGenerator.kt  | 33 ++++++++-
+ .../teacher/engine/MotorDiagnosticEngine.kt        | 17 ++++-
+ .../caligrafia/teacher/ui/TeacherViewModel.kt      | 36 ++++++----
+ 14 files changed, 344 insertions(+), 91 deletions(-)

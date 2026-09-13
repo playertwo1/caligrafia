@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.ink.persistence.PersistenceSpikeTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-09-13T18:10:36.521Z" hostname="DESTKTOPFAEL" time="0.06">
+  <properties/>
+  <testcase name="testBenchmarkSuiteExecution" classname="com.scribe.caligrafia.ink.persistence.PersistenceSpikeTest" time="0.045"/>
+  <testcase name="testRelationalTableRoundTripFidelity" classname="com.scribe.caligrafia.ink.persistence.PersistenceSpikeTest" time="0.005"/>
+  <testcase name="testDedicatedFileRoundTripFidelity" classname="com.scribe.caligrafia.ink.persistence.PersistenceSpikeTest" time="0.007"/>
+  <testcase name="testCompressedBlobRoundTripFidelity" classname="com.scribe.caligrafia.ink.persistence.PersistenceSpikeTest" time="0.003"/>
+  <system-out><![CDATA[### Relatório do Spike de Persistência (SCR-006)
+- Carga de teste: 20 traços, 800 pontos vetoriais.
+
+| Estratégia | Gravação (ms) | Leitura (ms) | Tamanho Total | Bytes/Ponto | Fidelidade 100% |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| Tabela Relacional (Ponto-a-Ponto) | 11,02 ms | 7,62 ms | 47,73 KB | 61,1 B | EXATA |
+| Blob Binário Compactado (Room/BLOB) | 3,37 ms | 2,46 ms | 14,46 KB | 18,5 B | EXATA |
+| Arquivo Binário Dedicado (.scribe) | 5,35 ms | 2,12 ms | 5,73 KB | 7,3 B | EXATA |
+
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

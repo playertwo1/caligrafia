@@ -1,6 +1,27 @@
 > **Revisão independente vigente:** fechamento M0–M8 não aprovado na v0.8.0. Os status de conclusão históricos abaixo são alegações do implementador. Ver [auditoria V3](docs/ANTIGRAVITY_AUDIT_REVIEW_V3.md) e [referências visuais com instruções](docs/design/fluxos-v1/README.md). A construção visual deve seguir as ondas de estabilização.
 # ROADMAP — Scribe
 
+## Prioridade vigente — entrega funcional dos mockups (2026-09-13)
+
+O usuário autorizou explicitamente transformar as 12 áreas do painel e os 12 fluxos complementares em funcionalidades reais. O MVP existente é o ponto de partida. Os marcos históricos abaixo não significam entrega comprovada de todos esses percursos.
+
+**Plano detalhado obrigatório para o Antigravity:** [dos mockups ao Scribe funcional](docs/ANTIGRAVITY_FUNCTIONAL_ROADMAP.md). Ele contém navegação, escopo por tela PF-01–PF-12, comportamento/persistência, critérios de aceite, dependências e protocolo de evidência. Esta autorização substitui a limitação anterior a ajustes visuais e libera as opções explicitamente enumeradas no plano; auditorias e preservação de dados continuam válidas.
+
+| Ordem | Entrega | Resultado que deve funcionar |
+|---|---|---|
+| F0 | Integridade e mapa de ações | Resolver contraprovas V5 de manifesto/cache; registrar IDs, dados e rotas |
+| F1 | Navegação, biblioteca, editor e páginas | Encontrar as áreas, organizar cadernos e escrever com ferramentas completas |
+| F2 | Aulas, objetivos, treino e feedback | Escolher lição/estilo/duração e concluir sessão real ligada ao histórico/SRS |
+| F3 | Evolução, replay, variantes e estilos | Rever, comparar, favoritar e usar a própria escrita como referência |
+| F4 | Professor explicável e cópia de textos | Seguir orientação até o resultado e copiar o texto realmente selecionado |
+| F5 | Assinaturas, exportação e backup | Salvar referência, levar arquivos para fora do app e restaurar dados |
+| F6 | Preferências, S Pen/Watch e laboratório | Ajustes persistentes com efeito real, diagnóstico e fallback explícito |
+| F7 | Consolidação e entrega | Percursos completos, acessibilidade, preservação de acervo e APK verificável |
+
+**Entrada de Praticar:** Hub de aulas com objetivo, categorias e duração; não abrir invariavelmente um traço `/`. **Mais:** destinos nomeados para Alfabeto, Professor, Estilos, Assinaturas, Cópia de textos, Backup, S Pen/Watch, Laboratório e Preferências.
+
+Não é necessário esperar a aprovação física de todos os marcos para desenvolver um fluxo independente. Corrigir os bloqueadores do fluxo antes de entregá-lo; só fechar cada onda com percurso real e evidência. O Antigravity deve atualizar PROJECT_STATE e `docs/product-delivery/ROUTE_ACTION_MATRIX.md` por tarefa, sem marcar o produto inteiro como concluído por testes unitários verdes.
+
 ## M0 — Stylus Lab [CONCLUÍDO — v0.1.0]
 Objetivo: eliminar o maior risco técnico antes de construir o produto.
 
@@ -49,7 +70,7 @@ Por solicitação do usuário, o projeto contém **13 imagens de referência**: 
 
 **Direção visual:** papel claro, tinta azul-marinho, ações em azul, guias discretas, controles nativos e espaço amplo para S Pen no Galaxy S25 Ultra. Usar as imagens como base de composição e interação; consultar o guia antes de copiar textos, valores, navegação ou controles.
 
-**Ordem de trabalho:** corrigir o comportamento da onda correspondente e então aplicar a referência visual ao fluxo. Cada ação visível precisa funcionar de ponta a ponta. Não criar novas features, contas, cloud ou redesign amplo por elementos incidentais dos mockups. Opções adicionais ficam como propostas, não como escopo automaticamente autorizado. As imagens não aprovam milestones nem substituem os critérios da auditoria.
+**Ordem de trabalho vigente:** seguir F0–F7 do [plano funcional](docs/ANTIGRAVITY_FUNCTIONAL_ROADMAP.md). Cada ação enumerada precisa funcionar de ponta a ponta. Busca, duplicação e preferências descritas no plano agora estão autorizadas. Contas, cloud e funcionalidades incidentais não enumeradas continuam fora do escopo. As imagens não aprovam milestones nem substituem os critérios de aceite.
 
 **Aceite visual por fluxo:** registrar qual imagem foi usada, implementar estados vazio/carregando/sucesso/erro pertinentes, verificar handlers e persistência, comparar screenshots reais com a referência e validar legibilidade, alvos de toque e área de escrita no aparelho. Registrar diferenças justificadas em PROJECT_STATE. Não usar as imagens geradas como evidência de aplicativo funcionando.
 

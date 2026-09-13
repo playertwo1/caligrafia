@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.learning.history.LocalLearningHistoryRepositoryTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-09-13T18:10:36.592Z" hostname="DESTKTOPFAEL" time="0.015">
+  <properties/>
+  <testcase name="recordSession_persistsAndCalculatesSummaryAccurately" classname="com.scribe.caligrafia.learning.history.LocalLearningHistoryRepositoryTest" time="0.006"/>
+  <testcase name="recordMultipleSessions_accumulatesMinutesAndRespectsNonPunitiveLogic" classname="com.scribe.caligrafia.learning.history.LocalLearningHistoryRepositoryTest" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

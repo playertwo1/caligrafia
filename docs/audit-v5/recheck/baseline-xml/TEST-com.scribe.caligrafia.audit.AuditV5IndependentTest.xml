@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.audit.AuditV5IndependentTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-09-13T18:10:36.247Z" hostname="DESTKTOPFAEL" time="0.03">
+  <properties/>
+  <testcase name="sameSizeSameMtimeAttemptReplacementReloads" classname="com.scribe.caligrafia.audit.AuditV5IndependentTest" time="0.01"/>
+  <testcase name="malformedManifestCannotOverwrite" classname="com.scribe.caligrafia.audit.AuditV5IndependentTest" time="0.009"/>
+  <testcase name="reversedClosedPathCannotClaimIdenticalMuscularDynamics" classname="com.scribe.caligrafia.audit.AuditV5IndependentTest" time="0.0"/>
+  <testcase name="historyReplacementDoesNotRetainOldVersion" classname="com.scribe.caligrafia.audit.AuditV5IndependentTest" time="0.007"/>
+  <testcase name="backupIncludesPersistedSignature" classname="com.scribe.caligrafia.audit.AuditV5IndependentTest" time="0.004"/>
+  <testcase name="malformedJsonGrammarRejected" classname="com.scribe.caligrafia.audit.AuditV5IndependentTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

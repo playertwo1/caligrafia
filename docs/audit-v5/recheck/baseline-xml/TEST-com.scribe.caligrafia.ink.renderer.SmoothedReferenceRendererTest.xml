@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.ink.renderer.SmoothedReferenceRendererTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-09-13T18:10:36.582Z" hostname="DESTKTOPFAEL" time="0.003">
+  <properties/>
+  <testcase name="testRendererManagerSelection" classname="com.scribe.caligrafia.ink.renderer.SmoothedReferenceRendererTest" time="0.001"/>
+  <testcase name="testRenderEdgeCasesWithoutCrash" classname="com.scribe.caligrafia.ink.renderer.SmoothedReferenceRendererTest" time="0.001"/>
+  <testcase name="testImmutabilityOfStrokePointsDuringRender" classname="com.scribe.caligrafia.ink.renderer.SmoothedReferenceRendererTest" time="0.001"/>
+  <testcase name="testAndroidInkRendererAdapterDelegation" classname="com.scribe.caligrafia.ink.renderer.SmoothedReferenceRendererTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

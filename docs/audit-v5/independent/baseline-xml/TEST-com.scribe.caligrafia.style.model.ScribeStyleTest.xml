@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.style.model.ScribeStyleTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-09-13T16:40:35.324Z" hostname="DESTKTOPFAEL" time="0.001">
+  <properties/>
+  <testcase name="cursivaEscolar_hasProperProportionsAndSlant" classname="com.scribe.caligrafia.style.model.ScribeStyleTest" time="0.0"/>
+  <testcase name="builtInStyles_allHaveValidPropertiesAndDuctusRules" classname="com.scribe.caligrafia.style.model.ScribeStyleTest" time="0.0"/>
+  <testcase name="spencerian_hasSlenderProportionsAndShadedDuctus" classname="com.scribe.caligrafia.style.model.ScribeStyleTest" time="0.0"/>
+  <testcase name="copperplate_hasClassicalProportionsAndSteepSlant" classname="com.scribe.caligrafia.style.model.ScribeStyleTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

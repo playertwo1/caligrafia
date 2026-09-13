@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.ink.palm.PalmRejectionPolicyTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-09-13T18:10:36.518Z" hostname="DESTKTOPFAEL" time="0.001">
+  <properties/>
+  <testcase name="testStylusOnlyModeAllowsStylusAndEraser" classname="com.scribe.caligrafia.ink.palm.PalmRejectionPolicyTest" time="0.0"/>
+  <testcase name="testStylusAndFingerModeRejectsFingerDuringCooldown" classname="com.scribe.caligrafia.ink.palm.PalmRejectionPolicyTest" time="0.001"/>
+  <testcase name="testStylusAndFingerModeRejectsFingerWhileStylusDown" classname="com.scribe.caligrafia.ink.palm.PalmRejectionPolicyTest" time="0.0"/>
+  <testcase name="testStylusAndFingerModeRejectsFingerWhileHovering" classname="com.scribe.caligrafia.ink.palm.PalmRejectionPolicyTest" time="0.0"/>
+  <testcase name="testResetMetricsClearsRejectionCounts" classname="com.scribe.caligrafia.ink.palm.PalmRejectionPolicyTest" time="0.0"/>
+  <testcase name="testStylusAndFingerModeAllowsFingerWhenIdle" classname="com.scribe.caligrafia.ink.palm.PalmRejectionPolicyTest" time="0.0"/>
+  <testcase name="testStylusOnlyModeRejectsFinger" classname="com.scribe.caligrafia.ink.palm.PalmRejectionPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

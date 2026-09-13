@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.core.model.GuidelineConfigTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-09-13T18:10:36.279Z" hostname="DESTKTOPFAEL" time="0.001">
+  <properties/>
+  <testcase name="invalid_xHeight_throws_exception" classname="com.scribe.caligrafia.core.model.GuidelineConfigTest" time="0.0"/>
+  <testcase name="computeSlantSegments_returns_empty_when_slant_is_null" classname="com.scribe.caligrafia.core.model.GuidelineConfigTest" time="0.0"/>
+  <testcase name="computeBands_with_copperplate_212_ratio_calculates_double_heights" classname="com.scribe.caligrafia.core.model.GuidelineConfigTest" time="0.0"/>
+  <testcase name="invalid_slant_angle_throws_exception" classname="com.scribe.caligrafia.core.model.GuidelineConfigTest" time="0.0"/>
+  <testcase name="notebook_and_notebookPage_model_integrity" classname="com.scribe.caligrafia.core.model.GuidelineConfigTest" time="0.0"/>
+  <testcase name="computeBands_separates_consecutive_bands_by_interlineGap" classname="com.scribe.caligrafia.core.model.GuidelineConfigTest" time="0.0"/>
+  <testcase name="computeSlantSegments_calculates_trigonometric_inclination_correctly" classname="com.scribe.caligrafia.core.model.GuidelineConfigTest" time="0.0"/>
+  <testcase name="computeBands_with_111_ratio_calculates_equal_heights" classname="com.scribe.caligrafia.core.model.GuidelineConfigTest" time="0.0"/>
+  <testcase name="computeBands_does_not_overflow_pageHeight" classname="com.scribe.caligrafia.core.model.GuidelineConfigTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.notebook.export.PageExporterTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-09-13T18:10:36.615Z" hostname="DESTKTOPFAEL" time="0.002">
+  <properties/>
+  <testcase name="exportToPng_throwsIOException_in_non_graphic_environment_and_does_not_create_invalid_file" classname="com.scribe.caligrafia.notebook.export.PageExporterTest" time="0.001"/>
+  <testcase name="exportOptions_defaultsAreValid" classname="com.scribe.caligrafia.notebook.export.PageExporterTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

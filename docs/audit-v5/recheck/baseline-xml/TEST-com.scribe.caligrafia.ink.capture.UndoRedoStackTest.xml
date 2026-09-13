@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.ink.capture.UndoRedoStackTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-09-13T18:10:36.496Z" hostname="DESTKTOPFAEL" time="0.002">
+  <properties/>
+  <testcase name="undo_and_redo_singleStroke" classname="com.scribe.caligrafia.ink.capture.UndoRedoStackTest" time="0.001"/>
+  <testcase name="eraserAction_canBeUndone_andRedone" classname="com.scribe.caligrafia.ink.capture.UndoRedoStackTest" time="0.0"/>
+  <testcase name="newStrokeAfterUndo_clearsRedoStack" classname="com.scribe.caligrafia.ink.capture.UndoRedoStackTest" time="0.0"/>
+  <testcase name="initialState_hasNoUndoOrRedo" classname="com.scribe.caligrafia.ink.capture.UndoRedoStackTest" time="0.0"/>
+  <testcase name="loadStrokes_resetsUndoAndRedo" classname="com.scribe.caligrafia.ink.capture.UndoRedoStackTest" time="0.0"/>
+  <testcase name="toolConfig_defaultsAndPresets" classname="com.scribe.caligrafia.ink.capture.UndoRedoStackTest" time="0.001"/>
+  <testcase name="addStroke_enablesUndo_and_disablesRedo" classname="com.scribe.caligrafia.ink.capture.UndoRedoStackTest" time="0.0"/>
+  <testcase name="multiStep_undo_and_redo_preservesOrder" classname="com.scribe.caligrafia.ink.capture.UndoRedoStackTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

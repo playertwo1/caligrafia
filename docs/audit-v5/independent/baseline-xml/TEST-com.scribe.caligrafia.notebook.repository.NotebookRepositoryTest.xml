@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.notebook.repository.NotebookRepositoryTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-09-13T16:40:35.202Z" hostname="DESTKTOPFAEL" time="0.093">
+  <properties/>
+  <testcase name="addPage_and_getPages_maintains_order_and_index" classname="com.scribe.caligrafia.notebook.repository.NotebookRepositoryTest" time="0.018"/>
+  <testcase name="deleteNotebook_removes_all_pages_and_files" classname="com.scribe.caligrafia.notebook.repository.NotebookRepositoryTest" time="0.011"/>
+  <testcase name="updatePageGuidelines_updates_persistently" classname="com.scribe.caligrafia.notebook.repository.NotebookRepositoryTest" time="0.013"/>
+  <testcase name="deletePage_removes_page_from_notebook_and_disk" classname="com.scribe.caligrafia.notebook.repository.NotebookRepositoryTest" time="0.022"/>
+  <testcase name="createNotebook_creates_notebook_with_first_page_and_empty_strokes" classname="com.scribe.caligrafia.notebook.repository.NotebookRepositoryTest" time="0.011"/>
+  <testcase name="savePageStrokes_and_loadPageStrokes_preserves_stroke_data" classname="com.scribe.caligrafia.notebook.repository.NotebookRepositoryTest" time="0.016"/>
+  <testcase name="serializer_roundtrip_preserves_notebook_and_page_metadata" classname="com.scribe.caligrafia.notebook.repository.NotebookRepositoryTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

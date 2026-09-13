@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.audit.AuditV4IndependentTest" tests="16" skipped="0" failures="0" errors="0" timestamp="2026-09-13T18:10:36.084Z" hostname="DESTKTOPFAEL" time="0.162">
+  <properties/>
+  <testcase name="s08_emptyDiagnosticDoesNotClaimMasteryInPrescription" classname="com.scribe.caligrafia.audit.AuditV4IndependentTest" time="0.0"/>
+  <testcase name="r17_attemptRoundTripPreservesStyleContext" classname="com.scribe.caligrafia.audit.AuditV4IndependentTest" time="0.011"/>
+  <testcase name="r03_existingReaderSeesNewAttempt" classname="com.scribe.caligrafia.audit.AuditV4IndependentTest" time="0.01"/>
+  <testcase name="r06_equalMtimeDoesNotLoseSession" classname="com.scribe.caligrafia.audit.AuditV4IndependentTest" time="0.014"/>
+  <testcase name="s24_manifestEscapesRoundTrip" classname="com.scribe.caligrafia.audit.AuditV4IndependentTest" time="0.001"/>
+  <testcase name="s04_rejectsNonJsonManifest" classname="com.scribe.caligrafia.audit.AuditV4IndependentTest" time="0.0"/>
+  <testcase name="s04_rejectsUnsupportedManifestVersion" classname="com.scribe.caligrafia.audit.AuditV4IndependentTest" time="0.0"/>
+  <testcase name="r07_evolutionInputMustNotTruncateAtTwentySessions" classname="com.scribe.caligrafia.audit.AuditV4IndependentTest" time="0.084"/>
+  <testcase name="r14_denseReferenceStillMeasuresSlant" classname="com.scribe.caligrafia.audit.AuditV4IndependentTest" time="0.001"/>
+  <testcase name="s16_oppositeDiagonalsDoNotClaimIdenticalMuscularDynamics" classname="com.scribe.caligrafia.audit.AuditV4IndependentTest" time="0.0"/>
+  <testcase name="s09_denseAndSparseSlantHaveSameObservation" classname="com.scribe.caligrafia.audit.AuditV4IndependentTest" time="0.001"/>
+  <testcase name="s15_svgFramesNegativeCoordinates" classname="com.scribe.caligrafia.audit.AuditV4IndependentTest" time="0.0"/>
+  <testcase name="s03_rollbackRemovesNewRootsAfterMidCopyFailure" classname="com.scribe.caligrafia.audit.AuditV4IndependentTest" time="0.022"/>
+  <testcase name="r04_newAlphabetContainsNoSyntheticVariants" classname="com.scribe.caligrafia.audit.AuditV4IndependentTest" time="0.006"/>
+  <testcase name="s02_backupIncludesStyleEngineRootFile" classname="com.scribe.caligrafia.audit.AuditV4IndependentTest" time="0.002"/>
+  <testcase name="s04_invalidManifestCannotOverwriteActiveData" classname="com.scribe.caligrafia.audit.AuditV4IndependentTest" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

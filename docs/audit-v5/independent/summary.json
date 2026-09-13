@@ -1,0 +1,114 @@
+{
+  "sha": "5b98f8f643da97a53161ef7f4a792509d67e5429",
+  "baseline": {
+    "classes": 46,
+    "tests": 243,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "adversarial_v4": [
+    {
+      "name": "s08_emptyDiagnosticDoesNotClaimMasteryInPrescription",
+      "status": "PASS"
+    },
+    {
+      "name": "r17_attemptRoundTripPreservesStyleContext",
+      "status": "PASS"
+    },
+    {
+      "name": "r03_existingReaderSeesNewAttempt",
+      "status": "PASS"
+    },
+    {
+      "name": "r06_equalMtimeDoesNotLoseSession",
+      "status": "PASS"
+    },
+    {
+      "name": "s24_manifestEscapesRoundTrip",
+      "status": "PASS"
+    },
+    {
+      "name": "s04_rejectsNonJsonManifest",
+      "status": "PASS"
+    },
+    {
+      "name": "s04_rejectsUnsupportedManifestVersion",
+      "status": "PASS"
+    },
+    {
+      "name": "r07_evolutionInputMustNotTruncateAtTwentySessions",
+      "status": "PASS"
+    },
+    {
+      "name": "r14_denseReferenceStillMeasuresSlant",
+      "status": "PASS"
+    },
+    {
+      "name": "s16_oppositeDiagonalsDoNotClaimIdenticalMuscularDynamics",
+      "status": "PASS"
+    },
+    {
+      "name": "s09_denseAndSparseSlantHaveSameObservation",
+      "status": "PASS"
+    },
+    {
+      "name": "s15_svgFramesNegativeCoordinates",
+      "status": "PASS"
+    },
+    {
+      "name": "s03_rollbackRemovesNewRootsAfterMidCopyFailure",
+      "status": "PASS"
+    },
+    {
+      "name": "r04_newAlphabetContainsNoSyntheticVariants",
+      "status": "PASS"
+    },
+    {
+      "name": "s02_backupIncludesStyleEngineRootFile",
+      "status": "PASS"
+    },
+    {
+      "name": "s04_invalidManifestCannotOverwriteActiveData",
+      "status": "PASS"
+    }
+  ],
+  "additional_v5": [
+    {
+      "name": "sameSizeSameMtimeAttemptReplacementReloads",
+      "status": "FAIL",
+      "message": "org.junit.ComparisonFailure: expected:<[italic]> but was:<[uncial]>"
+    },
+    {
+      "name": "malformedManifestCannotOverwrite",
+      "status": "FAIL",
+      "message": "org.junit.ComparisonFailure: expected:<[ORIGINAL]> but was:<[REPLACED]>"
+    },
+    {
+      "name": "reversedClosedPathCannotClaimIdenticalMuscularDynamics",
+      "status": "FAIL",
+      "message": "java.lang.AssertionError"
+    },
+    {
+      "name": "historyReplacementDoesNotRetainOldVersion",
+      "status": "FAIL",
+      "message": "org.junit.ComparisonFailure: expected:<[Updated l]esson> but was:<[L]esson>"
+    },
+    {
+      "name": "backupIncludesPersistedSignature",
+      "status": "FAIL",
+      "message": "java.lang.AssertionError"
+    },
+    {
+      "name": "malformedJsonGrammarRejected",
+      "status": "FAIL",
+      "message": "java.lang.AssertionError: expected null, but was:<BackupManifest(formatVersion=1.0, appVersion=0.8.0, appVersionCode=10, createdAtMs=1789317709963, deviceInfo=Android, notebookCount=0, pageCount=0, personalGlyphCount=0, lessonHistoryCount=0, practiceAttemptCount=0, hasTeacherDiagnostic=false)>"
+    }
+  ],
+  "lint": {
+    "Warning": 48
+  },
+  "runner_exit_code": 0,
+  "additional_exit_code": 1,
+  "device": "emulator-5554 available; no physical S25 Ultra; no instrumented tests run"
+}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.ink.gesture.EdgeGestureExclusionHelperTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-09-13T18:10:36.499Z" hostname="DESTKTOPFAEL" time="0.0">
+  <properties/>
+  <testcase name="computeEdgeExclusionBounds_enforces_minimum_and_maximum_width_bounds" classname="com.scribe.caligrafia.ink.gesture.EdgeGestureExclusionHelperTest" time="0.0"/>
+  <testcase name="computeEdgeExclusionBounds_returns_empty_when_dimensions_are_zero_or_negative" classname="com.scribe.caligrafia.ink.gesture.EdgeGestureExclusionHelperTest" time="0.0"/>
+  <testcase name="computeEdgeExclusionBounds_returns_left_and_right_bounds_for_valid_dimensions" classname="com.scribe.caligrafia.ink.gesture.EdgeGestureExclusionHelperTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

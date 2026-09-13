@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.learning.model.CurriculumCatalogTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-09-13T16:40:35.189Z" hostname="DESTKTOPFAEL" time="0.002">
+  <properties/>
+  <testcase name="allLessons_contains18Lessons" classname="com.scribe.caligrafia.learning.model.CurriculumCatalogTest" time="0.001"/>
+  <testcase name="lessonDurations_arePositive" classname="com.scribe.caligrafia.learning.model.CurriculumCatalogTest" time="0.0"/>
+  <testcase name="allStages_areRepresentedInCurriculum" classname="com.scribe.caligrafia.learning.model.CurriculumCatalogTest" time="0.0"/>
+  <testcase name="getLessonById_returnsCorrectLesson" classname="com.scribe.caligrafia.learning.model.CurriculumCatalogTest" time="0.0"/>
+  <testcase name="allLessons_haveUniqueNonEmptyIds" classname="com.scribe.caligrafia.learning.model.CurriculumCatalogTest" time="0.001"/>
+  <testcase name="defaultFirstLesson_isFirstInStage1" classname="com.scribe.caligrafia.learning.model.CurriculumCatalogTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,55 @@
+{
+  "sha": "32b28c11753d5a8b2db86cf5ec75163818eb18cf",
+  "baseline": {
+    "classes": 47,
+    "tests": 249,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "audits": {
+    "com.scribe.caligrafia.audit.AuditFixAcceptanceTest": {
+      "name": "com.scribe.caligrafia.audit.AuditFixAcceptanceTest",
+      "tests": "33",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-13T18:10:34.159Z",
+      "hostname": "DESTKTOPFAEL",
+      "time": "1.923"
+    },
+    "com.scribe.caligrafia.audit.AuditV4IndependentTest": {
+      "name": "com.scribe.caligrafia.audit.AuditV4IndependentTest",
+      "tests": "16",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-13T18:10:36.084Z",
+      "hostname": "DESTKTOPFAEL",
+      "time": "0.162"
+    },
+    "com.scribe.caligrafia.audit.AuditV5IndependentTest": {
+      "name": "com.scribe.caligrafia.audit.AuditV5IndependentTest",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-13T18:10:36.247Z",
+      "hostname": "DESTKTOPFAEL",
+      "time": "0.03"
+    }
+  },
+  "recheck": {
+    "name": "com.scribe.caligrafia.audit.AuditV5RecheckTest",
+    "tests": "3",
+    "skipped": "0",
+    "failures": "2",
+    "errors": "0",
+    "timestamp": "2026-09-13T18:11:48.432Z",
+    "hostname": "DESTKTOPFAEL",
+    "time": "0.15"
+  },
+  "lint": {
+    "Warning": 48
+  }
+}

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.ink.lifecycle.StylusLifecycleTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-09-13T16:40:35.079Z" hostname="DESTKTOPFAEL" time="0.017">
+  <properties/>
+  <testcase name="session_lifecycle_manager_clear_auto_save_removes_file" classname="com.scribe.caligrafia.ink.lifecycle.StylusLifecycleTest" time="0.006"/>
+  <testcase name="pipeline_flushes_and_commits_active_stroke_when_points_are_valid" classname="com.scribe.caligrafia.ink.lifecycle.StylusLifecycleTest" time="0.002"/>
+  <testcase name="spen_insertion_detector_ignores_foreign_or_null_intents" classname="com.scribe.caligrafia.ink.lifecycle.StylusLifecycleTest" time="0.001"/>
+  <testcase name="spen_insertion_triggers_active_stroke_flush_in_pipeline" classname="com.scribe.caligrafia.ink.lifecycle.StylusLifecycleTest" time="0.001"/>
+  <testcase name="spen_insertion_detector_processes_samsung_broadcast_intents" classname="com.scribe.caligrafia.ink.lifecycle.StylusLifecycleTest" time="0.001"/>
+  <testcase name="pipeline_cancels_active_stroke_cleanly_when_points_are_fewer_than_two" classname="com.scribe.caligrafia.ink.lifecycle.StylusLifecycleTest" time="0.001"/>
+  <testcase name="session_lifecycle_manager_auto_saves_and_restores_exact_vector_strokes" classname="com.scribe.caligrafia.ink.lifecycle.StylusLifecycleTest" time="0.005"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

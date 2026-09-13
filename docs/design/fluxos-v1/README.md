@@ -2,7 +2,7 @@
 
 Propostas visuais solicitadas pelo usuário em 2026-09-12. São 12 imagens distintas, cada uma com três estados de interface. Complementam o [painel geral](../scribe-visao-12-telas-v1.png).
 
-As imagens orientam composição, hierarquia, controles e estados. Não são screenshots da implementação nem aprovação dos gates. Continuam válidos [AGENTS](../../../AGENTS.md) e [auditoria V3](../../ANTIGRAVITY_AUDIT_REVIEW_V3.md). Este pedido cria referências visuais; não autoriza implementar novas funcionalidades por iniciativa própria.
+As imagens orientam composição, hierarquia, controles e estados. Não são screenshots da implementação nem aprovação dos gates. **Atualização de 2026-09-13:** o usuário autorizou implementar as áreas e opções como funcionalidades reais, conforme [roadmap funcional](../../ANTIGRAVITY_FUNCTIONAL_ROADMAP.md), ondas F0–F7. O painel geral tem 12 áreas do produto; estas 12 pranchas detalham fluxos complementares, não são uma lista substituta. Continuam válidos os requisitos de integridade e comprovação de [AGENTS](../../../AGENTS.md).
 
 | Imagem | Fluxo | Dependências da auditoria |
 |---|---|---|
@@ -29,11 +29,11 @@ As imagens orientam composição, hierarquia, controles e estados. Não são scr
 6. Na imagem 11, substituir “assinatura digital” por “imagem da assinatura”. SVG/PNG não são assinatura criptográfica nem prova de autenticidade.
 7. Estado de erro da imagem 10 é um cenário alternativo, não sequência obrigatória após um arquivo validado. Só afirmar dados inalterados após comprovação de recuperação/transação. Não substituir pastas como atalho.
 8. Datas, contagens, notas e exemplos manuscritos são fictícios para layout. Nunca transformá-los em seeds de progresso pessoal. Loading, erro, ausência e insuficiência de dados são estados distintos.
-9. Capas decorativas, duplicação, barra espelhada, tamanho do texto e outras opções visuais adicionais são sugestões; não expandir o escopo durante estabilização para reproduzi-las. Listar propostas futuras separadamente.
+9. Duplicação, busca e preferências de barra/mão/texto/contraste/animação/lembretes foram incorporadas ao plano funcional autorizado. Implementar com persistência e aceite, na onda prevista. Capas continuam decorativas; não acrescentar gerador ou catálogo comercial. Elementos incidentais não enumerados continuam fora do escopo.
 10. Priorizar o espaço de escrita no aparelho: cabeçalhos e slogans grandes nestas pranchas devem ser reduzidos na UI de produção. Garantir alvos de toque, texto escalável, contraste e área livre para a palma.
 11. Usar componentes nativos Android para selecionar documentos/destinos. O seletor desenhado é ilustrativo; não construir um gerenciador de arquivos próprio por causa dele.
 12. Toda ação visível precisa de handler, estado, persistência e teste do percurso real. Imagem aprovada não equivale a funcionalidade implementada. Implementar apenas dentro da onda correspondente e registrar evidência por ID.
 
 ## Entrega
 
-Arquivos PNG separados para consulta e um índice com orientações. Código do aplicativo não foi alterado.
+Entrega original: PNGs e índice. Próxima entrega autorizada: percursos reais do aplicativo, pelo plano funcional; atualização deste guia não equivale a implementação.

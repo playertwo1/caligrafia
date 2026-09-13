@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.alphabet.repository.PersonalAlphabetSerializerTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-09-13T18:10:34.148Z" hostname="DESTKTOPFAEL" time="0.005">
+  <properties/>
+  <testcase name="serializeAndDeserialize_preservesAllMetadata" classname="com.scribe.caligrafia.alphabet.repository.PersonalAlphabetSerializerTest" time="0.005"/>
+  <testcase name="deserialize_emptyJson_returnsDefaultAlphabet" classname="com.scribe.caligrafia.alphabet.repository.PersonalAlphabetSerializerTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
