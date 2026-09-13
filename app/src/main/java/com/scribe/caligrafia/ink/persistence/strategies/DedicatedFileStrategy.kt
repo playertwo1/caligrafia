@@ -45,55 +45,59 @@ class DedicatedFileStrategy(private val baseDir: File) : StrokePersistenceStrate
         val tempFile = File.createTempFile("scribe_${file.nameWithoutExtension}_", ".tmp", parent)
         try {
             FileOutputStream(tempFile).use { fos ->
-                BufferedOutputStream(fos).use { bos ->
-                    DataOutputStream(bos).use { dos ->
-                        // 1. Cabeçalho de arquivo (não-comprimido para rápida identificação de arquivo)
-                        dos.write(MAGIC_HEADER)
-                        dos.writeShort(SCHEMA_VERSION.toInt())
-                        dos.writeUTF(sessionId)
-                        dos.writeInt(strokes.size)
-                        dos.flush()
+                val bos = BufferedOutputStream(fos)
+                val dos = DataOutputStream(bos)
 
-                        // 2. Carga útil comprimida com Deflater
-                        DeflaterOutputStream(bos).use { deflater ->
-                            DataOutputStream(deflater).use { payloadDos ->
-                                for (stroke in strokes) {
-                                    payloadDos.writeUTF(stroke.id)
-                                    payloadDos.writeUTF(stroke.tool.name)
-                                    payloadDos.writeLong(stroke.startedAtMs)
-                                    payloadDos.writeLong(stroke.endedAtMs)
-                                    payloadDos.writeBoolean(stroke.isCancelled)
+                // 1. Cabeçalho de arquivo (não-comprimido para rápida identificação de arquivo)
+                dos.write(MAGIC_HEADER)
+                dos.writeShort(SCHEMA_VERSION.toInt())
+                dos.writeUTF(sessionId)
+                dos.writeInt(strokes.size)
+                dos.flush()
 
-                                    val hasColor = stroke.color != null
-                                    payloadDos.writeBoolean(hasColor)
-                                    if (hasColor) payloadDos.writeInt(stroke.color!!)
+                // 2. Carga útil comprimida com Deflater
+                val deflater = DeflaterOutputStream(bos)
+                val payloadDos = DataOutputStream(deflater)
+                for (stroke in strokes) {
+                    payloadDos.writeUTF(stroke.id)
+                    payloadDos.writeUTF(stroke.tool.name)
+                    payloadDos.writeLong(stroke.startedAtMs)
+                    payloadDos.writeLong(stroke.endedAtMs)
+                    payloadDos.writeBoolean(stroke.isCancelled)
 
-                                    val hasWidth = stroke.baseWidthPx != null
-                                    payloadDos.writeBoolean(hasWidth)
-                                    if (hasWidth) payloadDos.writeFloat(stroke.baseWidthPx!!)
+                    val hasColor = stroke.color != null
+                    payloadDos.writeBoolean(hasColor)
+                    if (hasColor) payloadDos.writeInt(stroke.color!!)
 
-                                    payloadDos.writeInt(stroke.points.size)
+                    val hasWidth = stroke.baseWidthPx != null
+                    payloadDos.writeBoolean(hasWidth)
+                    if (hasWidth) payloadDos.writeFloat(stroke.baseWidthPx!!)
 
-                                    for (p in stroke.points) {
-                                        payloadDos.writeFloat(p.x)
-                                        payloadDos.writeFloat(p.y)
-                                        payloadDos.writeLong(p.tMs)
+                    payloadDos.writeInt(stroke.points.size)
 
-                                        var flags = 0
-                                        if (p.pressure != null) flags = flags or 0x01
-                                        if (p.tiltRad != null) flags = flags or 0x02
-                                        if (p.orientationRad != null) flags = flags or 0x04
-                                        payloadDos.writeByte(flags)
+                    for (p in stroke.points) {
+                        payloadDos.writeFloat(p.x)
+                        payloadDos.writeFloat(p.y)
+                        payloadDos.writeLong(p.tMs)
 
-                                        if (p.pressure != null) payloadDos.writeFloat(p.pressure)
-                                        if (p.tiltRad != null) payloadDos.writeFloat(p.tiltRad)
-                                        if (p.orientationRad != null) payloadDos.writeFloat(p.orientationRad)
-                                    }
-                                }
-                            }
-                        }
+                        var flags = 0
+                        if (p.pressure != null) flags = flags or 0x01
+                        if (p.tiltRad != null) flags = flags or 0x02
+                        if (p.orientationRad != null) flags = flags or 0x04
+                        payloadDos.writeByte(flags)
+
+                        if (p.pressure != null) payloadDos.writeFloat(p.pressure)
+                        if (p.tiltRad != null) payloadDos.writeFloat(p.tiltRad)
+                        if (p.orientationRad != null) payloadDos.writeFloat(p.orientationRad)
                     }
                 }
+                payloadDos.flush()
+                deflater.finish()
+                deflater.flush()
+                bos.flush()
+                fos.flush()
+
+                // R09: fos.fd.sync() executado com o descritor de arquivo ainda aberto e válido
                 try {
                     fos.fd.sync()
                 } catch (_: Throwable) {

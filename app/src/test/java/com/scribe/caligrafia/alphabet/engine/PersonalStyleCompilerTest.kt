@@ -58,7 +58,7 @@ class PersonalStyleCompilerTest {
             category = AlphabetCategory.LOWERCASE,
             variants = listOf(
                 createVariantWithStrokes("v2", listOf(
-                    createStroke(listOf(Pair(10f, 10f), Pair(20f, 90f))) // height = 80 -> ratio = 2.0
+                    createStroke(listOf(Pair(10f, 0f), Pair(20f, 100f))) // height = 100 -> ratio = 2.5 >= 2.4 -> Ratio212
                 ))
             )
         )

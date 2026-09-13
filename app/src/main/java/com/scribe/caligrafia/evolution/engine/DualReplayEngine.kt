@@ -13,6 +13,22 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /**
+ * Modo de sincronização temporal para o Replay Duplo (R12).
+ */
+enum class ReplaySyncMode {
+    /**
+     * Preserva o tempo real e velocidades relativas autênticas de cada execução.
+     * Trilha mais curta conclui em seu tempo real sem ser esticada artificialmente.
+     */
+    REAL_TIME,
+
+    /**
+     * Normaliza as duas trilhas proporcionalmente para que concluam juntas na timeline (0% a 100%).
+     */
+    NORMALIZED
+}
+
+/**
  * Estado instantâneo do frame de reprodução dupla sincronizada (SCR-503).
  */
 data class DualReplayFrame(
@@ -22,7 +38,8 @@ data class DualReplayFrame(
     val status: ReplayStatus = ReplayStatus.IDLE,
     val speed: ReplaySpeed = ReplaySpeed.NORMAL,
     val durationAMs: Long = 0L,
-    val durationBMs: Long = 0L
+    val durationBMs: Long = 0L,
+    val syncMode: ReplaySyncMode = ReplaySyncMode.REAL_TIME
 ) {
     val isPlaying: Boolean get() = status == ReplayStatus.PLAYING
 }
@@ -30,13 +47,19 @@ data class DualReplayFrame(
 /**
  * Motor de reprodução temporal sincronizado para duas trilhas simultâneas de traços (SCR-503).
  *
- * Permite reproduzir lado a lado a escrita do "Antes" e do "Depois", normalizando a timeline
- * de forma que o calígrafo observe o ductus, paradas e fluidez de ambas as execuções em sincronia.
+ * Permite reproduzir lado a lado a escrita do "Antes" e do "Depois", suportando tempo real monotônico
+ * autêntico (R12) e modo de comparação normalizada.
  */
 class DualReplayEngine(
     trackA: List<Stroke> = emptyList(),
-    trackB: List<Stroke> = emptyList()
+    trackB: List<Stroke> = emptyList(),
+    syncMode: ReplaySyncMode = ReplaySyncMode.REAL_TIME
 ) {
+    var syncMode: ReplaySyncMode = syncMode
+        set(value) {
+            field = value
+            dispatchCurrentFrame()
+        }
 
     private val strokesA = mutableListOf<Stroke>()
     private val strokesB = mutableListOf<Stroke>()
@@ -98,6 +121,7 @@ class DualReplayEngine(
         dispatchCurrentFrame()
     }
 
+
     /**
      * Inicia ou retoma a reprodução sincronizada.
      */
@@ -111,14 +135,18 @@ class DualReplayEngine(
         status = ReplayStatus.PLAYING
         playbackJob?.cancel()
 
-        val maxDurationMs = maxOf(durationAMs, durationBMs).coerceAtLeast(1000L)
+        val maxDurationMs = maxOf(durationAMs, durationBMs).coerceAtLeast(100L)
         val frameIntervalMs = 16L // ~60fps
 
         playbackJob = scope.launch {
+            var lastTimeMs = System.currentTimeMillis()
             while (isActive && status == ReplayStatus.PLAYING) {
                 delay(frameIntervalMs)
+                val now = System.currentTimeMillis()
+                val deltaMs = (now - lastTimeMs).coerceAtLeast(1L)
+                lastTimeMs = now
 
-                val deltaProgress = (frameIntervalMs * speed.multiplier) / maxDurationMs.toFloat()
+                val deltaProgress = (deltaMs * speed.multiplier) / maxDurationMs.toFloat()
                 currentProgress += deltaProgress
 
                 if (currentProgress >= 1.0f) {
@@ -161,11 +189,24 @@ class DualReplayEngine(
      */
     fun computeDualFrameAt(progress: Float): DualReplayFrame {
         val clampedProgress = progress.coerceIn(0f, 1f)
+        val maxDurationMs = maxOf(durationAMs, durationBMs).coerceAtLeast(100L)
 
-        val targetRelAMs = (clampedProgress * durationAMs).toLong()
+        val targetRelAMs: Long
+        val targetRelBMs: Long
+
+        when (syncMode) {
+            ReplaySyncMode.REAL_TIME -> {
+                val currentElapsedMs = (clampedProgress * maxDurationMs).toLong()
+                targetRelAMs = currentElapsedMs.coerceAtMost(durationAMs)
+                targetRelBMs = currentElapsedMs.coerceAtMost(durationBMs)
+            }
+            ReplaySyncMode.NORMALIZED -> {
+                targetRelAMs = (clampedProgress * durationAMs).toLong()
+                targetRelBMs = (clampedProgress * durationBMs).toLong()
+            }
+        }
+
         val visibleA = computeVisibleStrokes(strokesA, baseTimeAMs, targetRelAMs)
-
-        val targetRelBMs = (clampedProgress * durationBMs).toLong()
         val visibleB = computeVisibleStrokes(strokesB, baseTimeBMs, targetRelBMs)
 
         return DualReplayFrame(
@@ -175,7 +216,8 @@ class DualReplayEngine(
             status = status,
             speed = speed,
             durationAMs = durationAMs,
-            durationBMs = durationBMs
+            durationBMs = durationBMs,
+            syncMode = syncMode
         )
     }
 

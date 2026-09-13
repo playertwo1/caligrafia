@@ -1,5 +1,6 @@
 package com.scribe.caligrafia.core.model
 
+import com.scribe.caligrafia.style.model.ScribeStyle
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.tan
@@ -246,5 +247,19 @@ data class GuidelineConfig(
             ratio = GuidelineRatio.Ratio323,
             slant = SlantConfig(angleDegrees = 68.0f, spacingPx = 70.0f)
         )
+
+        /** Gera configuração de pautas a partir de um [ScribeStyle] (R05). */
+        fun fromStyle(style: ScribeStyle, xHeightPx: Float = 50f): GuidelineConfig {
+            val slant = if (style.defaultSlantAngle in 10f..170f && style.defaultSlantAngle != 90.0f) {
+                SlantConfig(angleDegrees = style.defaultSlantAngle, spacingPx = 80.0f)
+            } else {
+                null
+            }
+            return GuidelineConfig(
+                xHeightPx = xHeightPx,
+                ratio = style.recommendedRatio,
+                slant = slant
+            )
+        }
     }
 }

@@ -20,6 +20,7 @@ object NotebookManifestSerializer {
         val sb = StringBuilder()
         sb.append("id=").append(notebook.id).append("\n")
         sb.append("title=").append(escapeString(notebook.title)).append("\n")
+        sb.append("coverStyle=").append(notebook.coverStyle).append("\n")
         sb.append("createdAt=").append(notebook.createdAt).append("\n")
         sb.append("updatedAt=").append(notebook.updatedAt).append("\n")
         sb.append("pageIds=").append(notebook.pageIds.joinToString(",")).append("\n")
@@ -30,6 +31,7 @@ object NotebookManifestSerializer {
         val lines = content.lines()
         var id = ""
         var title = "Caderno Sem Título"
+        var coverStyle = "PAPEL_ARTESANAL"
         var createdAt = System.currentTimeMillis()
         var updatedAt = System.currentTimeMillis()
         var pageIds = emptyList<String>()
@@ -44,6 +46,7 @@ object NotebookManifestSerializer {
             when (key) {
                 "id" -> id = value
                 "title" -> title = unescapeString(value)
+                "coverStyle" -> coverStyle = value
                 "createdAt" -> createdAt = value.toLongOrNull() ?: createdAt
                 "updatedAt" -> updatedAt = value.toLongOrNull() ?: updatedAt
                 "pageIds" -> {
@@ -56,6 +59,7 @@ object NotebookManifestSerializer {
         return Notebook(
             id = id,
             title = title,
+            coverStyle = coverStyle,
             createdAt = createdAt,
             updatedAt = updatedAt,
             pageIds = pageIds

@@ -29,17 +29,19 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
+import java.io.OutputStreamWriter
 import java.util.UUID
 
 enum class ExpansionsTab(val title: String) {
-    SIGNATURE("Assinatura"),
-    PASSAGES("Cópia de Textos"),
-    BACKUP("Backup & Dados"),
-    SPEN_WATCH("S Pen & Watch")
+    TEACHER("Diagnóstico"),
+    ALPHABET("Meu Alfabeto"),
+    SIGNATURE("Assinaturas"),
+    BACKUP("Backup"),
+    SPEN_SETTINGS("Caneta S Pen")
 }
 
 data class ExpansionsUiState(
-    val activeTab: ExpansionsTab = ExpansionsTab.SIGNATURE,
+    val activeTab: ExpansionsTab = ExpansionsTab.TEACHER,
     // Assinatura
     val baselineAttempt: SignatureAttempt? = null,
     val currentStrokes: List<Stroke> = emptyList(),
@@ -66,7 +68,9 @@ data class ExpansionsUiState(
 
 class ExpansionsViewModel @JvmOverloads constructor(
     application: Application,
-    private val backupManager: ScribeBackupManager = ScribeBackupManager(application.filesDir),
+    private val backupManager: ScribeBackupManager = ScribeBackupManager(
+        application.filesDir ?: File(System.getProperty("java.io.tmpdir", "."), "scribe_test_files")
+    ),
     private val watchBridge: IWatchCompanionBridge = WatchCompanionAdapter(application)
 ) : AndroidViewModel(application) {
 
@@ -113,8 +117,8 @@ class ExpansionsViewModel @JvmOverloads constructor(
 
         var minX = Float.MAX_VALUE
         var minY = Float.MAX_VALUE
-        var maxX = Float.MIN_VALUE
-        var maxY = Float.MIN_VALUE
+        var maxX = -Float.MAX_VALUE
+        var maxY = -Float.MAX_VALUE
 
         for (s in strokes) {
             for (p in s.points) {
@@ -128,7 +132,7 @@ class ExpansionsViewModel @JvmOverloads constructor(
         val duration = (strokes.maxOf { it.endedAtMs } - strokes.first().startedAtMs).coerceAtLeast(1L)
         val attempt = SignatureAttempt(
             id = UUID.randomUUID().toString(),
-            strokes = strokes,
+            strokes = strokes.toList(),
             durationMs = duration,
             minX = minX,
             minY = minY,
@@ -156,6 +160,32 @@ class ExpansionsViewModel @JvmOverloads constructor(
             )
         }
         return svg
+    }
+
+    fun exportSvg(outputDir: File): File? {
+        val strokes = _uiState.value.currentStrokes.ifEmpty {
+            _uiState.value.baselineAttempt?.strokes ?: emptyList()
+        }
+        if (strokes.isEmpty()) {
+            _uiState.update { it.copy(snackbarMessage = "Nenhum traço de assinatura para exportar.") }
+            return null
+        }
+        return try {
+            val svg = generateSvg()
+            outputDir.mkdirs()
+            val file = File(outputDir, "assinatura_${System.currentTimeMillis()}.svg")
+            FileOutputStream(file).use { fos ->
+                val writer = OutputStreamWriter(fos, Charsets.UTF_8)
+                writer.write(svg)
+                writer.flush()
+                fos.fd.sync()
+            }
+            _uiState.update { it.copy(snackbarMessage = "Arquivo SVG salvo em: ${file.name}") }
+            file
+        } catch (e: Throwable) {
+            _uiState.update { it.copy(snackbarMessage = "Erro ao exportar SVG: ${e.message}") }
+            null
+        }
     }
 
     fun exportPng(outputDir: File): File? {
@@ -235,6 +265,9 @@ class ExpansionsViewModel @JvmOverloads constructor(
                 }
                 onComplete?.invoke(true)
             } catch (e: Throwable) {
+                if (destinationFile.exists()) {
+                    destinationFile.delete()
+                }
                 _uiState.update {
                     it.copy(
                         isExporting = false,

@@ -87,7 +87,7 @@ fun AlphabetScreen(
     viewModel: AlphabetViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToPractice: ((String) -> Unit)? = null,
-    onNavigateToNotebook: (() -> Unit)? = null
+    onNavigateToNotebook: ((String) -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -195,21 +195,23 @@ fun AlphabetScreen(
                 viewModel.loadVariantPreview(variantId)
             },
             onNavigateToPractice = {
-                val symbol = uiState.selectedGlyph!!.symbol
+                val glyph = uiState.selectedGlyph!!
                 viewModel.selectGlyph(null)
-                onNavigateToPractice?.invoke(symbol)
+                onNavigateToPractice?.invoke(glyph.id)
             }
         )
     }
 
     // Diálogo de Sucesso na Compilação do PersonalStyle
     if (uiState.compilationSuccessDialogVisible && uiState.lastCompiledStyle != null) {
+        val compiledStyle = uiState.lastCompiledStyle!!
         PersonalStyleCompiledDialog(
-            style = uiState.lastCompiledStyle!!,
+            style = compiledStyle,
             onDismiss = { viewModel.dismissCompilationDialog() },
             onUseInNotebook = {
+                val styleId = compiledStyle.id
                 viewModel.dismissCompilationDialog()
-                onNavigateToNotebook?.invoke()
+                onNavigateToNotebook?.invoke(styleId)
             }
         )
     }

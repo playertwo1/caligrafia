@@ -14,7 +14,9 @@ data class PracticeAttemptRecord(
     val scorePercent: Int,
     val averageSlantDegrees: Float,
     val durationMs: Long,
-    val isBaseline: Boolean = false
+    val isBaseline: Boolean = false,
+    val targetSlantDegrees: Float? = null,
+    val styleId: String? = null
 )
 
 /**
@@ -28,7 +30,10 @@ data class BeforeAfterComparison(
     val scoreGainPercent: Int,
     val slantImprovementDegrees: Float,
     val durationDeltaMs: Long,
-    val summaryInsight: String
+    val summaryInsight: String,
+    val speedBeforePxPerMs: Float = 0f,
+    val speedAfterPxPerMs: Float = 0f,
+    val speedGainPercent: Float = 0f
 )
 
 /**

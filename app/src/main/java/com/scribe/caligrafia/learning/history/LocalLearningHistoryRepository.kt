@@ -20,6 +20,7 @@ class LocalLearningHistoryRepository(
 
     private var cachedSessions = mutableListOf<CompletedSessionRecord>()
     private var cachedRepetitionItems = mutableMapOf<String, SpacedRepetitionItem>()
+    private var lastKnownModified: Long = 0L
 
     init {
         synchronized(lock) {
@@ -35,7 +36,10 @@ class LocalLearningHistoryRepository(
         updatedRepetition: SpacedRepetitionItem? = null
     ) {
         synchronized(lock) {
-            cachedSessions.add(0, session) // Mais recente primeiro
+            checkAndReloadIfModifiedExternally()
+            if (cachedSessions.none { it.sessionId == session.sessionId }) {
+                cachedSessions.add(0, session) // Mais recente primeiro
+            }
             if (updatedRepetition != null) {
                 cachedRepetitionItems[updatedRepetition.targetId] = updatedRepetition
             }
@@ -48,6 +52,7 @@ class LocalLearningHistoryRepository(
      */
     fun getRepetitionItems(): List<SpacedRepetitionItem> {
         synchronized(lock) {
+            checkAndReloadIfModifiedExternally()
             return cachedRepetitionItems.values.toList()
         }
     }
@@ -57,6 +62,7 @@ class LocalLearningHistoryRepository(
      */
     fun getProgressSummary(): LearningProgressSummary {
         synchronized(lock) {
+            checkAndReloadIfModifiedExternally()
             val totalSeconds = cachedSessions.sumOf { it.actualDurationSeconds }
             val totalMinutes = (totalSeconds / 60)
             val totalSessions = cachedSessions.size
@@ -80,10 +86,17 @@ class LocalLearningHistoryRepository(
         }
     }
 
+    private fun checkAndReloadIfModifiedExternally() {
+        if (historyFile.exists() && historyFile.lastModified() > lastKnownModified) {
+            loadFromDisk()
+        }
+    }
+
     private fun loadFromDisk() {
         if (!historyFile.exists()) return
 
         try {
+            lastKnownModified = historyFile.lastModified()
             val jsonText = historyFile.readText(StandardCharsets.UTF_8)
             val (sessions, repetitions) = LearningHistorySerializer.deserialize(jsonText)
             cachedSessions.clear()
@@ -108,10 +121,10 @@ class LocalLearningHistoryRepository(
         val tempFile = File(baseDir, "learning_history.json.tmp")
         try {
             FileOutputStream(tempFile).use { fos ->
-                OutputStreamWriter(fos, StandardCharsets.UTF_8).use { writer ->
-                    writer.write(jsonString)
-                    writer.flush()
-                }
+                val writer = OutputStreamWriter(fos, StandardCharsets.UTF_8)
+                writer.write(jsonString)
+                writer.flush()
+                fos.flush()
                 try {
                     fos.fd.sync()
                 } catch (_: Throwable) {}
@@ -122,6 +135,7 @@ class LocalLearningHistoryRepository(
                 StandardCopyOption.REPLACE_EXISTING,
                 StandardCopyOption.ATOMIC_MOVE
             )
+            lastKnownModified = historyFile.lastModified()
         } catch (e: Throwable) {
             if (tempFile.exists()) tempFile.delete()
             throw e

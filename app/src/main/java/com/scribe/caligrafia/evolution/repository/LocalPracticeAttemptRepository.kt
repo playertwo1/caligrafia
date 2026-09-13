@@ -45,9 +45,6 @@ class LocalPracticeAttemptRepository(
         synchronized(lock) {
             if (!attemptsDir.exists()) attemptsDir.mkdirs()
             loadManifest()
-            if (cachedMetadata.isEmpty()) {
-                seedInitialSamples()
-            }
         }
     }
 
@@ -172,12 +169,12 @@ class LocalPracticeAttemptRepository(
         val temp = File(attemptsDir, "attempts_manifest.txt.tmp")
         try {
             FileOutputStream(temp).use { fos ->
-                OutputStreamWriter(fos, StandardCharsets.UTF_8).use { writer ->
-                    for (meta in cachedMetadata) {
-                        writer.write("${meta.attemptId}|${meta.targetId}|${meta.targetTitle}|${meta.timestampMs}|${meta.scorePercent}|${meta.averageSlantDegrees}|${meta.durationMs}|${meta.isBaseline}\n")
-                    }
-                    writer.flush()
+                val writer = OutputStreamWriter(fos, StandardCharsets.UTF_8)
+                for (meta in cachedMetadata) {
+                    writer.write("${meta.attemptId}|${meta.targetId}|${meta.targetTitle}|${meta.timestampMs}|${meta.scorePercent}|${meta.averageSlantDegrees}|${meta.durationMs}|${meta.isBaseline}\n")
                 }
+                writer.flush()
+                fos.flush()
                 try { fos.fd.sync() } catch (_: Throwable) {}
             }
             Files.move(temp.toPath(), manifestFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)

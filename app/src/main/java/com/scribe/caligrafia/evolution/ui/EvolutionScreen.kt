@@ -59,6 +59,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.scribe.caligrafia.core.model.Stroke
@@ -81,20 +82,22 @@ fun EvolutionScreen(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF0F172A),
-                    titleContentColor = Color.White
+                    containerColor = Color.White,
+                    titleContentColor = com.scribe.caligrafia.ui.theme.ScribeTextPrimary
                 ),
                 title = {
                     Column {
                         Text(
-                            text = "Painel de Evolução (M5)",
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold
+                            text = "Sua Evolução",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Serif,
+                            color = com.scribe.caligrafia.ui.theme.ScribeTextPrimary
                         )
                         Text(
-                            text = "Before/After, Overlay, Dual Replay e Consistência",
+                            text = "Histórico de escrita, consistência e comparação de traços",
                             fontSize = 11.sp,
-                            color = Color(0xFF94A3B8)
+                            color = com.scribe.caligrafia.ui.theme.ScribeTextMuted
                         )
                     }
                 },
@@ -102,8 +105,8 @@ fun EvolutionScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Voltar",
-                            tint = Color.White
+                            contentDescription = "Voltar ao Caderno",
+                            tint = com.scribe.caligrafia.ui.theme.ScribeTextPrimary
                         )
                     }
                 }
@@ -307,6 +310,52 @@ private fun CalendarTabContent(
     }
 }
 
+@Composable
+private fun EvolutionEmptyState(
+    title: String = "Nenhum comparativo disponível ainda",
+    description: String = "Pratique exercícios no Treino Guiado para acompanhar sua evolução lado a lado com sua caligrafia real!",
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.TrendingUp,
+                contentDescription = null,
+                tint = Color(0xFF2563EB),
+                modifier = Modifier.size(48.dp)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = title,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = Color(0xFF0F172A),
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = description,
+                fontSize = 13.sp,
+                color = Color(0xFF64748B),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
 /**
  * Aba 2: Comparador Antes & Depois (SCR-501).
  */
@@ -316,6 +365,11 @@ private fun BeforeAfterTabContent(
     selected: BeforeAfterComparison?,
     onSelect: (String) -> Unit
 ) {
+    if (comparisons.isEmpty()) {
+        EvolutionEmptyState()
+        return
+    }
+
     val scrollState = rememberScrollState()
 
     Column(
@@ -451,6 +505,11 @@ private fun OverlayTabContent(
     onSelect: (String) -> Unit,
     onAlphaChanged: (Float) -> Unit
 ) {
+    if (comparisons.isEmpty()) {
+        EvolutionEmptyState()
+        return
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -546,6 +605,11 @@ private fun DualReplayTabContent(
     onSeek: (Float) -> Unit,
     onSetSpeed: (ReplaySpeed) -> Unit
 ) {
+    if (comparisons.isEmpty()) {
+        EvolutionEmptyState()
+        return
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -734,19 +798,62 @@ private fun DrawScope.drawStrokeSequence(
     overrideColor: Color? = null,
     alpha: Float = 1.0f
 ) {
+    if (strokes.isEmpty()) return
+
+    val allPts = strokes.flatMap { it.points }
+    if (allPts.isEmpty()) return
+
+    val minX = allPts.minOf { it.x }
+    val maxX = allPts.maxOf { it.x }
+    val minY = allPts.minOf { it.y }
+    val maxY = allPts.maxOf { it.y }
+    val strokeW = (maxX - minX).coerceAtLeast(1f)
+    val strokeH = (maxY - minY).coerceAtLeast(1f)
+
+    // Escala e centraliza preservando o aspecto do traço dentro do preview
+    val padding = 16f
+    val availableW = (size.width - 2 * padding).coerceAtLeast(1f)
+    val availableH = (size.height - 2 * padding).coerceAtLeast(1f)
+
+    val shouldScale = strokeW > size.width || strokeH > size.height || minX < 0f || minY < 0f || maxX > size.width || maxY > size.height
+    val scale = if (shouldScale) {
+        minOf(availableW / strokeW, availableH / strokeH).coerceAtMost(1.0f)
+    } else 1.0f
+
+    val offsetX = if (shouldScale) padding + (availableW - strokeW * scale) * 0.5f - minX * scale else 0f
+    val offsetY = if (shouldScale) padding + (availableH - strokeH * scale) * 0.5f - minY * scale else 0f
+
+    fun transform(x: Float, y: Float): Offset {
+        return if (shouldScale) Offset(x * scale + offsetX, y * scale + offsetY) else Offset(x, y)
+    }
+
     for (stroke in strokes) {
-        if (stroke.points.size < 2) continue
         val strokeColor = overrideColor ?: Color(stroke.color ?: android.graphics.Color.BLACK)
-        val baseWidth = (stroke.baseWidthPx ?: 5.0f)
+        val baseWidth = (stroke.baseWidthPx ?: 5.0f) * scale
+
+        // R13: Preservação de pontos isolados (pingos no 'i', acentos, pontuações)
+        if (stroke.points.size == 1) {
+            val p = stroke.points[0]
+            val width = (baseWidth * (p.pressure ?: 0.5f) * 1.5f).coerceAtLeast(2.0f)
+            val mapped = transform(p.x, p.y)
+            drawCircle(
+                color = strokeColor.copy(alpha = alpha.coerceIn(0f, 1f)),
+                radius = width * 0.5f,
+                center = mapped
+            )
+            continue
+        }
 
         for (i in 0 until stroke.points.size - 1) {
             val p1 = stroke.points[i]
             val p2 = stroke.points[i + 1]
             val width = (baseWidth * (p1.pressure ?: 0.5f) * 1.5f).coerceAtLeast(1.5f)
+            val mapped1 = transform(p1.x, p1.y)
+            val mapped2 = transform(p2.x, p2.y)
             drawLine(
                 color = strokeColor.copy(alpha = alpha.coerceIn(0f, 1f)),
-                start = Offset(p1.x, p1.y),
-                end = Offset(p2.x, p2.y),
+                start = mapped1,
+                end = mapped2,
                 strokeWidth = width,
                 cap = StrokeCap.Round
             )

@@ -92,8 +92,12 @@ import java.io.File
 @Composable
 fun ExpansionsScreen(
     viewModel: ExpansionsViewModel,
+    teacherViewModel: com.scribe.caligrafia.teacher.ui.TeacherViewModel? = null,
+    alphabetViewModel: com.scribe.caligrafia.alphabet.ui.AlphabetViewModel? = null,
     onBack: () -> Unit,
-    onNavigateToPracticeWithText: ((PassageItem) -> Unit)? = null
+    onNavigateToPracticeWithText: ((PassageItem) -> Unit)? = null,
+    onNavigateToPractice: ((String) -> Unit)? = null,
+    onNavigateToNotebookWithStyle: ((String) -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -113,15 +117,16 @@ fun ExpansionsScreen(
                 title = {
                     Column {
                         Text(
-                            text = "Estúdio de Expansões",
+                            text = "Recursos & Ajustes",
                             fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Serif,
                             fontSize = 18.sp,
-                            color = Color(0xFF0F172A)
+                            color = com.scribe.caligrafia.ui.theme.ScribeTextPrimary
                         )
                         Text(
-                            text = "Milestone M8 — Assinaturas, Cópia, Backup & S Pen",
-                            fontSize = 12.sp,
-                            color = Color(0xFF64748B)
+                            text = "Diagnóstico, Alfabeto, Assinaturas, Backup e S Pen",
+                            fontSize = 11.sp,
+                            color = com.scribe.caligrafia.ui.theme.ScribeTextMuted
                         )
                     }
                 },
@@ -130,7 +135,7 @@ fun ExpansionsScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Voltar ao Caderno",
-                            tint = Color(0xFF0F172A)
+                            tint = com.scribe.caligrafia.ui.theme.ScribeTextPrimary
                         )
                     }
                 },
@@ -150,12 +155,12 @@ fun ExpansionsScreen(
             ScrollableTabRow(
                 selectedTabIndex = uiState.activeTab.ordinal,
                 containerColor = Color.White,
-                contentColor = Color(0xFF2563EB),
+                contentColor = com.scribe.caligrafia.ui.theme.ScribeBluePrimary,
                 edgePadding = 16.dp,
                 indicator = { tabPositions ->
                     TabRowDefaults.SecondaryIndicator(
                         Modifier.tabIndicatorOffset(tabPositions[uiState.activeTab.ordinal]),
-                        color = Color(0xFF2563EB),
+                        color = com.scribe.caligrafia.ui.theme.ScribeBluePrimary,
                         height = 3.dp
                     )
                 }
@@ -168,7 +173,7 @@ fun ExpansionsScreen(
                             Text(
                                 text = tab.title,
                                 fontWeight = if (uiState.activeTab == tab) FontWeight.Bold else FontWeight.Normal,
-                                color = if (uiState.activeTab == tab) Color(0xFF2563EB) else Color(0xFF64748B)
+                                color = if (uiState.activeTab == tab) com.scribe.caligrafia.ui.theme.ScribeBluePrimary else Color(0xFF64748B)
                             )
                         }
                     )
@@ -177,13 +182,42 @@ fun ExpansionsScreen(
 
             // Conteúdo da aba selecionada
             when (uiState.activeTab) {
+                ExpansionsTab.TEACHER -> {
+                    if (teacherViewModel != null) {
+                        com.scribe.caligrafia.teacher.ui.TeacherScreen(
+                            viewModel = teacherViewModel,
+                            onBack = onBack,
+                            onStartPractice = { exerciseId ->
+                                onNavigateToPractice?.invoke(exerciseId)
+                            }
+                        )
+                    } else {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("Diagnóstico do Professor indisponível")
+                        }
+                    }
+                }
+                ExpansionsTab.ALPHABET -> {
+                    if (alphabetViewModel != null) {
+                        com.scribe.caligrafia.alphabet.ui.AlphabetScreen(
+                            viewModel = alphabetViewModel,
+                            onNavigateBack = onBack,
+                            onNavigateToPractice = { targetId ->
+                                onNavigateToPractice?.invoke(targetId)
+                            },
+                            onNavigateToNotebook = { styleId ->
+                                onNavigateToNotebookWithStyle?.invoke(styleId)
+                            }
+                        )
+                    } else {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("Alfabeto Pessoal indisponível")
+                        }
+                    }
+                }
                 ExpansionsTab.SIGNATURE -> SignatureStudioContent(viewModel = viewModel)
-                ExpansionsTab.PASSAGES -> PassagesContent(
-                    viewModel = viewModel,
-                    onNavigateToPracticeWithText = onNavigateToPracticeWithText
-                )
                 ExpansionsTab.BACKUP -> BackupContent(viewModel = viewModel)
-                ExpansionsTab.SPEN_WATCH -> SpenAndWatchContent(viewModel = viewModel)
+                ExpansionsTab.SPEN_SETTINGS -> SpenAndWatchContent(viewModel = viewModel)
             }
         }
     }
@@ -412,7 +446,8 @@ private fun SignatureStudioContent(viewModel: ExpansionsViewModel) {
                     ) {
                         Button(
                             onClick = {
-                                viewModel.generateSvg()
+                                val dir = File(context.filesDir, "signatures")
+                                viewModel.exportSvg(dir)
                                 showSvgDialog = true
                             },
                             modifier = Modifier.weight(1f),
@@ -721,16 +756,18 @@ private fun BackupContent(viewModel: ExpansionsViewModel) {
                         Button(
                             onClick = {
                                 val backupsDir = File(context.filesDir, "backups")
+                                backupsDir.mkdirs()
                                 val dest = File(backupsDir, "scribe_backup_${System.currentTimeMillis()}.scribepack")
                                 viewModel.createBackup(dest)
                             },
                             enabled = !uiState.isExporting,
                             modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+                            colors = ButtonDefaults.buttonColors(containerColor = com.scribe.caligrafia.ui.theme.ScribeBluePrimary)
                         ) {
                             Text(
                                 if (uiState.isExporting) "Exportando..." else "Criar Backup Agora",
-                                fontSize = 12.sp
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }
@@ -738,7 +775,7 @@ private fun BackupContent(viewModel: ExpansionsViewModel) {
             }
         }
 
-        // Resumo do Último Backup
+        // Resumo do Último Backup Criado
         item {
             AnimatedVisibility(visible = uiState.lastBackupSummary != null) {
                 uiState.lastBackupSummary?.let { summary ->
@@ -762,6 +799,121 @@ private fun BackupContent(viewModel: ExpansionsViewModel) {
                                 color = Color(0xFF334155),
                                 lineHeight = 18.sp
                             )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Lista de Backups Disponíveis para Restauração (Fluxo 10)
+        item {
+            val backups = remember(uiState.lastBackupSummary, uiState.lastImportResult) {
+                val dir = File(context.filesDir, "backups")
+                dir.listFiles { f -> f.extension == "scribepack" }?.sortedByDescending { it.lastModified() } ?: emptyList()
+            }
+            var fileToRestore by remember { mutableStateOf<File?>(null) }
+
+            if (fileToRestore != null) {
+                val targetFile = fileToRestore!!
+                AlertDialog(
+                    onDismissRequest = { fileToRestore = null },
+                    title = {
+                        Text("Restaurar dados?", fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
+                    },
+                    text = {
+                        Text(
+                            text = "Deseja restaurar o backup '${targetFile.name}'? A restauração é atômica com rollback automático em caso de erro.",
+                            fontSize = 13.sp,
+                            color = com.scribe.caligrafia.ui.theme.ScribeTextSecondary
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                viewModel.restoreBackup(targetFile)
+                                fileToRestore = null
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = com.scribe.caligrafia.ui.theme.ScribeBluePrimary)
+                        ) {
+                            Text("Restaurar Agora")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { fileToRestore = null }) {
+                            Text("Cancelar", color = com.scribe.caligrafia.ui.theme.ScribeTextSecondary)
+                        }
+                    }
+                )
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Arquivos de Backup Armazenados",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = com.scribe.caligrafia.ui.theme.ScribeTextPrimary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Restaure com segurança atômica e verificação de integridade ZIP.",
+                        fontSize = 12.sp,
+                        color = com.scribe.caligrafia.ui.theme.ScribeTextMuted
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (backups.isEmpty()) {
+                        Text(
+                            text = "Nenhum arquivo de backup gerado ainda neste aparelho.",
+                            fontSize = 12.sp,
+                            color = Color(0xFF94A3B8)
+                        )
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            backups.forEach { file ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(Color(0xFFF8FAFC), RoundedCornerShape(8.dp))
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = file.name,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = com.scribe.caligrafia.ui.theme.ScribeTextPrimary
+                                        )
+                                        Text(
+                                            text = "${file.length() / 1024} KB",
+                                            fontSize = 11.sp,
+                                            color = com.scribe.caligrafia.ui.theme.ScribeTextMuted
+                                        )
+                                    }
+
+                                    Button(
+                                        onClick = { fileToRestore = file },
+                                        enabled = !uiState.isImporting,
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEFF6FF)),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Text(
+                                            "Restaurar",
+                                            fontSize = 11.sp,
+                                            color = com.scribe.caligrafia.ui.theme.ScribeBluePrimary,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }

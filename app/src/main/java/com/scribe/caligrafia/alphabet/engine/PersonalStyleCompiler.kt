@@ -118,15 +118,33 @@ class PersonalStyleCompiler {
             for (stroke in variant.strokes) {
                 val pts = stroke.points
                 if (pts.size >= 2) {
+                    for (i in 0 until pts.size - 1) {
+                        val p1 = pts[i]
+                        val p2 = pts[i + 1]
+                        val dy = p2.y - p1.y
+                        val dx = p2.x - p1.x
+                        val dist = kotlin.math.sqrt(dx * dx + dy * dy)
+
+                        // Traços descendentes significativos (dy > 4px, dist > 5px)
+                        if (dy > 4f && dist > 5f) {
+                            // Convenção canônica caligráfica: atan2(dy, -dx)
+                            val angleRad = atan2(dy.toDouble(), (-dx).toDouble())
+                            var deg = Math.toDegrees(angleRad).toFloat()
+                            if (deg < 0) deg += 180f
+                            if (deg in 45f..90f) {
+                                measuredAngles.add(deg)
+                            }
+                        }
+                    }
+                    // Endpoints diretos
                     val pFirst = pts.first()
                     val pLast = pts.last()
-                    val dy = pLast.y - pFirst.y
-                    val dx = pLast.x - pFirst.x
-
-                    // Traços descendentes significativos (dy > 10px)
-                    if (dy > 10f) {
-                        val rad = atan2(dy, dx)
-                        val deg = Math.toDegrees(rad.toDouble()).toFloat()
+                    val totalDy = pLast.y - pFirst.y
+                    val totalDx = pLast.x - pFirst.x
+                    if (totalDy > 8f) {
+                        val angleRad = atan2(totalDy.toDouble(), (-totalDx).toDouble())
+                        var deg = Math.toDegrees(angleRad).toFloat()
+                        if (deg < 0) deg += 180f
                         if (deg in 45f..90f) {
                             measuredAngles.add(deg)
                         }
@@ -167,9 +185,9 @@ class PersonalStyleCompiler {
             if (avgNormalHeight > 0.0 && avgAscenderHeight > 0.0) {
                 val ratio = avgAscenderHeight / avgNormalHeight
                 when {
-                    ratio >= 2.4 -> GuidelineRatio.Ratio323 // Estilo alongado clássico (Spencerian)
-                    ratio >= 1.7 -> GuidelineRatio.Ratio212 // Estilo moderado (Copperplate)
-                    else -> GuidelineRatio.Ratio111         // Estilo escolar
+                    ratio >= 2.4 -> GuidelineRatio.Ratio212 // Estilo de alta ascensão (Copperplate 2:1:2)
+                    ratio >= 1.7 -> GuidelineRatio.Ratio323 // Estilo moderado (Spencerian/Itálica 3:2:3)
+                    else -> GuidelineRatio.Ratio111         // Estilo compacto/escolar (1:1:1)
                 }
             } else {
                 GuidelineRatio.Ratio212

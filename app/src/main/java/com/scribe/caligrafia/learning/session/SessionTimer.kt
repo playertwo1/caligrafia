@@ -2,7 +2,9 @@ package com.scribe.caligrafia.learning.session
 
 import com.scribe.caligrafia.learning.model.CurriculumLesson
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,6 +23,7 @@ class SessionTimer(
     private val scope: CoroutineScope? = null
 ) {
     private var tickerJob: Job? = null
+    private val activeScope: CoroutineScope = scope ?: CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     private val _sessionState = MutableStateFlow<ActiveSessionState?>(null)
     val sessionState: StateFlow<ActiveSessionState?> = _sessionState.asStateFlow()
@@ -151,7 +154,14 @@ class SessionTimer(
                     )
                 }
             } else {
-                finishSession()
+                tickerJob?.cancel()
+                _sessionState.update {
+                    it?.copy(
+                        totalElapsedSeconds = newTotalElapsed,
+                        isFinished = true,
+                        currentPhase = SessionPhase.REVIEW_SUMMARY
+                    )
+                }
             }
         } else {
             _sessionState.update {
@@ -172,9 +182,8 @@ class SessionTimer(
     }
 
     private fun startTicker() {
-        val coroutineScope = scope ?: return
         tickerJob?.cancel()
-        tickerJob = coroutineScope.launch {
+        tickerJob = activeScope.launch {
             while (true) {
                 delay(1000L)
                 tickOneSecond()

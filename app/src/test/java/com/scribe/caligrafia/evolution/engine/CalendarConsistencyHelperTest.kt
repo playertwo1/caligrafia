@@ -83,4 +83,26 @@ class CalendarConsistencyHelperTest {
         assertEquals(18, summary.averageAccuracyGainPercent)
         assertEquals(2, summary.comparisonsCount)
     }
+
+    @Test
+    fun buildMonthDays_zeroSecondSession_doesNotTurnIntoOneMinute() {
+        // R07: Sessão com 0 segundos não deve virar 1 minuto inventado
+        val cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+        cal.set(2026, Calendar.SEPTEMBER, 15, 12, 0, 0)
+
+        val sessionZero = CompletedSessionRecord(
+            sessionId = "s_zero",
+            lessonId = "l1",
+            lessonTitle = "Lição Zero",
+            timestampMs = cal.timeInMillis,
+            durationMinutes = 0,
+            actualDurationSeconds = 0,
+            attemptsCount = 0,
+            averageScorePercent = 0
+        )
+
+        val days = CalendarConsistencyHelper.buildMonthDays(listOf(sessionZero), cal)
+        val day15 = days.first { it.dayOfMonth == 15 }
+        assertEquals(0, day15.totalMinutesPracticed)
+    }
 }

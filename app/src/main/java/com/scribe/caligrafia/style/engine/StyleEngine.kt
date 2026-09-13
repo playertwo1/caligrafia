@@ -14,12 +14,15 @@ import java.io.File
  * 3. Prover estilos para o Caderno Livre e o Treino Guiado.
  */
 class StyleEngine(
-    private val customFontsDir: File? = null
+    private val customFontsDir: File? = null,
+    private val storageDir: File? = customFontsDir?.parentFile ?: customFontsDir
 ) {
     private val customStyles = mutableMapOf<String, ScribeStyle>()
+    private val personalStylesFile: File? = storageDir?.let { File(it, "personal_styles.json") }
 
     init {
         scanCustomFonts()
+        loadPersonalStyles()
     }
 
     /**
@@ -44,9 +47,12 @@ class StyleEngine(
         val expanded = com.scribe.caligrafia.expansions.styles.ExpandedStyles.allExpandedStyles.firstOrNull { it.id == styleId }
         if (expanded != null) return expanded
 
-        // 2. Verifica nos estilos customizados importados
+        // 2. Verifica nos estilos customizados importados ou pessoais
         val custom = customStyles[styleId]
         if (custom != null) {
+            if (custom.category == com.scribe.caligrafia.style.model.StyleCategory.PERSONAL) {
+                return custom
+            }
             val path = custom.customFontPath
             if (path != null && File(path).exists()) {
                 return custom
@@ -86,13 +92,65 @@ class StyleEngine(
      */
     fun registerCustomStyle(style: ScribeStyle) {
         customStyles[style.id] = style
+        if (style.category == com.scribe.caligrafia.style.model.StyleCategory.PERSONAL) {
+            savePersonalStyles()
+        }
+    }
+
+    /**
+     * Carrega estilos pessoais compilados a partir de arquivo persistido em disco.
+     */
+    fun loadPersonalStyles(file: File? = personalStylesFile) {
+        val candidateFiles = if (file != null) {
+            listOf(file)
+        } else {
+            listOfNotNull(
+                personalStylesFile,
+                storageDir?.let { File(it, "personal_styles.json") },
+                customFontsDir?.let { File(it, "personal_styles.json") },
+                customFontsDir?.parentFile?.let { File(it, "personal_styles.json") }
+            ).distinct()
+        }
+
+        for (target in candidateFiles) {
+            if (!target.exists() || !target.isFile) continue
+            try {
+                val content = target.readText(Charsets.UTF_8)
+                val styles = PersonalStyleSerializer.deserialize(content)
+                for (s in styles) {
+                    customStyles[s.id] = s
+                }
+            } catch (_: Throwable) {
+                // Ignora se o arquivo estiver corrompido
+            }
+        }
+    }
+
+    /**
+     * Salva estilos pessoais compilados em disco.
+     */
+    fun savePersonalStyles(file: File? = personalStylesFile) {
+        val target = file ?: return
+        val personalStyles = customStyles.values.filter { it.category == com.scribe.caligrafia.style.model.StyleCategory.PERSONAL }
+        val parent = target.parentFile
+        if (parent != null && !parent.exists()) parent.mkdirs()
+        try {
+            val json = PersonalStyleSerializer.serialize(personalStyles)
+            target.writeText(json, Charsets.UTF_8)
+        } catch (_: Throwable) {
+            // Falhas de IO não devem quebrar o fluxo
+        }
     }
 
     /**
      * Remove um estilo customizado importado.
      */
     fun removeCustomStyle(styleId: String): Boolean {
-        return customStyles.remove(styleId) != null
+        val removed = customStyles.remove(styleId) != null
+        if (removed) {
+            savePersonalStyles()
+        }
+        return removed
     }
 
     /**

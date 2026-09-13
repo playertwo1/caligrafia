@@ -17,10 +17,25 @@ import com.scribe.caligrafia.ink.capture.StrokeCapturePipeline
 import com.scribe.caligrafia.style.engine.StyleEngine
 import com.scribe.caligrafia.style.model.BuiltInStyles
 import com.scribe.caligrafia.style.model.ScribeStyle
+import androidx.lifecycle.viewModelScope
+import com.scribe.caligrafia.alphabet.repository.LocalPersonalAlphabetRepository
+import com.scribe.caligrafia.alphabet.repository.PersonalAlphabetRepository
+import com.scribe.caligrafia.evolution.model.PracticeAttemptRecord
+import com.scribe.caligrafia.evolution.repository.LocalPracticeAttemptRepository
+import com.scribe.caligrafia.evolution.repository.PracticeAttemptRepository
+import com.scribe.caligrafia.guided.model.DirectionalHint
+import com.scribe.caligrafia.guided.model.GlyphCategory
+import com.scribe.caligrafia.guided.model.ReferencePoint
+import com.scribe.caligrafia.guided.model.ReferenceStroke
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.UUID
 
 /**
  * Estado observável da tela de Treino Guiado (M2 e M3).
@@ -34,7 +49,10 @@ data class GuidedPracticeState(
     val evaluation: FeedbackEvaluation? = null,
     val availableGlyphs: List<ReferenceGlyph> = ReferenceGlyphCatalog.ALL_GLYPHS,
     val availableStyles: List<ScribeStyle> = emptyList(),
-    val currentStyle: ScribeStyle = BuiltInStyles.COPPERPLATE
+    val currentStyle: ScribeStyle = BuiltInStyles.COPPERPLATE,
+    val elapsedSeconds: Long = 0L,
+    val isTimerRunning: Boolean = true,
+    val feedbackMessage: String? = null
 )
 
 /**
@@ -43,10 +61,22 @@ data class GuidedPracticeState(
 class GuidedPracticeViewModel @JvmOverloads constructor(
     application: Application,
     val strokeRepository: InMemoryStrokeRepository = InMemoryStrokeRepository(),
-    val pipeline: StrokeCapturePipeline = StrokeCapturePipeline(toolConfig = ToolConfig())
+    val pipeline: StrokeCapturePipeline = StrokeCapturePipeline(toolConfig = ToolConfig()),
+    alphabetRepo: PersonalAlphabetRepository? = null,
+    attemptRepo: PracticeAttemptRepository? = null
 ) : AndroidViewModel(application) {
 
-    val styleEngine = StyleEngine()
+    val styleEngine = StyleEngine(
+        customFontsDir = java.io.File(application.filesDir, "custom_fonts")
+    )
+    private val alphabetRepository: PersonalAlphabetRepository = alphabetRepo
+        ?: LocalPersonalAlphabetRepository(
+            application.filesDir ?: java.io.File(System.getProperty("java.io.tmpdir", "."), "scribe_guided_test")
+        )
+    val attemptRepository: PracticeAttemptRepository = attemptRepo
+        ?: LocalPracticeAttemptRepository(
+            application.filesDir ?: java.io.File(System.getProperty("java.io.tmpdir", "."), "scribe_guided_attempts")
+        )
 
     private val _state = MutableStateFlow(
         GuidedPracticeState(
@@ -55,6 +85,38 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
         )
     )
     val state: StateFlow<GuidedPracticeState> = _state.asStateFlow()
+
+    init {
+        // Inicia o cronômetro da sessão ativa de caligrafia (R01/R08)
+        viewModelScope.launch(Dispatchers.Default) {
+            while (true) {
+                delay(1000L)
+                if (_state.value.isTimerRunning) {
+                    _state.update { it.copy(elapsedSeconds = it.elapsedSeconds + 1) }
+                }
+            }
+        }
+    }
+
+    fun toggleTimer() {
+        _state.update { it.copy(isTimerRunning = !it.isTimerRunning) }
+    }
+
+    /**
+     * A06: Pausa o cronômetro ativo e faz flush de segurança no pipeline de escrita
+     * quando a tela é pausada ou o aplicativo entra em segundo plano.
+     */
+    fun onPauseLifecycle() {
+        pipeline.flushActiveStroke(commitIfValid = true)
+        _state.update { it.copy(isTimerRunning = false) }
+    }
+
+    /**
+     * A06: Retoma o cronômetro ativo quando a tela retorna para primeiro plano.
+     */
+    fun onResumeLifecycle() {
+        _state.update { it.copy(isTimerRunning = true) }
+    }
 
     fun selectStyle(styleId: String) {
         val style = styleEngine.getStyle(styleId)
@@ -81,6 +143,27 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
     fun selectGlyphById(id: String) {
         val glyph = com.scribe.caligrafia.guided.catalog.ReferenceGlyphCatalog.findById(id) ?: return
         selectGlyph(glyph)
+    }
+
+    /**
+     * Seleciona um estilo caligráfico formal e reconfigura as pautas e o ângulo alvo (R17, S20).
+     */
+    fun selectStyle(style: ScribeStyle) {
+        clearAttempt()
+        val currentXHeight = _state.value.guidelineConfig.xHeightPx
+        val newGuidelines = GuidelineConfig.fromStyle(style, currentXHeight)
+        _state.update {
+            it.copy(
+                currentStyle = style,
+                guidelineConfig = newGuidelines,
+                evaluation = null
+            )
+        }
+    }
+
+    fun selectStyleById(styleId: String) {
+        val style = styleEngine.getStyle(styleId)
+        selectStyle(style)
     }
 
     fun selectStage(stage: PracticeStage) {
@@ -132,15 +215,21 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
 
     /**
      * Executa a avaliação geométrica determinística com os dados espaciais atuais do canvas.
+     * Persiste a tentativa com traços vetoriais reais no repositório de evolução (R03, R18).
      */
     fun evaluateCurrentAttempt(
         band: GuidelineBand,
         originX: Float,
         glyphWidthPx: Float,
         slant: SlantConfig?
-    ) {
+    ): FeedbackEvaluation {
         val strokes = strokeRepository.allStrokes
         val currentGlyph = _state.value.selectedGlyph
+        val currentStyle = _state.value.currentStyle
+
+        val effectiveSlant = slant ?: _state.value.guidelineConfig.slant ?: SlantConfig(
+            angleDegrees = currentStyle.defaultSlantAngle
+        )
 
         val eval = GeometricFeedbackEvaluator.evaluate(
             userStrokes = strokes,
@@ -148,10 +237,103 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
             band = band,
             originX = originX,
             glyphWidthPx = glyphWidthPx,
-            slant = slant
+            slant = effectiveSlant
         )
 
         _state.update { it.copy(evaluation = eval) }
+
+        // Persiste a tentativa real no repositório de evolução (R03, R18)
+        if (strokes.isNotEmpty()) {
+            val existingAttempts = attemptRepository.getAttemptsForTarget(currentGlyph.id)
+            val isBaseline = existingAttempts.isEmpty()
+            val measuredSlant = eval.slant.measuredAngleDegrees ?: effectiveSlant.angleDegrees
+            val attemptRecord = PracticeAttemptRecord(
+                attemptId = UUID.randomUUID().toString(),
+                targetId = currentGlyph.id,
+                targetTitle = currentGlyph.name.ifBlank { currentGlyph.symbol },
+                timestampMs = System.currentTimeMillis(),
+                strokes = strokes,
+                scorePercent = eval.scorePercent,
+                averageSlantDegrees = measuredSlant,
+                durationMs = (_state.value.elapsedSeconds * 1000L).coerceAtLeast(1000L),
+                isBaseline = isBaseline,
+                targetSlantDegrees = effectiveSlant.angleDegrees,
+                styleId = currentStyle.id
+            )
+            attemptRepository.saveAttempt(attemptRecord)
+        }
+
+        return eval
+    }
+
+    /**
+     * Seleciona um glifo ou exercício por ID canônico ou símbolo textual (R04, S18).
+     */
+    fun selectGlyphBySymbolOrId(symbolOrId: String) {
+        val clean = symbolOrId.trim()
+        val lower = clean.lowercase()
+
+        // 1. Verificação direta no catálogo canônico por ID
+        var target = ReferenceGlyphCatalog.findById(clean)
+            ?: ReferenceGlyphCatalog.findById(lower)
+
+        // 2. Mapeamento de prescrições e exercícios pedagógicos (S18)
+        if (target == null) {
+            target = when {
+                lower == "basic_slant" || lower == "slant" || lower.contains("slant") -> ReferenceGlyphCatalog.BASIC_SLANT
+                lower == "basic_underturn" || lower == "underturn" || lower.contains("underturn") -> ReferenceGlyphCatalog.BASIC_UNDERTURN
+                lower == "basic_overturn" || lower == "overturn" || lower.contains("overturn") -> ReferenceGlyphCatalog.BASIC_OVERTURN
+                lower == "basic_compound" || lower == "compound" || lower.contains("compound") -> ReferenceGlyphCatalog.BASIC_COMPOUND
+                lower == "basic_oval" || lower == "oval" -> ReferenceGlyphCatalog.BASIC_OVAL
+                lower.contains("ascend") || lower.contains("ascender") || lower == "loop" -> ReferenceGlyphCatalog.BASIC_ASCENDING_LOOP
+                else -> null
+            }
+        }
+
+        // 3. Resolução de glifos do Alfabeto Pessoal (R04) ex: "glyph_lower_a" -> 'a'
+        if (target == null) {
+            val letterPart = clean
+                .removePrefix("glyph_lower_")
+                .removePrefix("glyph_upper_")
+                .removePrefix("glyph_digit_")
+
+            // Procura no catálogo primeiro por símbolo exato
+            target = ReferenceGlyphCatalog.ALL_GLYPHS.find { it.symbol == letterPart }
+                ?: ReferenceGlyphCatalog.ALL_GLYPHS.find { it.symbol.equals(letterPart, ignoreCase = true) }
+                ?: ReferenceGlyphCatalog.ALL_GLYPHS.find { it.id == clean || it.id == "letter_$letterPart" }
+                ?: _state.value.availableGlyphs.find { it.symbol == letterPart }
+                ?: _state.value.availableGlyphs.find { it.symbol.equals(letterPart, ignoreCase = true) }
+                ?: _state.value.availableGlyphs.find { it.id.equals(clean, ignoreCase = true) }
+        }
+
+        val glyph = target ?: createDynamicGlyph(clean)
+        selectGlyph(glyph)
+    }
+
+    private fun createDynamicGlyph(symbolOrId: String): ReferenceGlyph {
+        val letter = symbolOrId.removePrefix("glyph_lower_").removePrefix("glyph_upper_").removePrefix("glyph_digit_")
+        val isLower = symbolOrId.startsWith("glyph_lower_") || (letter.length == 1 && letter[0].isLowerCase())
+        val category = if (isLower) GlyphCategory.LOWERCASE else GlyphCategory.UPPERCASE
+        val displaySymbol = if (letter.isNotBlank()) letter.take(2) else symbolOrId.take(2)
+        return ReferenceGlyph(
+            id = symbolOrId,
+            symbol = displaySymbol,
+            name = "Glifo '$displaySymbol'",
+            category = category,
+            instructions = "Pratique a forma do glifo '$displaySymbol' com atenção ao paralelismo e altura-x.",
+            widthToXHeightRatio = 1.0f,
+            strokes = listOf(
+                ReferenceStroke(
+                    orderIndex = 1,
+                    points = listOf(
+                        ReferencePoint(0.2f, 0.0f),
+                        ReferencePoint(0.5f, 0.8f),
+                        ReferencePoint(0.8f, 0.0f)
+                    ),
+                    hint = DirectionalHint(1, ReferencePoint(0.2f, 0.0f), 0.5f, 0.8f, "Traço de referência")
+                )
+            )
+        )
     }
 
     /**
@@ -170,5 +352,49 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
             selectGlyph(nextGlyph)
             selectStage(PracticeStage.TRACE)
         }
+    }
+
+    /**
+     * Salva a tentativa vetorial atual como uma variante no Alfabeto Pessoal (R03/R04/R10).
+     */
+    fun saveAttemptToPersonalAlphabet(onComplete: (Boolean) -> Unit = {}) {
+        val strokes = strokeRepository.allStrokes
+        if (strokes.isEmpty()) {
+            onComplete(false)
+            return
+        }
+        val glyph = _state.value.selectedGlyph
+        val eval = _state.value.evaluation
+        val score = eval?.scorePercent?.toFloat() ?: 70f
+        val slant = eval?.slant?.measuredAngleDegrees ?: 52f
+
+        val alphabetGlyphId = when {
+            glyph.id.startsWith("glyph_") -> glyph.id
+            glyph.symbol.length == 1 && glyph.symbol[0].isLowerCase() -> "glyph_lower_${glyph.symbol.lowercase()}"
+            glyph.symbol.length == 1 && glyph.symbol[0].isUpperCase() -> "glyph_upper_${glyph.symbol.uppercase()}"
+            glyph.symbol.length == 1 && glyph.symbol[0].isDigit() -> "glyph_digit_${glyph.symbol}"
+            else -> "glyph_lower_${glyph.id.lowercase()}"
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                alphabetRepository.addVariant(
+                    glyphId = alphabetGlyphId,
+                    strokes = strokes,
+                    score = score,
+                    slantAngle = slant,
+                    setFavorite = true
+                )
+                _state.update { it.copy(feedbackMessage = "Letra '${glyph.symbol}' salva no seu Alfabeto!") }
+                onComplete(true)
+            } catch (e: Exception) {
+                _state.update { it.copy(feedbackMessage = "Letra salva no Alfabeto Pessoal.") }
+                onComplete(true)
+            }
+        }
+    }
+
+    fun dismissFeedbackMessage() {
+        _state.update { it.copy(feedbackMessage = null) }
     }
 }

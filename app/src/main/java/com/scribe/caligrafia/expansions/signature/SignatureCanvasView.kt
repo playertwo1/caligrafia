@@ -82,14 +82,14 @@ class SignatureCanvasView @JvmOverloads constructor(
         completedStrokes.clear()
         activeStrokePoints.clear()
         invalidate()
-        onStrokeFinished?.invoke(completedStrokes)
+        onStrokeFinished?.invoke(emptyList())
     }
 
     fun undoLastStroke() {
         if (completedStrokes.isNotEmpty()) {
             completedStrokes.removeAt(completedStrokes.size - 1)
             invalidate()
-            onStrokeFinished?.invoke(completedStrokes)
+            onStrokeFinished?.invoke(completedStrokes.toList())
         }
     }
 
@@ -154,6 +154,19 @@ class SignatureCanvasView @JvmOverloads constructor(
 
             MotionEvent.ACTION_UP -> {
                 if (activeStrokePoints.isNotEmpty()) {
+                    val lastPt = activeStrokePoints.last()
+                    if (lastPt.x != event.x || lastPt.y != event.y) {
+                        activeStrokePoints.add(
+                            StrokePoint(
+                                x = event.x,
+                                y = event.y,
+                                tMs = event.eventTime,
+                                pressure = if (event.pressure > 0f) event.pressure else null,
+                                tiltRad = null,
+                                orientationRad = null
+                            )
+                        )
+                    }
                     val stroke = Stroke(
                         id = UUID.randomUUID().toString(),
                         tool = toolType,
@@ -167,7 +180,7 @@ class SignatureCanvasView @JvmOverloads constructor(
                     completedStrokes.add(stroke)
                     activeStrokePoints.clear()
                     invalidate()
-                    onStrokeFinished?.invoke(completedStrokes)
+                    onStrokeFinished?.invoke(completedStrokes.toList())
                 }
                 parent?.requestDisallowInterceptTouchEvent(false)
                 return true

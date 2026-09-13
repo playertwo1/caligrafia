@@ -120,12 +120,13 @@ class LearningViewModel @JvmOverloads constructor(
         val current = sessionTimer.sessionState.value ?: return
 
         val avgScore = current.averageScore?.roundToInt()
+        val actualMinutes = (current.totalElapsedSeconds / 60).coerceAtLeast(if (current.totalElapsedSeconds > 0) 1 else 0)
         val record = CompletedSessionRecord(
             sessionId = UUID.randomUUID().toString(),
             lessonId = current.lesson.id,
             lessonTitle = current.lesson.title,
             timestampMs = System.currentTimeMillis(),
-            durationMinutes = current.duration.minutes,
+            durationMinutes = actualMinutes,
             actualDurationSeconds = current.totalElapsedSeconds,
             attemptsCount = current.attemptsCount,
             averageScorePercent = avgScore

@@ -69,7 +69,7 @@ object TeacherSerializer {
                     val dimName = extractString(itemStr, "dimension") ?: continue
                     val dim = runCatching { BiomechanicalDimension.valueOf(dimName) }.getOrNull() ?: continue
                     val score = extractFloat(itemStr, "score") ?: 70f
-                    val observed = extractFloat(itemStr, "observedValue") ?: 0f
+                    val observed = extractFloat(itemStr, "observedValue")
                     val target = extractFloat(itemStr, "targetValue") ?: 100f
                     val statusStr = extractString(itemStr, "status") ?: "GOOD"
                     val status = runCatching { EvaluationStatus.valueOf(statusStr) }.getOrDefault(EvaluationStatus.GOOD)

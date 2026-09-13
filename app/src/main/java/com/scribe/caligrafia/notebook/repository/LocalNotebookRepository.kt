@@ -66,12 +66,16 @@ class LocalNotebookRepository(
         }
     }
 
-    override suspend fun createNotebook(title: String): Notebook = withContext(Dispatchers.IO) {
+    override suspend fun createNotebook(
+        title: String,
+        initialGuideline: GuidelineConfig,
+        coverStyle: String
+    ): Notebook = withContext(Dispatchers.IO) {
         val id = UUID.randomUUID().toString()
         val nbDir = File(notebooksRoot, id)
         nbDir.mkdirs()
 
-        // Cria a primeira página padrão do caderno
+        // Cria a primeira página com o guideline escolhido
         val firstPageId = UUID.randomUUID().toString()
         val pagesDir = File(nbDir, "pages")
         pagesDir.mkdirs()
@@ -80,7 +84,7 @@ class LocalNotebookRepository(
             id = firstPageId,
             notebookId = id,
             pageIndex = 0,
-            guidelineConfig = GuidelineConfig.copperplate(),
+            guidelineConfig = initialGuideline,
             documentRelativePath = "notebooks/$id/pages/$firstPageId.scribe"
         )
         val pageMetaFile = File(pagesDir, "$firstPageId.meta")
@@ -93,6 +97,7 @@ class LocalNotebookRepository(
         val notebook = Notebook(
             id = id,
             title = title,
+            coverStyle = coverStyle,
             pageIds = listOf(firstPageId)
         )
         val manifestFile = File(nbDir, "manifest.txt")

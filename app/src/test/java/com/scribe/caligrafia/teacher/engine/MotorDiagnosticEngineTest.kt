@@ -35,7 +35,9 @@ class MotorDiagnosticEngineTest {
         val diag = engine.diagnoseAttempts(emptyList())
 
         assertNotNull(diag)
-        assertEquals(70.0f, diag.overallScore, 0.1f)
+        // S07/S08: Dado ausente não deve virar score de 70% inventado
+        assertEquals(0.0f, diag.overallScore, 0.1f)
+        assertEquals(0, diag.totalAttemptsAnalyzed)
         assertEquals(4, diag.dimensions.size)
         assertTrue(diag.dimensions.containsKey(BiomechanicalDimension.SLANT_STABILITY))
         assertTrue(diag.dimensions.containsKey(BiomechanicalDimension.GUIDELINE_CONTAINMENT))
@@ -51,7 +53,7 @@ class MotorDiagnosticEngineTest {
             val pts = (0 until 10).map { pIdx ->
                 val dist = pIdx * 10.0
                 StrokePoint(
-                    x = (100.0 + sIdx * 50.0 + dist * cos(rad52)).toFloat(),
+                    x = (300.0 + sIdx * 50.0 - dist * cos(rad52)).toFloat(),
                     y = (100.0 + dist * sin(rad52)).toFloat(),
                     tMs = pIdx * 16L,
                     pressure = 0.5f,
@@ -111,9 +113,9 @@ class MotorDiagnosticEngineTest {
         val attemptStroke = createStroke(
             "stroke_att",
             listOf(
-                StrokePoint(100f, 100f, 1000L, 0.5f, null, null),
+                StrokePoint(140f, 100f, 1000L, 0.5f, null, null),
                 StrokePoint(120f, 150f, 1050L, 0.5f, null, null),
-                StrokePoint(140f, 200f, 1100L, 0.5f, null, null)
+                StrokePoint(100f, 200f, 1100L, 0.5f, null, null)
             )
         )
         val attempt = PracticeAttemptRecord(

@@ -60,16 +60,17 @@ class MotorDiagnosticEngine(
             BiomechanicalDimension.PRESSURE_CONTROL to pressureEval
         )
 
-        val overallScore = (
-            slantEval.score * 0.30f +
-            containmentEval.score * 0.25f +
-            rhythmEval.score * 0.25f +
-            pressureEval.score * 0.20f
-        ).coerceIn(0f, 100f)
+        // S09: Dimensões não medidas/insuficientes são excluídas da pontuação geral
+        val measuredDims = dimensions.values.filter { it.status != EvaluationStatus.INSUFFICIENT_DATA }
+        val overallScore = if (measuredDims.isNotEmpty()) {
+            measuredDims.map { it.score }.average().toFloat().coerceIn(0f, 100f)
+        } else {
+            0.0f
+        }
 
-        val sortedDims = dimensions.entries.sortedBy { it.value.score }
-        val primaryWeakness = sortedDims.firstOrNull()?.key
-        val primaryStrength = sortedDims.lastOrNull()?.key
+        val sortedDims = measuredDims.sortedBy { it.score }
+        val primaryWeakness = sortedDims.firstOrNull()?.dimension
+        val primaryStrength = sortedDims.lastOrNull()?.dimension
 
         return BiomechanicalDiagnostic(
             overallScore = overallScore,
@@ -89,39 +90,50 @@ class MotorDiagnosticEngine(
         strokes: List<Stroke>,
         targetSlantDegrees: Float
     ): DimensionEvaluation {
-        val angles = mutableListOf<Float>()
+        var totalWeightedAngle = 0.0
+        var totalWeight = 0.0
+        val weightedAngles = mutableListOf<Pair<Float, Float>>()
 
         for (stroke in strokes) {
             val pts = stroke.points
+            if (pts.size < 2) continue
             for (i in 0 until pts.size - 1) {
                 val p1 = pts[i]
                 val p2 = pts[i + 1]
-                val dy = p2.y - p1.y
                 val dx = p2.x - p1.x
+                val dy = p2.y - p1.y
+                val dist = sqrt(dx * dx + dy * dy)
 
-                // Segmentos descendentes expressivos
-                if (dy > 3.0f && sqrt(dx * dx + dy * dy) > 4.0f) {
-                    val angle = atan2(dy, dx) * 180.0f / Math.PI.toFloat()
-                    if (angle in 30.0f..90.0f) {
-                        angles.add(angle)
+                // R11 / S09: Segmentos descendentes expressivos com convenção caligráfica canônica.
+                // dy > 0 (descendente); o ângulo caligráfico em relação à linha de base é atan2(dy, -dx)
+                if (dy > 4.0f && dist > 5.0f) {
+                    val angleRad = atan2(dy.toDouble(), (-dx).toDouble())
+                    var angleDeg = Math.toDegrees(angleRad).toFloat()
+                    if (angleDeg < 0) angleDeg += 180f
+                    if (angleDeg in 20.0f..160.0f) {
+                        totalWeightedAngle += angleDeg * dist
+                        totalWeight += dist
+                        weightedAngles.add(Pair(angleDeg, dist))
                     }
                 }
             }
         }
 
-        if (angles.isEmpty()) {
+        if (totalWeight <= 0.0 || weightedAngles.isEmpty()) {
             return DimensionEvaluation(
                 dimension = BiomechanicalDimension.SLANT_STABILITY,
-                score = 70.0f,
-                observedValue = targetSlantDegrees,
+                score = 0.0f,
+                observedValue = null,
                 targetValue = targetSlantDegrees,
-                status = EvaluationStatus.GOOD,
+                status = EvaluationStatus.INSUFFICIENT_DATA,
                 shortDiagnosis = "Amostras descendentes insuficientes para cálculo de dispersão angular."
             )
         }
 
-        val meanAngle = angles.average().toFloat()
-        val variance = angles.map { (it - meanAngle).pow(2) }.average().toFloat()
+        val meanAngle = (totalWeightedAngle / totalWeight).toFloat()
+        val variance = weightedAngles.sumOf { (ang, w) ->
+            (ang - meanAngle).toDouble().pow(2) * (w / totalWeight)
+        }.toFloat()
         val stdDev = sqrt(variance)
         val angularError = kotlin.math.abs(meanAngle - targetSlantDegrees)
 
@@ -140,6 +152,7 @@ class MotorDiagnosticEngine(
             EvaluationStatus.GOOD -> "Boa inclinação (%.1f°), com variação moderada entre traços (±%.1f°).".format(meanAngle, stdDev)
             EvaluationStatus.NEEDS_ATTENTION -> "Oscilação angular perceptível (desvio ±%.1f°). Alinhe os traços a %.1f°.".format(stdDev, targetSlantDegrees)
             EvaluationStatus.CRITICAL -> "Instabilidade angular alta (desvio ±%.1f°). Mantenha o punho fixo e deslize o braço.".format(stdDev)
+            EvaluationStatus.INSUFFICIENT_DATA -> "Amostras descendentes insuficientes para cálculo de dispersão angular."
         }
 
         return DimensionEvaluation(
@@ -159,42 +172,41 @@ class MotorDiagnosticEngine(
         strokes: List<Stroke>,
         attempts: List<PracticeAttemptRecord>
     ): DimensionEvaluation {
-        // Se temos tentativas com pontuação de precisão geométrica calculada, usamos a média
         val attemptScores = attempts.map { it.scorePercent.toFloat() }
-        val baseScore = if (attemptScores.isNotEmpty()) {
-            attemptScores.average().toFloat()
-        } else {
-            // Estimativa por dispersão vertical dos traços
-            val allY = strokes.flatMap { s -> s.points.map { it.y } }
-            if (allY.isEmpty()) 70.0f
-            else {
-                val height = (allY.maxOrNull() ?: 0f) - (allY.minOrNull() ?: 0f)
-                if (height in 20f..400f) 80.0f else 60.0f
+        if (attemptScores.isNotEmpty()) {
+            val score = attemptScores.average().toFloat().coerceIn(0.0f, 100.0f)
+            val status = when {
+                score >= 85.0f -> EvaluationStatus.EXCELLENT
+                score >= 70.0f -> EvaluationStatus.GOOD
+                score >= 50.0f -> EvaluationStatus.NEEDS_ATTENTION
+                else -> EvaluationStatus.CRITICAL
             }
+            val shortDiagnosis = when (status) {
+                EvaluationStatus.EXCELLENT -> "Controle primoroso de pauta: linhas de base e ascendentes sem estouros."
+                EvaluationStatus.GOOD -> "Boa contenção na pauta, com pequenos transbordos em laçadas."
+                EvaluationStatus.NEEDS_ATTENTION -> "Atenção aos limites verticais: observe a linha de base e a altura-x."
+                EvaluationStatus.CRITICAL -> "Vazamento excessivo de pauta. Desacelere ao atingir as guias."
+                EvaluationStatus.INSUFFICIENT_DATA -> "Sem dados de pauta disponíveis."
+            }
+
+            return DimensionEvaluation(
+                dimension = BiomechanicalDimension.GUIDELINE_CONTAINMENT,
+                score = score,
+                observedValue = score,
+                targetValue = 100.0f,
+                status = status,
+                shortDiagnosis = shortDiagnosis
+            )
         }
 
-        val score = baseScore.coerceIn(0.0f, 100.0f)
-        val status = when {
-            score >= 85.0f -> EvaluationStatus.EXCELLENT
-            score >= 70.0f -> EvaluationStatus.GOOD
-            score >= 50.0f -> EvaluationStatus.NEEDS_ATTENTION
-            else -> EvaluationStatus.CRITICAL
-        }
-
-        val shortDiagnosis = when (status) {
-            EvaluationStatus.EXCELLENT -> "Controle primoroso de pauta: linhas de base e ascendentes sem estouros."
-            EvaluationStatus.GOOD -> "Boa contenção na pauta, com pequenos transbordos em laçadas."
-            EvaluationStatus.NEEDS_ATTENTION -> "Atenção aos limites verticais: observe a linha de base e a altura-x."
-            EvaluationStatus.CRITICAL -> "Vazamento excessivo de pauta. Desacelere ao atingir as guias."
-        }
-
+        // S09: Sem tentativas avaliadas contra gabarito real, não inventar scores fictícios (60%/80%)
         return DimensionEvaluation(
             dimension = BiomechanicalDimension.GUIDELINE_CONTAINMENT,
-            score = score,
-            observedValue = score,
+            score = 0.0f,
+            observedValue = null,
             targetValue = 100.0f,
-            status = status,
-            shortDiagnosis = shortDiagnosis
+            status = EvaluationStatus.INSUFFICIENT_DATA,
+            shortDiagnosis = "Sem tentativas avaliadas contra pautas de referência para cálculo de contenção."
         )
     }
 
@@ -228,11 +240,11 @@ class MotorDiagnosticEngine(
         if (speeds.isEmpty()) {
             return DimensionEvaluation(
                 dimension = BiomechanicalDimension.RHYTHM_AND_CADENCE,
-                score = 75.0f,
-                observedValue = 0.40f,
+                score = 0.0f,
+                observedValue = null,
                 targetValue = 0.45f,
-                status = EvaluationStatus.GOOD,
-                shortDiagnosis = "Cadência regular em amostras curtas."
+                status = EvaluationStatus.INSUFFICIENT_DATA,
+                shortDiagnosis = "Amostras temporais insuficientes para cálculo de cadência e fluidez."
             )
         }
 
@@ -258,6 +270,7 @@ class MotorDiagnosticEngine(
             EvaluationStatus.GOOD -> "Bom ritmo motor (%.2f px/ms), movimento uniforme.".format(avgSpeed)
             EvaluationStatus.NEEDS_ATTENTION -> "Hesitações detectadas em transições e curvas. Mantenha o fluxo contínuo."
             EvaluationStatus.CRITICAL -> "Traçado fragmentado ou hesitante. Pratique movimentos contínuos sem parar a caneta."
+            EvaluationStatus.INSUFFICIENT_DATA -> "Amostras temporais insuficientes para cálculo de cadência."
         }
 
         return DimensionEvaluation(
@@ -297,11 +310,11 @@ class MotorDiagnosticEngine(
         if (allPressures.isEmpty()) {
             return DimensionEvaluation(
                 dimension = BiomechanicalDimension.PRESSURE_CONTROL,
-                score = 75.0f,
-                observedValue = 0.5f,
-                targetValue = 0.5f,
-                status = EvaluationStatus.GOOD,
-                shortDiagnosis = "Pressão uniforme mantida (sensor neutro ou stylus capacitiva)."
+                score = 0.0f,
+                observedValue = null,
+                targetValue = 1.4f,
+                status = EvaluationStatus.INSUFFICIENT_DATA,
+                shortDiagnosis = "Sem dados de sensor de pressão da caneta disponíveis no dispositivo."
             )
         }
 
@@ -342,17 +355,17 @@ class MotorDiagnosticEngine(
         val emptyMap = BiomechanicalDimension.values().associateWith { dim ->
             DimensionEvaluation(
                 dimension = dim,
-                score = 70.0f,
-                observedValue = 0.0f,
-                targetValue = 100.0f,
-                status = EvaluationStatus.GOOD,
-                shortDiagnosis = "Aguardando primeiras tentativas de escrita para diagnóstico aprofundado."
+                score = 0.0f,
+                observedValue = null,
+                targetValue = 0.0f,
+                status = EvaluationStatus.INSUFFICIENT_DATA,
+                shortDiagnosis = "Ainda não há escrita suficiente. Faça um treino para receber orientações."
             )
         }
 
         return BiomechanicalDiagnostic(
-            overallScore = 70.0f,
-            maturityLevel = MaturityLevel.PRACTITIONER,
+            overallScore = 0.0f,
+            maturityLevel = MaturityLevel.BEGINNER,
             dimensions = emptyMap,
             primaryWeakness = null,
             primaryStrength = null,

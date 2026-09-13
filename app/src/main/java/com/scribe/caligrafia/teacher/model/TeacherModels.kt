@@ -31,7 +31,8 @@ enum class EvaluationStatus(val label: String) {
     EXCELLENT("Excelente"),
     GOOD("Bom"),
     NEEDS_ATTENTION("Requer Atenção"),
-    CRITICAL("Crítico")
+    CRITICAL("Crítico"),
+    INSUFFICIENT_DATA("Dados Insuficientes")
 }
 
 /**
@@ -59,7 +60,7 @@ enum class MaturityLevel(val title: String, val minScore: Float) {
 data class DimensionEvaluation(
     val dimension: BiomechanicalDimension,
     val score: Float, // 0.0f a 100.0f
-    val observedValue: Float,
+    val observedValue: Float?,
     val targetValue: Float,
     val status: EvaluationStatus,
     val shortDiagnosis: String

@@ -73,10 +73,25 @@ object GeometricFeedbackEvaluator {
         // 5. Avaliação de Proximidade Geométrica (Path Proximity)
         val proximityMetric = evaluateProximity(allUserPoints, mappedRefStrokes, band.xHeight)
 
-        // 6. Avaliação de Cobertura / Completude (A12)
+        // 6. Avaliação de Cobertura / Completude (A12 / R14: independente da taxa de amostragem)
         val coverageRadius = band.xHeight * 0.25f
         val coveredCount = allMappedRefPoints.count { refPt ->
-            allUserPoints.any { uPt -> distance(refPt.x, refPt.y, uPt.x, uPt.y) <= coverageRadius }
+            userStrokes.any { stroke ->
+                val pts = stroke.points
+                when {
+                    pts.isEmpty() -> false
+                    pts.size == 1 -> distance(refPt.x, refPt.y, pts[0].x, pts[0].y) <= coverageRadius
+                    else -> {
+                        (0 until pts.size - 1).any { i ->
+                            pointToSegmentDistance(
+                                refPt.x, refPt.y,
+                                pts[i].x, pts[i].y,
+                                pts[i + 1].x, pts[i + 1].y
+                            ) <= coverageRadius
+                        }
+                    }
+                }
+            }
         }
         val coverageRatio = if (allMappedRefPoints.isNotEmpty()) {
             coveredCount.toFloat() / allMappedRefPoints.size
@@ -101,6 +116,14 @@ object GeometricFeedbackEvaluator {
         feedbackMessages.add(slantMetric.feedback)
         feedbackMessages.add(directionMetric.feedback)
         feedbackMessages.add(proximityMetric.feedback)
+
+        // Determinação de aprovação: nota >= 70% e todas as dimensões com nota >= 60%
+        val isPassed = totalScore >= 70 &&
+            guidelineMetric.scorePercent >= 55 &&
+            slantMetric.scorePercent >= 55 &&
+            directionMetric.scorePercent >= 55 &&
+            proximityMetric.scorePercent >= 55 &&
+            coverageRatio >= 0.65f
 
         return FeedbackEvaluation(
             scorePercent = totalScore,
@@ -172,7 +195,8 @@ object GeometricFeedbackEvaluator {
         slantConfig: SlantConfig?
     ): SlantMetric {
         val targetAngle = slantConfig?.angleDegrees ?: 90.0f
-        val measuredAngles = mutableListOf<Float>()
+        var totalWeightedAngle = 0.0
+        var totalWeight = 0.0
 
         for (stroke in userStrokes) {
             val pts = stroke.points
@@ -187,22 +211,18 @@ object GeometricFeedbackEvaluator {
 
                 // Apenas segmentos descendentes com comprimento mínimo considerável
                 if (dy > 4f && dist > 5f) {
-                    // Ângulo em relação à horizontal: atan2(dy, -dx) para linha inclinada à direita
-                    // Se a linha cai e inclina para a direita (dx < 0 de cima para baixo), slant = atan2(dy, -dx)
-                    // Na caligrafia, um traço descendo para a esquerda tem dx < 0; descendo verticalmente dx = 0.
-                    // Em Copperplate: top (x1, y1), bottom (x2, y2). Se inclinado a 52°, x1 > x2, logo dx = x2 - x1 < 0.
-                    // Então -dx > 0. Ângulo = atan2(dy, -dx).
                     val angleRad = atan2(dy.toDouble(), (-dx).toDouble())
                     var angleDeg = Math.toDegrees(angleRad).toFloat()
                     if (angleDeg < 0) angleDeg += 180f
                     if (angleDeg in 20f..160f) {
-                        measuredAngles.add(angleDeg)
+                        totalWeightedAngle += angleDeg * dist
+                        totalWeight += dist
                     }
                 }
             }
         }
 
-        if (measuredAngles.isEmpty()) {
+        if (totalWeight <= 0.0) {
             return SlantMetric(
                 targetAngleDegrees = targetAngle,
                 measuredAngleDegrees = null,
@@ -212,7 +232,7 @@ object GeometricFeedbackEvaluator {
             )
         }
 
-        val avgAngle = measuredAngles.average().toFloat()
+        val avgAngle = (totalWeightedAngle / totalWeight).toFloat()
         val deviation = abs(avgAngle - targetAngle)
         val score = (100f - deviation * 2.2f).roundToInt().coerceIn(0, 100)
 

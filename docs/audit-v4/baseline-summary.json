@@ -1,0 +1,44 @@
+{
+  "timestamp": "2026-09-13T09:27:00-03:00",
+  "auditReviewVersion": "V4",
+  "baseCommit": "bb09dc4a8331cab4ba8922e82479293806c294b1",
+  "targetDevice": "Samsung Galaxy S25 Ultra (One UI 7, Android 15)",
+  "stylusModel": "Samsung S Pen (EMR, 4096 levels, 240-360Hz)",
+  "testExecution": {
+    "totalTests": 227,
+    "totalSuites": 48,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "durationSeconds": 4.1,
+    "acceptanceSuite": {
+      "name": "com.scribe.caligrafia.audit.AuditFixAcceptanceTest",
+      "totalTests": 33,
+      "failures": 0,
+      "errors": 0,
+      "passPercentage": 100.0
+    }
+  },
+  "buildMetrics": {
+    "assembleDebugDurationSeconds": 10,
+    "debugApkPath": "app/build/outputs/apk/debug/app-debug.apk",
+    "apkSizeMegabytes": 22.7,
+    "lintErrorCount": 0
+  },
+  "findingsSummary": {
+    "S_series_total": 24,
+    "S_series_resolved": 21,
+    "S_series_partial_or_pending_device": 3,
+    "R_series_total": 20,
+    "R_series_resolved": 20,
+    "R_series_partial_or_pending_device": 0,
+    "A_series_total": 22,
+    "A_series_resolved": 20,
+    "A_series_partial_or_pending_device": 2
+  },
+  "pendingPhysicalValidations": [
+    "A01: Sub-10ms latency measurement of Android Ink API on physical Galaxy S25 Ultra",
+    "S13 / S18: Physical response and calibration of 4096 pressure levels with original S Pen on S25 Ultra",
+    "S19: Galaxy Watch haptic pulse and posture alert reception via Wearable Data Layer"
+  ]
+}

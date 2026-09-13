@@ -116,4 +116,133 @@ class ScribeBackupManagerTest {
         assertFalse(importResult.isSuccess)
         assertNotNull(importResult.errorMessage)
     }
+
+    @Test
+    fun exportBackup_producesZipWithValidCentralDirectory_openableByZipFile() {
+        // S01: Verifica que o arquivo ZIP final possui o diretório central válido (END header)
+        val notebookDir = File(sourceBaseDir, "notebooks/caderno_1/pages").apply { mkdirs() }
+        File(notebookDir, "page_1.scribe").writeText("PAGE_DATA_1")
+
+        val backupFile = tempFolder.newFile("backup_test.scribepack")
+        backupFile.outputStream().use { fos ->
+            backupManager.exportBackup(fos)
+        }
+
+        // Deve abrir com java.util.zip.ZipFile sem lançar "zip END header not found"
+        val zipFile = java.util.zip.ZipFile(backupFile)
+        val entries = zipFile.entries().toList()
+        assertTrue(entries.isNotEmpty())
+        assertTrue(entries.any { it.name == "manifest.json" })
+        zipFile.close()
+    }
+
+    @Test
+    fun exportAndImport_withRealRepositoryPaths_packsAndRestoresAllCanonicalEntities() {
+        // S02: Testa com os caminhos canônicos reais dos repositórios
+        // 1. Cadernos com páginas aninhadas
+        val pagesDir = File(sourceBaseDir, "notebooks/caderno_real/pages").apply { mkdirs() }
+        File(pagesDir, "page_real.scribe").writeText("CADERNO_REAL_PAGE")
+
+        // 2. Alfabeto pessoal canônico
+        val strokesDir = File(sourceBaseDir, "personal_alphabet/strokes").apply { mkdirs() }
+        File(strokesDir, "glyph_b.scribe").writeText("GLIFO_CANONICO_B")
+        File(sourceBaseDir, "personal_alphabet/personal_alphabet_manifest.json").writeText("{\"version\":1}")
+
+        // 3. Tentativas de prática canônicas
+        val attemptsDir = File(sourceBaseDir, "attempts").apply { mkdirs() }
+        File(attemptsDir, "attempt_1.scribe").writeText("ATTEMPT_STROKES_1")
+
+        // 4. Histórico de aprendizado na raiz
+        File(sourceBaseDir, "learning_history.json").writeText("{\"totalSessions\": 5}")
+
+        // 5. Diagnóstico do professor
+        val teacherDir = File(sourceBaseDir, "teacher").apply { mkdirs() }
+        File(teacherDir, "diagnostic.json").writeText("{\"posture\": \"GOOD\"}")
+
+        // 6. Fontes customizadas
+        val fontsDir = File(sourceBaseDir, "custom_fonts").apply { mkdirs() }
+        File(fontsDir, "minha_fonte.ttf").writeText("FONT_BYTES")
+
+        val baos = ByteArrayOutputStream()
+        val summary = backupManager.exportBackup(baos)
+
+        assertEquals(1, summary.manifest.notebookCount)
+        assertEquals(1, summary.manifest.pageCount)
+        assertEquals(1, summary.manifest.personalGlyphCount)
+        assertEquals(1, summary.manifest.practiceAttemptCount)
+        assertEquals(1, summary.manifest.lessonHistoryCount)
+        assertTrue(summary.manifest.hasTeacherDiagnostic)
+
+        // Restaura no destino
+        val targetBackupManager = ScribeBackupManager(targetBaseDir)
+        val importResult = targetBackupManager.importBackup(ByteArrayInputStream(baos.toByteArray()))
+
+        assertTrue(importResult.isSuccess)
+        assertEquals(1, importResult.restoredNotebooks)
+        assertEquals(1, importResult.restoredGlyphs)
+        assertEquals(1, importResult.restoredAttempts)
+        assertEquals(1, importResult.restoredLessons)
+        assertTrue(importResult.restoredTeacherData)
+
+        // Verifica existência nos caminhos canônicos
+        assertTrue(File(targetBaseDir, "notebooks/caderno_real/pages/page_real.scribe").exists())
+        assertTrue(File(targetBaseDir, "personal_alphabet/strokes/glyph_b.scribe").exists())
+        assertTrue(File(targetBaseDir, "attempts/attempt_1.scribe").exists())
+        assertTrue(File(targetBaseDir, "learning_history.json").exists())
+        assertTrue(File(targetBaseDir, "teacher/diagnostic.json").exists())
+        assertTrue(File(targetBaseDir, "custom_fonts/minha_fonte.ttf").exists())
+    }
+
+    @Test
+    fun importBackup_withZipSlipMaliciousPath_isSafelyRejected() {
+        // S04: Testa que caminhos com '../' são rejeitados e não escapam da pasta
+        val baos = ByteArrayOutputStream()
+        val zos = java.util.zip.ZipOutputStream(baos)
+
+        // Adiciona manifesto
+        val manifest = BackupManifest()
+        val manifestBytes = BackupSerializer.serializeManifest(manifest).toByteArray()
+        zos.putNextEntry(java.util.zip.ZipEntry("manifest.json"))
+        zos.write(manifestBytes)
+        zos.closeEntry()
+
+        // Adiciona entrada maliciosa com path traversal
+        val maliciousEntry = java.util.zip.ZipEntry("../malicious.txt")
+        zos.putNextEntry(maliciousEntry)
+        zos.write("MALICIOUS_DATA".toByteArray())
+        zos.closeEntry()
+
+        zos.finish()
+        zos.flush()
+
+        val targetBackupManager = ScribeBackupManager(targetBaseDir)
+        val result = targetBackupManager.importBackup(ByteArrayInputStream(baos.toByteArray()))
+
+        assertFalse(result.isSuccess)
+        assertTrue(result.errorMessage?.contains("Caminho de entrada inválido") == true ||
+                   result.errorMessage?.contains("SecurityException") == true ||
+                   result.errorMessage?.contains("Falha") == true)
+    }
+
+    @Test
+    fun importBackup_atomicRollbackOnFailure_preservesOriginalData() {
+        // S03: Configura dados originais ativos no destino
+        val existingNotebookDir = File(targetBaseDir, "notebooks/caderno_original/pages").apply { mkdirs() }
+        val originalPage = File(existingNotebookDir, "p1.scribe").apply { writeText("ORIGINAL_PAGE_CONTENT") }
+        val originalLearning = File(targetBaseDir, "learning_history.json").apply { writeText("ORIGINAL_HISTORY") }
+
+        // Cria arquivo com manifesto mas faz o targetBaseDir/notebooks ficar somente leitura ou injeta erro simulado
+        val targetBackupManager = ScribeBackupManager(targetBaseDir)
+        
+        // Se passarmos um ZIP truncado ou se falhar durante a extração, os dados originais permanecem
+        val invalidZipStream = ByteArrayInputStream("DADOS_TRUNCADOS".toByteArray())
+        val result = targetBackupManager.importBackup(invalidZipStream)
+
+        assertFalse(result.isSuccess)
+        // Dados originais devem permanecer íntegros
+        assertTrue(originalPage.exists())
+        assertEquals("ORIGINAL_PAGE_CONTENT", originalPage.readText())
+        assertTrue(originalLearning.exists())
+        assertEquals("ORIGINAL_HISTORY", originalLearning.readText())
+    }
 }

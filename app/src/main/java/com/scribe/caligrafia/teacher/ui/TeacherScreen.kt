@@ -429,6 +429,7 @@ private fun DimensionCard(
         EvaluationStatus.GOOD -> Color(0xFF2563EB)
         EvaluationStatus.NEEDS_ATTENTION -> Color(0xFFD97706)
         EvaluationStatus.CRITICAL -> Color(0xFFDC2626)
+        EvaluationStatus.INSUFFICIENT_DATA -> Color(0xFF6B7280)
     }
 
     Card(

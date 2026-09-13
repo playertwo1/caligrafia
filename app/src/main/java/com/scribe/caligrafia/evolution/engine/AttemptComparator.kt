@@ -12,16 +12,33 @@ import kotlin.math.abs
 object AttemptComparator {
 
     /**
+     * Calcula a velocidade média real do traçado em pixels por milissegundo (px/ms) (R18).
+     */
+    fun calculateVelocityPxPerMs(attempt: PracticeAttemptRecord): Float {
+        var totalLengthPx = 0.0
+        for (stroke in attempt.strokes) {
+            val pts = stroke.points
+            for (i in 0 until pts.size - 1) {
+                val dx = pts[i + 1].x - pts[i].x
+                val dy = pts[i + 1].y - pts[i].y
+                totalLengthPx += kotlin.math.hypot(dx.toDouble(), dy.toDouble())
+            }
+        }
+        val duration = attempt.durationMs.coerceAtLeast(1L)
+        return (totalLengthPx / duration).toFloat()
+    }
+
+    /**
      * Compara duas tentativas de escrita e sintetiza os deltas objetivos de evolução.
      *
      * @param before Tentativa inicial (baseline ou anterior).
      * @param after Tentativa recente ou atual.
-     * @param targetSlantDegrees Ângulo alvo de inclinação da família formal (padrão 52.0° para Copperplate).
+     * @param targetSlantDegrees Ângulo alvo de inclinação (respeita o estilo gravado na tentativa ou fallback de 52.0°).
      */
     fun compare(
         before: PracticeAttemptRecord,
         after: PracticeAttemptRecord,
-        targetSlantDegrees: Float = 52.0f
+        targetSlantDegrees: Float = after.targetSlantDegrees ?: before.targetSlantDegrees ?: 52.0f
     ): BeforeAfterComparison {
         val scoreGain = after.scorePercent - before.scorePercent
 
@@ -30,6 +47,13 @@ object AttemptComparator {
         val slantImprovement = beforeSlantDiff - afterSlantDiff
 
         val durationDelta = after.durationMs - before.durationMs
+
+        // R18: Cálculo real de velocidade de percurso em px/ms e ganho percentual de agilidade
+        val speedBefore = calculateVelocityPxPerMs(before)
+        val speedAfter = calculateVelocityPxPerMs(after)
+        val speedGain = if (speedBefore > 0.0001f) {
+            ((speedAfter - speedBefore) / speedBefore) * 100f
+        } else 0f
 
         val insight = when {
             scoreGain > 15 && slantImprovement > 2.0f ->
@@ -52,7 +76,10 @@ object AttemptComparator {
             scoreGainPercent = scoreGain,
             slantImprovementDegrees = slantImprovement,
             durationDeltaMs = durationDelta,
-            summaryInsight = insight
+            summaryInsight = insight,
+            speedBeforePxPerMs = speedBefore,
+            speedAfterPxPerMs = speedAfter,
+            speedGainPercent = speedGain
         )
     }
 }

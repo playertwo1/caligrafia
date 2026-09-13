@@ -14,6 +14,25 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.scribe.caligrafia.alphabet.ui.AlphabetScreen
 import com.scribe.caligrafia.alphabet.ui.AlphabetViewModel
 import com.scribe.caligrafia.evolution.ui.EvolutionScreen
@@ -30,17 +49,17 @@ import com.scribe.caligrafia.expansions.ui.ExpansionsScreen
 import com.scribe.caligrafia.expansions.ui.ExpansionsViewModel
 import com.scribe.caligrafia.teacher.ui.TeacherScreen
 import com.scribe.caligrafia.teacher.ui.TeacherViewModel
+import com.scribe.caligrafia.ui.theme.ScribeBluePrimary
 import com.scribe.caligrafia.ui.theme.ScribeTheme
 
-enum class ScribeScreen {
-    NOTEBOOK,
-    GUIDED_PRACTICE,
-    LEARNING_HUB,
-    EVOLUTION,
-    ALPHABET,
-    TEACHER_AI,
-    EXPANSIONS,
-    STYLUS_LAB
+/**
+ * 4 Abas Canônicas de Navegação (conforme painel geral e docs/design/fluxos-v1/README.md).
+ */
+enum class ScribeTab(val title: String) {
+    NOTEBOOK("Caderno"),
+    PRACTICE("Praticar"),
+    EVOLUTION("Evolução"),
+    MORE("Mais")
 }
 
 class MainActivity : ComponentActivity() {
@@ -66,92 +85,145 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ScribeTheme {
-                var currentScreen by rememberSaveable { mutableStateOf(ScribeScreen.NOTEBOOK) }
+                var currentTab by rememberSaveable { mutableStateOf(ScribeTab.NOTEBOOK) }
                 var lastBackPressTime by remember { mutableStateOf(0L) }
 
                 // Interceptador inteligente do gesto "Voltar":
-                // Previne fechamento involuntário do app ao escrever nas laterais.
+                // Se estiver fora do Caderno, volta para o Caderno.
+                // Se estiver no Caderno, exige toque duplo para sair.
                 BackHandler {
-                    when (currentScreen) {
-                        ScribeScreen.STYLUS_LAB -> currentScreen = ScribeScreen.NOTEBOOK
-                        ScribeScreen.GUIDED_PRACTICE -> currentScreen = ScribeScreen.NOTEBOOK
-                        ScribeScreen.LEARNING_HUB -> currentScreen = ScribeScreen.NOTEBOOK
-                        ScribeScreen.EVOLUTION -> currentScreen = ScribeScreen.NOTEBOOK
-                        ScribeScreen.ALPHABET -> currentScreen = ScribeScreen.NOTEBOOK
-                        ScribeScreen.TEACHER_AI -> currentScreen = ScribeScreen.NOTEBOOK
-                        ScribeScreen.EXPANSIONS -> currentScreen = ScribeScreen.NOTEBOOK
-                        ScribeScreen.NOTEBOOK -> {
-                            val now = System.currentTimeMillis()
-                            if (now - lastBackPressTime < 2000L) {
-                                finish()
-                            } else {
-                                lastBackPressTime = now
-                                Toast.makeText(this@MainActivity, "Pressione voltar novamente para sair", Toast.LENGTH_SHORT).show()
-                            }
+                    if (currentTab != ScribeTab.NOTEBOOK) {
+                        currentTab = ScribeTab.NOTEBOOK
+                    } else {
+                        val now = System.currentTimeMillis()
+                        if (now - lastBackPressTime < 2000L) {
+                            finish()
+                        } else {
+                            lastBackPressTime = now
+                            Toast.makeText(this@MainActivity, "Pressione voltar novamente para sair", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
 
-                when (currentScreen) {
-                    ScribeScreen.NOTEBOOK -> {
-                        NotebookPracticeScreen(
-                            viewModel = notebookViewModel,
-                            onNavigateToLab = { currentScreen = ScribeScreen.STYLUS_LAB },
-                            onNavigateToGuidedPractice = { currentScreen = ScribeScreen.GUIDED_PRACTICE },
-                            onNavigateToLearningHub = { currentScreen = ScribeScreen.LEARNING_HUB },
-                            onNavigateToEvolution = { currentScreen = ScribeScreen.EVOLUTION },
-                            onNavigateToAlphabet = { currentScreen = ScribeScreen.ALPHABET },
-                            onNavigateToTeacher = { currentScreen = ScribeScreen.TEACHER_AI },
-                            onNavigateToExpansions = { currentScreen = ScribeScreen.EXPANSIONS }
-                        )
+                Scaffold(
+                    bottomBar = {
+                        NavigationBar(
+                            containerColor = Color.White,
+                            tonalElevation = 6.dp
+                        ) {
+                            NavigationBarItem(
+                                selected = currentTab == ScribeTab.NOTEBOOK,
+                                onClick = { currentTab = ScribeTab.NOTEBOOK },
+                                icon = { Icon(Icons.Default.MenuBook, contentDescription = "Caderno") },
+                                label = {
+                                    Text(
+                                        "Caderno",
+                                        fontSize = 11.sp,
+                                        fontWeight = if (currentTab == ScribeTab.NOTEBOOK) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = ScribeBluePrimary,
+                                    selectedTextColor = ScribeBluePrimary,
+                                    indicatorColor = Color(0xFFEAF1FF)
+                                )
+                            )
+                            NavigationBarItem(
+                                selected = currentTab == ScribeTab.PRACTICE,
+                                onClick = { currentTab = ScribeTab.PRACTICE },
+                                icon = { Icon(Icons.Default.Edit, contentDescription = "Praticar") },
+                                label = {
+                                    Text(
+                                        "Praticar",
+                                        fontSize = 11.sp,
+                                        fontWeight = if (currentTab == ScribeTab.PRACTICE) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = ScribeBluePrimary,
+                                    selectedTextColor = ScribeBluePrimary,
+                                    indicatorColor = Color(0xFFEAF1FF)
+                                )
+                            )
+                            NavigationBarItem(
+                                selected = currentTab == ScribeTab.EVOLUTION,
+                                onClick = { currentTab = ScribeTab.EVOLUTION },
+                                icon = { Icon(Icons.Default.ShowChart, contentDescription = "Evolução") },
+                                label = {
+                                    Text(
+                                        "Evolução",
+                                        fontSize = 11.sp,
+                                        fontWeight = if (currentTab == ScribeTab.EVOLUTION) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = ScribeBluePrimary,
+                                    selectedTextColor = ScribeBluePrimary,
+                                    indicatorColor = Color(0xFFEAF1FF)
+                                )
+                            )
+                            NavigationBarItem(
+                                selected = currentTab == ScribeTab.MORE,
+                                onClick = { currentTab = ScribeTab.MORE },
+                                icon = { Icon(Icons.Default.MoreHoriz, contentDescription = "Mais") },
+                                label = {
+                                    Text(
+                                        "Mais",
+                                        fontSize = 11.sp,
+                                        fontWeight = if (currentTab == ScribeTab.MORE) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = ScribeBluePrimary,
+                                    selectedTextColor = ScribeBluePrimary,
+                                    indicatorColor = Color(0xFFEAF1FF)
+                                )
+                            )
+                        }
                     }
-                    ScribeScreen.GUIDED_PRACTICE -> {
-                        GuidedPracticeScreen(
-                            viewModel = guidedPracticeViewModel,
-                            onNavigateBack = { currentScreen = ScribeScreen.NOTEBOOK }
-                        )
-                    }
-                    ScribeScreen.LEARNING_HUB -> {
-                        LearningHubScreen(
-                            viewModel = learningViewModel,
-                            onNavigateBack = { currentScreen = ScribeScreen.NOTEBOOK }
-                        )
-                    }
-                    ScribeScreen.EVOLUTION -> {
-                        EvolutionScreen(
-                            viewModel = evolutionViewModel,
-                            onNavigateBack = { currentScreen = ScribeScreen.NOTEBOOK }
-                        )
-                    }
-                    ScribeScreen.ALPHABET -> {
-                        AlphabetScreen(
-                            viewModel = alphabetViewModel,
-                            onNavigateBack = { currentScreen = ScribeScreen.NOTEBOOK },
-                            onNavigateToPractice = { currentScreen = ScribeScreen.GUIDED_PRACTICE },
-                            onNavigateToNotebook = { currentScreen = ScribeScreen.NOTEBOOK }
-                        )
-                    }
-                    ScribeScreen.TEACHER_AI -> {
-                        TeacherScreen(
-                            viewModel = teacherViewModel,
-                            onBack = { currentScreen = ScribeScreen.NOTEBOOK },
-                            onStartPractice = { exerciseId ->
-                                guidedPracticeViewModel.selectGlyphById(exerciseId)
-                                currentScreen = ScribeScreen.GUIDED_PRACTICE
+                ) { paddingValues ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues)
+                    ) {
+                        when (currentTab) {
+                            ScribeTab.NOTEBOOK -> {
+                                NotebookPracticeScreen(
+                                    viewModel = notebookViewModel,
+                                    onNavigateToGuidedPractice = { currentTab = ScribeTab.PRACTICE }
+                                )
                             }
-                        )
-                    }
-                    ScribeScreen.EXPANSIONS -> {
-                        ExpansionsScreen(
-                            viewModel = expansionsViewModel,
-                            onBack = { currentScreen = ScribeScreen.NOTEBOOK }
-                        )
-                    }
-                    ScribeScreen.STYLUS_LAB -> {
-                        InspectorScreen(
-                            viewModel = stylusLabViewModel,
-                            onNavigateToNotebook = { currentScreen = ScribeScreen.NOTEBOOK }
-                        )
+                            ScribeTab.PRACTICE -> {
+                                GuidedPracticeScreen(
+                                    viewModel = guidedPracticeViewModel,
+                                    onNavigateBack = { currentTab = ScribeTab.NOTEBOOK }
+                                )
+                            }
+                            ScribeTab.EVOLUTION -> {
+                                EvolutionScreen(
+                                    viewModel = evolutionViewModel,
+                                    onNavigateBack = { currentTab = ScribeTab.NOTEBOOK }
+                                )
+                            }
+                            ScribeTab.MORE -> {
+                                ExpansionsScreen(
+                                    viewModel = expansionsViewModel,
+                                    teacherViewModel = teacherViewModel,
+                                    alphabetViewModel = alphabetViewModel,
+                                    onBack = { currentTab = ScribeTab.NOTEBOOK },
+                                    onNavigateToPracticeWithText = { currentTab = ScribeTab.PRACTICE },
+                                    onNavigateToPractice = { targetId ->
+                                        guidedPracticeViewModel.selectGlyphBySymbolOrId(targetId)
+                                        currentTab = ScribeTab.PRACTICE
+                                    },
+                                    onNavigateToNotebookWithStyle = { styleId ->
+                                        notebookViewModel.selectStyle(styleId, adaptPageGuidelines = true)
+                                        currentTab = ScribeTab.NOTEBOOK
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -164,6 +236,11 @@ class MainActivity : ComponentActivity() {
             stylusLabViewModel.onResumeLifecycle(this)
         } catch (e: Throwable) {
             android.util.Log.e("Scribe", "Erro no onResume do StylusLab", e)
+        }
+        try {
+            guidedPracticeViewModel.onResumeLifecycle()
+        } catch (e: Throwable) {
+            android.util.Log.e("Scribe", "Erro no onResume do GuidedPractice", e)
         }
     }
 
@@ -178,6 +255,11 @@ class MainActivity : ComponentActivity() {
             notebookViewModel.onPauseLifecycle()
         } catch (e: Throwable) {
             android.util.Log.e("Scribe", "Erro no onPause do Notebook", e)
+        }
+        try {
+            guidedPracticeViewModel.onPauseLifecycle()
+        } catch (e: Throwable) {
+            android.util.Log.e("Scribe", "Erro no onPause do GuidedPractice", e)
         }
     }
 }

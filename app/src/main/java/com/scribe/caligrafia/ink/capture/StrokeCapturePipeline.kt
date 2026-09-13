@@ -263,14 +263,7 @@ class StrokeCapturePipeline(
         val pointerId = event.getPointerId(pointerIndex)
         val tool = ToolType.fromMotionEvent(event.getToolType(pointerIndex), event.buttonState)
 
-        val firstPoint = createPoint(
-            x = event.getX(pointerIndex),
-            y = event.getY(pointerIndex),
-            tMs = event.eventTime,
-            pressure = event.getPressure(pointerIndex),
-            tilt = event.getAxisValue(MotionEvent.AXIS_TILT, pointerIndex),
-            orientation = event.getOrientation(pointerIndex)
-        )
+        val firstPoint = extractPoint(event, pointerIndex)
         return onPointerDown(pointerId, tool, firstPoint, event.eventTime)
     }
 
@@ -282,14 +275,7 @@ class StrokeCapturePipeline(
         // o stylus toma posse do traço
         if (tool == ToolType.STYLUS || tool == ToolType.ERASER) {
             val pointerId = event.getPointerId(actionIndex)
-            val point = createPoint(
-                x = event.getX(actionIndex),
-                y = event.getY(actionIndex),
-                tMs = event.eventTime,
-                pressure = event.getPressure(actionIndex),
-                tilt = event.getAxisValue(MotionEvent.AXIS_TILT, actionIndex),
-                orientation = event.getOrientation(actionIndex)
-            )
+            val point = extractPoint(event, actionIndex)
             return onPointerDown(pointerId, tool, point, event.eventTime)
         }
 
@@ -314,29 +300,11 @@ class StrokeCapturePipeline(
 
         // 1. Consumir todas as amostras históricas geradas entre frames em ordem cronológica
         for (h in 0 until historySize) {
-            points.add(
-                createPoint(
-                    x = event.getHistoricalX(pointerIndex, h),
-                    y = event.getHistoricalY(pointerIndex, h),
-                    tMs = event.getHistoricalEventTime(h),
-                    pressure = event.getHistoricalPressure(pointerIndex, h),
-                    tilt = event.getHistoricalAxisValue(MotionEvent.AXIS_TILT, pointerIndex, h),
-                    orientation = event.getHistoricalOrientation(pointerIndex, h)
-                )
-            )
+            points.add(extractPoint(event, pointerIndex, historicalIndex = h))
         }
 
         // 2. Adicionar o ponto atual do evento
-        points.add(
-            createPoint(
-                x = event.getX(pointerIndex),
-                y = event.getY(pointerIndex),
-                tMs = event.eventTime,
-                pressure = event.getPressure(pointerIndex),
-                tilt = event.getAxisValue(MotionEvent.AXIS_TILT, pointerIndex),
-                orientation = event.getOrientation(pointerIndex)
-            )
-        )
+        points.add(extractPoint(event, pointerIndex))
 
         return onPointerMove(activePointerId, points, historicalCount = historySize)
     }
@@ -350,28 +318,10 @@ class StrokeCapturePipeline(
         if (pointerIndex >= 0) {
             val historySize = event.historySize
             for (h in 0 until historySize) {
-                finalPoints.add(
-                    createPoint(
-                        x = event.getHistoricalX(pointerIndex, h),
-                        y = event.getHistoricalY(pointerIndex, h),
-                        tMs = event.getHistoricalEventTime(h),
-                        pressure = event.getHistoricalPressure(pointerIndex, h),
-                        tilt = event.getHistoricalAxisValue(MotionEvent.AXIS_TILT, pointerIndex, h),
-                        orientation = event.getHistoricalOrientation(pointerIndex, h)
-                    )
-                )
+                finalPoints.add(extractPoint(event, pointerIndex, historicalIndex = h))
             }
 
-            finalPoints.add(
-                createPoint(
-                    x = event.getX(pointerIndex),
-                    y = event.getY(pointerIndex),
-                    tMs = event.eventTime,
-                    pressure = event.getPressure(pointerIndex),
-                    tilt = event.getAxisValue(MotionEvent.AXIS_TILT, pointerIndex),
-                    orientation = event.getOrientation(pointerIndex)
-                )
-            )
+            finalPoints.add(extractPoint(event, pointerIndex))
         }
 
         return onPointerUp(activePointerId, finalPoints, event.eventTime)
@@ -384,27 +334,9 @@ class StrokeCapturePipeline(
             val finalPoints = mutableListOf<StrokePoint>()
             val historySize = event.historySize
             for (h in 0 until historySize) {
-                finalPoints.add(
-                    createPoint(
-                        x = event.getHistoricalX(actionIndex, h),
-                        y = event.getHistoricalY(actionIndex, h),
-                        tMs = event.getHistoricalEventTime(h),
-                        pressure = event.getHistoricalPressure(actionIndex, h),
-                        tilt = event.getHistoricalAxisValue(MotionEvent.AXIS_TILT, actionIndex, h),
-                        orientation = event.getHistoricalOrientation(actionIndex, h)
-                    )
-                )
+                finalPoints.add(extractPoint(event, actionIndex, historicalIndex = h))
             }
-            finalPoints.add(
-                createPoint(
-                    x = event.getX(actionIndex),
-                    y = event.getY(actionIndex),
-                    tMs = event.eventTime,
-                    pressure = event.getPressure(actionIndex),
-                    tilt = event.getAxisValue(MotionEvent.AXIS_TILT, actionIndex),
-                    orientation = event.getOrientation(actionIndex)
-                )
-            )
+            finalPoints.add(extractPoint(event, actionIndex))
             return onPointerUp(pointerId, finalPoints, event.eventTime)
         }
         return false
@@ -416,24 +348,28 @@ class StrokeCapturePipeline(
     }
 
     private fun terminateActiveStroke(isCancelled: Boolean, eventTime: Long) {
-        val id = activeStrokeId ?: return
-        val completedStroke = Stroke(
-            id = id,
-            tool = activeTool,
-            points = activePoints.toList(),
-            startedAtMs = activeStartedAtMs,
-            endedAtMs = eventTime,
-            isCancelled = isCancelled,
-            color = if (activeTool == ToolType.STYLUS) toolConfig.activeColorArgb else null,
-            baseWidthPx = if (activeTool == ToolType.STYLUS) toolConfig.activeStrokeWidthPx else null
-        )
-
+        val strokeId = activeStrokeId ?: return
+        val currentTool = activeTool ?: ToolType.STYLUS
         activeStrokeId = null
         activePointerId = -1
         activeTool = ToolType.UNKNOWN
+        val startedAt = activeStartedAtMs
         activeStartedAtMs = 0L
-        activePoints.clear()
         lastEraserPoint = null
+
+        val finalPoints = activePoints.toList()
+        activePoints.clear()
+
+        val completedStroke = Stroke(
+            id = strokeId,
+            tool = currentTool,
+            points = finalPoints,
+            startedAtMs = startedAt,
+            endedAtMs = eventTime,
+            isCancelled = isCancelled,
+            color = if (currentTool == ToolType.STYLUS) toolConfig.activeColorArgb else null,
+            baseWidthPx = if (currentTool == ToolType.STYLUS) toolConfig.activeStrokeWidthPx else null
+        )
 
         if (isCancelled) {
             onStrokeCancelled?.invoke(completedStroke)
@@ -442,6 +378,57 @@ class StrokeCapturePipeline(
             if (completedStroke.tool != ToolType.ERASER) {
                 onStrokeCompleted?.invoke(completedStroke)
             }
+        }
+    }
+
+    private fun extractPoint(
+        event: MotionEvent,
+        pointerIndex: Int,
+        historicalIndex: Int? = null
+    ): StrokePoint {
+        val hasPressure = hasAxis(event, MotionEvent.AXIS_PRESSURE)
+        val hasTilt = hasAxis(event, MotionEvent.AXIS_TILT)
+        val hasOrientation = hasAxis(event, MotionEvent.AXIS_ORIENTATION)
+
+        val x = if (historicalIndex != null) event.getHistoricalX(pointerIndex, historicalIndex) else event.getX(pointerIndex)
+        val y = if (historicalIndex != null) event.getHistoricalY(pointerIndex, historicalIndex) else event.getY(pointerIndex)
+        val tMs = if (historicalIndex != null) event.getHistoricalEventTime(historicalIndex) else event.eventTime
+        val rawPressure = if (historicalIndex != null) event.getHistoricalPressure(pointerIndex, historicalIndex) else event.getPressure(pointerIndex)
+        val rawTilt = if (historicalIndex != null) event.getHistoricalAxisValue(MotionEvent.AXIS_TILT, pointerIndex, historicalIndex) else event.getAxisValue(MotionEvent.AXIS_TILT, pointerIndex)
+        val rawOrientation = if (historicalIndex != null) event.getHistoricalOrientation(pointerIndex, historicalIndex) else event.getOrientation(pointerIndex)
+
+        val pressure = when {
+            !hasPressure -> null
+            rawPressure.isNaN() || rawPressure < 0f -> null
+            else -> rawPressure
+        }
+        val tilt = when {
+            !hasTilt -> null
+            rawTilt.isNaN() -> null
+            else -> rawTilt
+        }
+        val orientation = when {
+            !hasOrientation -> null
+            rawOrientation.isNaN() -> null
+            else -> rawOrientation
+        }
+
+        return StrokePoint(
+            x = x,
+            y = y,
+            tMs = tMs,
+            pressure = pressure,
+            tiltRad = tilt,
+            orientationRad = orientation
+        )
+    }
+
+    private fun hasAxis(event: MotionEvent, axis: Int): Boolean {
+        val dev = try { event.device } catch (_: Throwable) { null }
+        return if (dev != null) {
+            dev.getMotionRange(axis) != null
+        } else {
+            true
         }
     }
 

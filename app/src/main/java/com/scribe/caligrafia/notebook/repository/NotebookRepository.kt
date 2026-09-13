@@ -11,7 +11,11 @@ import com.scribe.caligrafia.core.model.Stroke
 interface NotebookRepository {
     suspend fun getNotebooks(): List<Notebook>
     suspend fun getNotebook(id: String): Notebook?
-    suspend fun createNotebook(title: String): Notebook
+    suspend fun createNotebook(
+        title: String,
+        initialGuideline: GuidelineConfig = GuidelineConfig.copperplate(),
+        coverStyle: String = "PAPEL_ARTESANAL"
+    ): Notebook
     suspend fun deleteNotebook(id: String): Boolean
 
     suspend fun getPages(notebookId: String): List<NotebookPage>

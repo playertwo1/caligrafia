@@ -9,12 +9,15 @@ import com.scribe.caligrafia.core.model.Stroke
 import com.scribe.caligrafia.core.model.StrokePoint
 import com.scribe.caligrafia.core.model.ToolType
 import com.scribe.caligrafia.ink.persistence.strategies.DedicatedFileStrategy
+import com.scribe.caligrafia.style.engine.PersonalStyleSerializer
 import com.scribe.caligrafia.style.model.ScribeStyle
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
@@ -41,6 +44,7 @@ class LocalPersonalAlphabetRepository(
     private val strokesDir = File(baseDir, "strokes")
     private val manifestFile = File(baseDir, "personal_alphabet_manifest.json")
     private val strokePersistence = DedicatedFileStrategy(strokesDir)
+    private val mutationMutex = Mutex()
 
     private val alphabetFlow = MutableStateFlow(PersonalAlphabet())
     private val strokeCache = ConcurrentHashMap<String, List<Stroke>>()
@@ -78,135 +82,167 @@ class LocalPersonalAlphabetRepository(
         setFavorite: Boolean,
         sourceAttemptId: String?
     ): GlyphVariant = withContext(ioDispatcher) {
-        val currentAlphabet = alphabetFlow.value
-        val existingGlyph = currentAlphabet.glyphs[glyphId]
-            ?: createDefaultGlyph(glyphId)
+        mutationMutex.withLock {
+            val currentAlphabet = alphabetFlow.value
+            val existingGlyph = currentAlphabet.glyphs[glyphId]
+                ?: createDefaultGlyph(glyphId)
 
-        val nextVersion = (existingGlyph.variants.maxOfOrNull { it.version } ?: 0) + 1
-        val variantId = "var_${glyphId}_v${nextVersion}_${System.currentTimeMillis()}"
+            val nextVersion = (existingGlyph.variants.maxOfOrNull { it.version } ?: 0) + 1
+            val variantId = "var_${glyphId}_v${nextVersion}_${UUID.randomUUID()}"
 
-        // Salva os traços vetoriais em .scribe
-        strokePersistence.save(variantId, strokes)
-        strokeCache[variantId] = strokes
+            // Salva os traços vetoriais em .scribe
+            strokePersistence.save(variantId, strokes)
+            strokeCache[variantId] = strokes
 
-        val newVariant = GlyphVariant(
-            id = variantId,
-            glyphId = glyphId,
-            version = nextVersion,
-            label = "v$nextVersion",
-            score = score,
-            slantAngleDegrees = slantAngle,
-            isFavorite = setFavorite || existingGlyph.variants.isEmpty(),
-            strokes = strokes,
-            strokeCount = strokes.size,
-            createdAtTimestamp = System.currentTimeMillis(),
-            sourceAttemptId = sourceAttemptId
-        )
+            val newVariant = GlyphVariant(
+                id = variantId,
+                glyphId = glyphId,
+                version = nextVersion,
+                label = "v$nextVersion",
+                score = score,
+                slantAngleDegrees = slantAngle,
+                isFavorite = setFavorite || existingGlyph.variants.isEmpty(),
+                strokes = strokes,
+                strokeCount = strokes.size,
+                createdAtTimestamp = System.currentTimeMillis(),
+                sourceAttemptId = sourceAttemptId
+            )
 
-        val updatedVariants = existingGlyph.variants.map { v ->
-            if (setFavorite) v.copy(isFavorite = false) else v
-        } + newVariant
+            val updatedVariants = existingGlyph.variants.map { v ->
+                if (setFavorite) v.copy(isFavorite = false) else v
+            } + newVariant
 
-        val updatedGlyph = existingGlyph.copy(
-            selectedVariantId = if (setFavorite || existingGlyph.selectedVariantId == null) variantId else existingGlyph.selectedVariantId,
-            variants = updatedVariants,
-            bestScore = updatedVariants.maxOfOrNull { it.score } ?: 0f,
-            updatedAtTimestamp = System.currentTimeMillis()
-        )
+            val updatedGlyph = existingGlyph.copy(
+                selectedVariantId = if (setFavorite || existingGlyph.selectedVariantId == null) variantId else existingGlyph.selectedVariantId,
+                variants = updatedVariants,
+                bestScore = updatedVariants.maxOfOrNull { it.score } ?: 0f,
+                updatedAtTimestamp = System.currentTimeMillis()
+            )
 
-        val updatedMap = currentAlphabet.glyphs.toMutableMap()
-        updatedMap[glyphId] = updatedGlyph
+            val updatedMap = currentAlphabet.glyphs.toMutableMap()
+            updatedMap[glyphId] = updatedGlyph
 
-        val newAlphabet = currentAlphabet.copy(glyphs = updatedMap)
-        saveAlphabetManifest(newAlphabet)
-        alphabetFlow.value = newAlphabet
+            val newAlphabet = currentAlphabet.copy(glyphs = updatedMap)
+            saveAlphabetManifest(newAlphabet)
+            alphabetFlow.value = newAlphabet
 
-        newVariant
+            newVariant
+        }
     }
 
     override suspend fun setFavoriteVariant(glyphId: String, variantId: String): Boolean = withContext(ioDispatcher) {
-        val currentAlphabet = alphabetFlow.value
-        val glyph = currentAlphabet.glyphs[glyphId] ?: return@withContext false
+        mutationMutex.withLock {
+            val currentAlphabet = alphabetFlow.value
+            val glyph = currentAlphabet.glyphs[glyphId] ?: return@withLock false
 
-        val variantExists = glyph.variants.any { it.id == variantId }
-        if (!variantExists) return@withContext false
+            val variantExists = glyph.variants.any { it.id == variantId }
+            if (!variantExists) return@withLock false
 
-        val updatedVariants = glyph.variants.map { v ->
-            v.copy(isFavorite = v.id == variantId)
+            val updatedVariants = glyph.variants.map { v ->
+                v.copy(isFavorite = v.id == variantId)
+            }
+
+            val updatedGlyph = glyph.copy(
+                selectedVariantId = variantId,
+                variants = updatedVariants,
+                updatedAtTimestamp = System.currentTimeMillis()
+            )
+
+            val updatedMap = currentAlphabet.glyphs.toMutableMap()
+            updatedMap[glyphId] = updatedGlyph
+
+            val newAlphabet = currentAlphabet.copy(glyphs = updatedMap)
+            saveAlphabetManifest(newAlphabet)
+            alphabetFlow.value = newAlphabet
+            true
         }
-
-        val updatedGlyph = glyph.copy(
-            selectedVariantId = variantId,
-            variants = updatedVariants,
-            updatedAtTimestamp = System.currentTimeMillis()
-        )
-
-        val updatedMap = currentAlphabet.glyphs.toMutableMap()
-        updatedMap[glyphId] = updatedGlyph
-
-        val newAlphabet = currentAlphabet.copy(glyphs = updatedMap)
-        saveAlphabetManifest(newAlphabet)
-        alphabetFlow.value = newAlphabet
-        true
     }
 
     override suspend fun deleteVariant(glyphId: String, variantId: String): Boolean = withContext(ioDispatcher) {
-        val currentAlphabet = alphabetFlow.value
-        val glyph = currentAlphabet.glyphs[glyphId] ?: return@withContext false
+        mutationMutex.withLock {
+            val currentAlphabet = alphabetFlow.value
+            val glyph = currentAlphabet.glyphs[glyphId] ?: return@withLock false
 
-        val variantToDelete = glyph.variants.firstOrNull { it.id == variantId } ?: return@withContext false
-        val remainingVariants = glyph.variants.filter { it.id != variantId }
+            val variantToDelete = glyph.variants.firstOrNull { it.id == variantId } ?: return@withLock false
+            val remainingVariants = glyph.variants.filter { it.id != variantId }
 
-        // Remove arquivo .scribe associado
-        val scribeFile = strokePersistence.getFile(variantId)
-        if (scribeFile.exists()) scribeFile.delete()
-        strokeCache.remove(variantId)
+            val newSelectedId = if (glyph.selectedVariantId == variantId) {
+                remainingVariants.firstOrNull { it.isFavorite }?.id ?: remainingVariants.lastOrNull()?.id
+            } else {
+                glyph.selectedVariantId
+            }
 
-        val newSelectedId = if (glyph.selectedVariantId == variantId) {
-            remainingVariants.firstOrNull { it.isFavorite }?.id ?: remainingVariants.lastOrNull()?.id
-        } else {
-            glyph.selectedVariantId
+            val updatedGlyph = glyph.copy(
+                selectedVariantId = newSelectedId,
+                variants = remainingVariants,
+                bestScore = remainingVariants.maxOfOrNull { it.score } ?: 0f,
+                updatedAtTimestamp = System.currentTimeMillis()
+            )
+
+            val updatedMap = currentAlphabet.glyphs.toMutableMap()
+            updatedMap[glyphId] = updatedGlyph
+
+            val newAlphabet = currentAlphabet.copy(glyphs = updatedMap)
+            // R10: Salva o manifesto atômico primeiro antes de deletar o arquivo físico
+            saveAlphabetManifest(newAlphabet)
+            alphabetFlow.value = newAlphabet
+
+            // Remove arquivo .scribe associado apenas após o manifesto salvo com sucesso
+            val scribeFile = strokePersistence.getFile(variantId)
+            if (scribeFile.exists()) scribeFile.delete()
+            strokeCache.remove(variantId)
+
+            true
         }
-
-        val updatedGlyph = glyph.copy(
-            selectedVariantId = newSelectedId,
-            variants = remainingVariants,
-            bestScore = remainingVariants.maxOfOrNull { it.score } ?: 0f,
-            updatedAtTimestamp = System.currentTimeMillis()
-        )
-
-        val updatedMap = currentAlphabet.glyphs.toMutableMap()
-        updatedMap[glyphId] = updatedGlyph
-
-        val newAlphabet = currentAlphabet.copy(glyphs = updatedMap)
-        saveAlphabetManifest(newAlphabet)
-        alphabetFlow.value = newAlphabet
-        true
     }
 
     override suspend fun compileAndSavePersonalStyle(styleName: String?): ScribeStyle = withContext(ioDispatcher) {
-        val currentAlphabet = alphabetFlow.value
-        val name = styleName ?: "Meu Estilo Pessoal"
-        val styleId = "personal_style_${System.currentTimeMillis()}"
+        mutationMutex.withLock {
+            val currentAlphabet = alphabetFlow.value
+            val name = styleName ?: "Meu Estilo Pessoal"
+            val styleId = "personal_style_${System.currentTimeMillis()}"
 
-        // Garante que traços das variantes ativas estejam disponíveis para cálculo
-        val populatedAlphabet = populateActiveVariantStrokes(currentAlphabet)
+            // Garante que traços das variantes ativas estejam disponíveis para cálculo
+            val populatedAlphabet = populateActiveVariantStrokes(currentAlphabet)
 
-        val style = styleCompiler.compile(
-            alphabet = populatedAlphabet,
-            styleName = name,
-            styleId = styleId
-        )
+            val style = styleCompiler.compile(
+                alphabet = populatedAlphabet,
+                styleName = name,
+                styleId = styleId
+            )
 
-        val updatedAlphabet = currentAlphabet.copy(
-            lastCompiledStyleId = styleId,
-            lastCompiledTimestamp = System.currentTimeMillis()
-        )
+            val updatedAlphabet = currentAlphabet.copy(
+                lastCompiledStyleId = styleId,
+                lastCompiledTimestamp = System.currentTimeMillis()
+            )
 
-        saveAlphabetManifest(updatedAlphabet)
-        alphabetFlow.value = updatedAlphabet
+            saveAlphabetManifest(updatedAlphabet)
+            alphabetFlow.value = updatedAlphabet
 
-        style
+            // Persiste o estilo pessoal compilado em personal_styles.json para descoberta imediata pelo StyleEngine
+            val targetDirs = listOfNotNull(
+                baseDir,
+                baseDir.parentFile
+            ).distinct()
+
+            for (targetDir in targetDirs) {
+                try {
+                    val stylesFile = File(targetDir, "personal_styles.json")
+                    val existingStyles = if (stylesFile.exists()) {
+                        PersonalStyleSerializer.deserialize(stylesFile.readText(Charsets.UTF_8)).filter { it.id != style.id }
+                    } else {
+                        emptyList()
+                    }
+                    val parent = stylesFile.parentFile
+                    if (parent != null && !parent.exists()) parent.mkdirs()
+                    stylesFile.writeText(PersonalStyleSerializer.serialize(existingStyles + style), Charsets.UTF_8)
+                } catch (_: Throwable) {
+                    // Falha de escrita de cache de estilos não quebra o fluxo de compilação
+                }
+            }
+
+            style
+        }
     }
 
     private fun loadOrInitializeAlphabet() {

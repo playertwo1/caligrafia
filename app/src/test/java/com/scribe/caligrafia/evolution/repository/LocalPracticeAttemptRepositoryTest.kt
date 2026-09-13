@@ -16,21 +16,19 @@ import java.nio.file.Files
 class LocalPracticeAttemptRepositoryTest {
 
     @Test
-    fun init_seedsInitialDemonstrationSamples() {
+    fun init_startsEmptyWithoutSyntheticSeeds() {
         val tempDir = Files.createTempDirectory("scribe_attempts_test").toFile()
         try {
             val repository = LocalPracticeAttemptRepository(tempDir)
 
             val all = repository.getAllAttempts()
-            assertTrue("Deve conter ao menos as amostras iniciais semeadas", all.size >= 4)
+            assertTrue("Um perfil novo deve iniciar com zero tentativas sintéticas (R03)", all.isEmpty())
 
             val slantAttempts = repository.getAttemptsForTarget("basic_slant")
-            assertEquals(2, slantAttempts.size)
+            assertTrue("Não deve conter tentativas para alvos antes do treino real", slantAttempts.isEmpty())
 
             val comparison = repository.getBeforeAndAfter("basic_slant")
-            assertNotNull(comparison)
-            assertTrue("A tentativa baseline deve ser anterior à recente", comparison!!.first.timestampMs < comparison.second.timestampMs)
-            assertTrue("Deve carregar os traços da tentativa", comparison.first.strokes.isNotEmpty())
+            org.junit.Assert.assertNull("Não deve haver comparativo antes de tentativas reais", comparison)
         } finally {
             tempDir.deleteRecursively()
         }

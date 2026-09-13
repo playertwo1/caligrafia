@@ -153,6 +153,7 @@ class NotebookRepositoryTest {
         assertEquals(nb.createdAt, deserializedNb.createdAt)
         assertEquals(nb.updatedAt, deserializedNb.updatedAt)
         assertEquals(nb.pageIds, deserializedNb.pageIds)
+        assertEquals(nb.coverStyle, deserializedNb.coverStyle)
 
         val page = com.scribe.caligrafia.core.model.NotebookPage(
             id = "p-1",

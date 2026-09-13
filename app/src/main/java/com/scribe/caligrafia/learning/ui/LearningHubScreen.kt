@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -73,7 +74,8 @@ import com.scribe.caligrafia.learning.session.SessionPhase
 @Composable
 fun LearningHubScreen(
     viewModel: LearningViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToPractice: ((targetId: String) -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -87,12 +89,18 @@ fun LearningHubScreen(
     }
 
     if (uiState.isSessionDialogVisible && uiState.activeSession != null) {
+        val currentLesson = uiState.activeSession!!.lesson
         ActiveSessionDialog(
             session = uiState.activeSession!!,
             onPause = { viewModel.pauseSession() },
             onResume = { viewModel.resumeSession() },
             onSkipPhase = { viewModel.skipToNextPhase() },
             onRecordAttempt = { score -> viewModel.recordAttempt(score) },
+            onNavigateToCanvas = {
+                val target = currentLesson.glyphIds.firstOrNull() ?: currentLesson.id
+                viewModel.dismissSessionDialog()
+                onNavigateToPractice?.invoke(target)
+            },
             onFinishAndSave = { viewModel.finishAndSaveSession() },
             onCancel = { viewModel.cancelSession() }
         )
@@ -483,6 +491,7 @@ private fun ActiveSessionDialog(
     onResume: () -> Unit,
     onSkipPhase: () -> Unit,
     onRecordAttempt: (Int) -> Unit,
+    onNavigateToCanvas: (() -> Unit)? = null,
     onFinishAndSave: () -> Unit,
     onCancel: () -> Unit
 ) {
@@ -600,33 +609,34 @@ private fun ActiveSessionDialog(
                         }
 
                         Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "Avaliar tentativa de traço:",
-                            fontSize = 11.sp,
-                            color = Color(0xFF64748B)
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            OutlinedButton(
-                                onClick = { onRecordAttempt(65) },
-                                modifier = Modifier.weight(1f)
+                            Text(
+                                text = "Nota Geométrica Média:",
+                                fontSize = 11.sp,
+                                color = Color(0xFF64748B)
+                            )
+                            val score = session.averageScore
+                            Text(
+                                text = if (score != null) "${score.toInt()}%" else "Aguardando traço...",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (score != null) Color(0xFF10B981) else Color(0xFF94A3B8)
+                            )
+                        }
+                        if (onNavigateToCanvas != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(
+                                onClick = onNavigateToCanvas,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
                             ) {
-                                Text("65%", fontSize = 10.sp)
-                            }
-                            OutlinedButton(
-                                onClick = { onRecordAttempt(80) },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text("80%", fontSize = 10.sp)
-                            }
-                            OutlinedButton(
-                                onClick = { onRecordAttempt(95) },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text("95%", fontSize = 10.sp)
+                                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Praticar Exercício no Canvas", fontSize = 12.sp)
                             }
                         }
                     }

@@ -22,8 +22,8 @@ object CalendarConsistencyHelper {
         val targetMonth = calendar.get(Calendar.MONTH) // 0-based
         val daysInMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
 
-        // Mapeia minutos e contagem por dia do mês
-        val minutesPerDay = mutableMapOf<Int, Int>()
+        // Mapeia segundos e contagem por dia do mês (R07: consistência matemática de durações)
+        val secondsPerDay = mutableMapOf<Int, Int>()
         val countPerDay = mutableMapOf<Int, Int>()
 
         val sessionCal = Calendar.getInstance(TimeZone.getDefault())
@@ -31,21 +31,21 @@ object CalendarConsistencyHelper {
             sessionCal.timeInMillis = session.timestampMs
             if (sessionCal.get(Calendar.YEAR) == targetYear && sessionCal.get(Calendar.MONTH) == targetMonth) {
                 val day = sessionCal.get(Calendar.DAY_OF_MONTH)
-                val minutes = (session.actualDurationSeconds / 60).coerceAtLeast(1)
-                minutesPerDay[day] = (minutesPerDay[day] ?: 0) + minutes
+                secondsPerDay[day] = (secondsPerDay[day] ?: 0) + session.actualDurationSeconds.coerceAtLeast(0)
                 countPerDay[day] = (countPerDay[day] ?: 0) + 1
             }
         }
 
         val result = mutableListOf<CalendarDayRecord>()
         for (day in 1..daysInMonth) {
+            val daySeconds = secondsPerDay[day] ?: 0
             result.add(
                 CalendarDayRecord(
                     epochDay = 0L, // simplificado
                     dayOfMonth = day,
                     month = targetMonth + 1,
                     year = targetYear,
-                    totalMinutesPracticed = minutesPerDay[day] ?: 0,
+                    totalMinutesPracticed = daySeconds / 60,
                     sessionCount = countPerDay[day] ?: 0
                 )
             )
