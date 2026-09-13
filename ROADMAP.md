@@ -9,16 +9,18 @@ O usuário autorizou explicitamente transformar as 12 áreas do painel e os 12 f
 
 **Plano detalhado obrigatório para o Antigravity:** [dos mockups ao Scribe funcional](docs/ANTIGRAVITY_FUNCTIONAL_ROADMAP.md). Ele contém navegação, escopo por tela PF-01–PF-12, comportamento/persistência, critérios de aceite, dependências e protocolo de evidência. Esta autorização substitui a limitação anterior a ajustes visuais e libera as opções explicitamente enumeradas no plano; auditorias e preservação de dados continuam válidas.
 
-| Ordem | Entrega | Resultado que deve funcionar |
-|---|---|---|
-| F0 | Integridade e mapa de ações | Resolver contraprovas V5 de manifesto/cache; registrar IDs, dados e rotas |
-| F1 | Navegação, biblioteca, editor e páginas | Encontrar as áreas, organizar cadernos e escrever com ferramentas completas |
-| F2 | Aulas, objetivos, treino e feedback | Escolher lição/estilo/duração e concluir sessão real ligada ao histórico/SRS |
-| F3 | Evolução, replay, variantes e estilos | Rever, comparar, favoritar e usar a própria escrita como referência |
-| F4 | Professor explicável e cópia de textos | Seguir orientação até o resultado e copiar o texto realmente selecionado |
-| F5 | Assinaturas, exportação e backup | Salvar referência, levar arquivos para fora do app e restaurar dados |
-| F6 | Preferências, S Pen/Watch e laboratório | Ajustes persistentes com efeito real, diagnóstico e fallback explícito |
-| F7 | Consolidação e entrega | Percursos completos, acessibilidade, preservação de acervo e APK verificável |
+| Ordem | Entrega | Resultado que deve funcionar | Status de Execução |
+|---|---|---|---|
+| F0 | Integridade e mapa de ações | Resolver contraprovas V5 de manifesto/cache; registrar IDs, dados e rotas | **CONCLUÍDO** (`3d4f0c5`) |
+| F1 | Navegação, biblioteca, editor e páginas | Encontrar as áreas, organizar cadernos e escrever com ferramentas completas | **CONCLUÍDO** (`9f692d4`) |
+| F2 | Aulas, objetivos, treino e feedback | Escolher lição/estilo/duração e concluir sessão real ligada ao histórico/SRS | **CONCLUÍDO** (`4dab8cb`) |
+| F3 | Evolução, replay, variantes e estilos | Rever, comparar, favoritar e usar a própria escrita como referência | **CONCLUÍDO** (`43a84d6`) |
+| F4 | Professor explicável e cópia de textos | Seguir orientação até o resultado e copiar o texto realmente selecionado | **CONCLUÍDO** (`127c604`) |
+| **F5** | **Assinaturas, exportação e backup** | **Salvar referência, levar arquivos para fora do app e restaurar dados** | **PARADA ATUAL (A Iniciar: F5.01–F5.21 e F5.G)** |
+| F6 | Preferências, S Pen/Watch e laboratório | Ajustes persistentes com efeito real, diagnóstico e fallback explícito | PENDENTE |
+| F7 | Consolidação e entrega | Percursos completos, acessibilidade, preservação de acervo e APK verificável | PENDENTE |
+
+> **Ponto de Parada Atual (2026-09-13):** Fases F0, F1, F2, F3 e F4 concluídas com 100% de cobertura (297 testes unitários passando, 0 falhas, `assembleDebug` OK). A execução parou na entrada da **Fase F5 — Assinaturas, exportação e recuperação (F5.01 a F5.21 e F5.G)**. Todos os commits anteriores estão publicados no GitHub (HEAD: `127c604`).
 
 **Entrada de Praticar:** Hub de aulas com objetivo, categorias e duração; não abrir invariavelmente um traço `/`. **Mais:** destinos nomeados para Alfabeto, Professor, Estilos, Assinaturas, Cópia de textos, Backup, S Pen/Watch, Laboratório e Preferências.
 

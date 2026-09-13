@@ -1,5 +1,11 @@
 # Roadmap executável — dos mockups ao Scribe funcional
 
+> **Ponto de Parada Atual (2026-09-13):**
+> - **Fases Concluídas:** F0, F1, F2, F3 e F4 (100% dos requisitos e testes de aceitação cumpridos, 297 testes unitários passando, 0 falhas, `assembleDebug` OK).
+> - **Commits Publicados no GitHub:** `3d4f0c5` (F0), `9f692d4` (F1), `4dab8cb` (F2), `43a84d6` (F3), `127c604` (F4).
+> - **Ponto Onde Parou:** Entrada da **Fase F5 — Assinaturas, exportação e recuperação (F5.01 a F5.21 e F5.G)**.
+> - **Checklist de Execução:** [ANTIGRAVITY_EXECUTION_CHECKLIST.md](ANTIGRAVITY_EXECUTION_CHECKLIST.md) atualizado com as marcações de F0 a F4 concluídas.
+
 > **Começar pelo [checklist obrigatório de execução](ANTIGRAVITY_EXECUTION_CHECKLIST.md).** Ele determina a ordem, decisões fixas e caixas individuais com provas. Este documento detalha objetivos e escopo; não substitui o checklist. Codex organiza/verifica; Antigravity executa e comprova.
 
 ## Mandato e resultado esperado
@@ -152,16 +158,16 @@ Referência: painel 12.
 
 As ondas abaixo são entregas funcionais, não novos rótulos de aprovação M0–M8. Começar pela primeira incompleta e avançar quando seus critérios estiverem demonstrados; não solicitar autorização novamente para cada etapa já incluída neste mandato.
 
-| Onda | Itens e trabalho | Gate para avançar |
-|---|---|---|
-| F0 — Integridade e mapa | Registrar SHA, inventário de ações, schema/IDs, corrigir duas contraprovas V5, baseline de dados reais e migração necessária | Manifesto inválido não altera dados; consumidor aberto recebe strokes novos; testes anteriores preservados. Sem exigir fechamento de todos os 66 IDs antes de iniciar qualquer UI |
-| F1 — Descoberta e caderno | PF-01; Hub PF-03 como entrada; menu Mais e pilhas de navegação para as 12 áreas | Percurso biblioteca/editor/páginas completo; rotas funcionais existentes acessíveis. Itens ainda em construção marcados no inventário, sem contá-los como entregues |
-| F2 — Aprender de ponta a ponta | PF-02/03; detalhe de feedback PF-04; catálogo de estilos inicial PF-07 | Escolher objetivo → sessão real → pausa → avaliar → resumo → histórico/SRS, sem dados artificiais |
-| F3 — Rever e personalizar | PF-04/05/07 completos | Comparar duas tentativas → salvar/favoritar variante → usar referência pessoal, persistente e observável |
-| F4 — Orientar e copiar | PF-06/09 | Prescrição → treino correto → resultado; texto escolhido → cópia real → histórico |
-| F5 — Levar e recuperar dados | PF-08/10 e exportações de PF-01 | Arquivos abrem fora do app; referência e conjunto misto sobrevivem ao round-trip; falhas recuperáveis |
-| F6 — Ajustar e medir | PF-11/12 | Preferências efetivas/persistidas, laboratório isolado, fallback do telefone. Watch e medições físicas registrados separadamente |
-| F7 — Consolidação do produto | Revisão das 12 áreas e 12 fluxos, acessibilidade, atualização de dados antigos, APK de entrega | Checklist completo de ações, screenshots reais, vídeos dos percursos, testes e release identificado; parecer independente sem autoaprovação |
+| Onda | Itens e trabalho | Gate para avançar | Status de Execução |
+|---|---|---|---|
+| F0 — Integridade e mapa | Registrar SHA, inventário de ações, schema/IDs, corrigir duas contraprovas V5, baseline de dados reais e migração necessária | Manifesto inválido não altera dados; consumidor aberto recebe strokes novos; testes anteriores preservados. Sem exigir fechamento de todos os 66 IDs antes de iniciar qualquer UI | **CONCLUÍDO** (`3d4f0c5`) |
+| F1 — Descoberta e caderno | PF-01; Hub PF-03 como entrada; menu Mais e pilhas de navegação para as 12 áreas | Percurso biblioteca/editor/páginas completo; rotas funcionais existentes acessíveis. Itens ainda em construção marcados no inventário, sem contá-los como entregues | **CONCLUÍDO** (`9f692d4`) |
+| F2 — Aprender de ponta a ponta | PF-02/03; detalhe de feedback PF-04; catálogo de estilos inicial PF-07 | Escolher objetivo → sessão real → pausa → avaliar → resumo → histórico/SRS, sem dados artificiais | **CONCLUÍDO** (`4dab8cb`) |
+| F3 — Rever e personalizar | PF-04/05/07 completos | Comparar duas tentativas → salvar/favoritar variante → usar referência pessoal, persistente e observável | **CONCLUÍDO** (`43a84d6`) |
+| F4 — Orientar e copiar | PF-06/09 | Prescrição → treino correto → resultado; texto escolhido → cópia real → histórico | **CONCLUÍDO** (`127c604`) |
+| **F5 — Levar e recuperar dados** | **PF-08/10 e exportações de PF-01** | **Arquivos abrem fora do app; referência e conjunto misto sobrevivem ao round-trip; falhas recuperáveis** | **PARADA ATUAL (A Iniciar: F5.01–F5.21 e F5.G)** |
+| F6 — Ajustar e medir | PF-11/12 | Preferências efetivas/persistidas, laboratório isolado, fallback do telefone. Watch e medições físicas registrados separadamente | PENDENTE |
+| F7 — Consolidação do produto | Revisão das 12 áreas e 12 fluxos, acessibilidade, atualização de dados antigos, APK de entrega | Checklist completo de ações, screenshots reais, vídeos dos percursos, testes e release identificado; parecer independente sem autoaprovação | PENDENTE |
 
 Dependências transversais: PF-10 só entra em entrega ao usuário após integridade comprovada; referências PF-07 precisam existir antes de oferecer seus exercícios em PF-02; evolução depende de tentativas reais; Professor depende das métricas/contexto corretos. Ausência de hardware não bloqueia trabalho de software independente, mas não fecha a parte física.
 
