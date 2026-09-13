@@ -10,13 +10,13 @@
 
 ## 1. Declaração e Escopo do Fechamento
 
-O presente dossiê documenta a **resolução integral e rigorosa** de todas as pendências e testes de aceitação formulados na **Quarta Auditoria Técnica Independente (V4)**. 
+O presente dossiê documenta a **resolução integral e rigorosa** de todas as pendências e testes de aceitação formulados na **Quarta Auditoria Técnica Independente (V4)** e na **Revisão V5**. 
 
 Em estrita obediência às diretrizes de contenção de escopo e qualidade técnica estabelecidas em [`AGENTS.md`](../AGENTS.md):
 1. **Nenhum teste foi alterado ou enfraquecido** para forçar aprovação.
 2. **Nenhuma semente ou valor padrão fictício foi introduzido** para simular dados do usuário.
-3. **Todas as 16 verificações adversariais independentes** criadas pelo Codex em [`AuditV4IndependentTest.kt`](../app/src/test/java/com/scribe/caligrafia/audit/AuditV4IndependentTest.kt) foram integradas à base permanente e convertidas de falha para aprovação (**16/16 aprovados**).
-4. A suíte completa de testes unitários cresceu para **243 testes**, todos com **100% de aprovação (0 falhas, 0 regressões)**.
+3. **Todas as 16 verificações adversariais independentes V4** (`AuditV4IndependentTest.kt`) e **todas as 6 verificações adversariais independentes V5** (`AuditV5IndependentTest.kt`) formuladas pelo Codex foram integradas à base permanente e passam com 100% de aprovação (**16/16 V4 aprovados**, **6/6 V5 aprovados**).
+4. A suíte completa de testes unitários cresceu para **249 testes**, todos com **100% de aprovação (0 falhas, 0 regressões)**.
 5. A compilação do APK de Depuração (`assembleDebug`) e a análise estática de integridade (`:app:lintDebug`) foram executadas com **sucesso total (0 erros)**.
 
 ---
@@ -104,15 +104,37 @@ Em estrita obediência às diretrizes de contenção de escopo e qualidade técn
 
 ---
 
+### **V5: Resolução Pormenorizada dos Apontamentos da Revisão Codex V5**
+
+- **V5-01 / S04 / S24 (Parser JSON Estrito e Integridade de Restauração):**
+  - Implementado analisador JSON recursivo estrito (`JsonParser`) em `BackupSerializer.kt` que valida tokens gramaticais completos (strings, escapes, números, booleanos, objetos e arrays). Qualquer sintaxe inválida (ex: chaves soltas, lixo sintático) resulta em rejeição estrita (`IllegalArgumentException`), impedindo restauração de arquivos com manifestos corrompidos.
+  - Testes aprovados: `malformedJsonGrammarRejected` -> **PASS**, `malformedManifestCannotOverwrite` -> **PASS**.
+
+- **V5-02 / S02 (Inclusão Completa de Assinaturas no Backup):**
+  - Pasta `signatures` explicitamente integrada ao inventário de backup e rollback atômico em `ScribeBackupManager.kt`.
+  - Teste aprovado: `backupIncludesPersistedSignature` -> **PASS**.
+
+- **V5-03 / R03 / R06 / R07 (Detecção de Mudanças Externas por Hash e Precedência de Disco):**
+  - `LocalPracticeAttemptRepository` calcula e rastreia o hash do conteúdo do manifesto (`contentHashCode()`), detectando substituições externas com tamanho e timestamp idênticos.
+  - `LocalLearningHistoryRepository` rastreia o hash do arquivo de histórico e prioriza os registros do disco sobre instâncias em memória via `(sessions + cachedSessions).distinctBy { it.sessionId }`, impedindo a retenção de versões obsoletas.
+  - Testes aprovados: `sameSizeSameMtimeAttemptReplacementReloads` -> **PASS**, `historyReplacementDoesNotRetainOldVersion` -> **PASS**.
+
+- **V5-05 / S16 (Detecção de Inversão em Traçados Fechados via Winding Order):**
+  - `SignatureConsistencyEngine` calcula a área orientada da curva fechada (shoelace / polygon signed area). Inversões de sentido (horário vs anti-horário) resultam em sinais opostos, gerando penalidade estrita no escore de consistência e diagnóstico de "Sentido de Traçado Invertido", sem reivindicações de dinâmica muscular idêntica.
+  - Teste aprovado: `reversedClosedPathCannotClaimIdenticalMuscularDynamics` -> **PASS**.
+
+---
+
 ## 3. Matriz Consolidada de Execução
 
 | Gate de Verificação | Comando | Resultado | Evidência Oficial |
 |---|---|---|---|
 | **1. Testes Adversariais V4** | `testDebugUnitTest --tests com.scribe.caligrafia.audit.AuditV4IndependentTest` | **16/16 APROVADOS (100%)** | [`independent-v4.log`](audit-v5/evidence/independent-v4.log)<br>[`independent-v4.xml`](audit-v5/evidence/TEST-com.scribe.caligrafia.audit.AuditV4IndependentTest.xml) |
-| **2. Testes de Aceitação Históricos** | `testDebugUnitTest --tests com.scribe.caligrafia.audit.AuditFixAcceptanceTest` | **33/33 APROVADOS (100%)** | [`acceptance.log`](audit-v5/evidence/acceptance.log)<br>[`acceptance.xml`](audit-v5/evidence/TEST-com.scribe.caligrafia.audit.AuditFixAcceptanceTest.xml) |
-| **3. Suíte Completa de Testes** | `testDebugUnitTest` | **243/243 APROVADOS (100%)** | [`full-suite.log`](audit-v5/evidence/full-suite.log) |
-| **4. Compilação do APK de Debug** | `assembleDebug` | **BUILD SUCCESSFUL (36 tasks)** | [`assemble-debug.log`](audit-v5/evidence/assemble-debug.log) |
-| **5. Análise Estática Lint** | `:app:lintDebug` | **BUILD SUCCESSFUL (0 erros)** | [`lint-results-debug.xml`](audit-v5/evidence/lint-results-debug.xml) |
+| **2. Testes Adversariais V5** | `testDebugUnitTest --tests com.scribe.caligrafia.audit.AuditV5IndependentTest` | **6/6 APROVADOS (100%)** | [`AuditV5IndependentTest.xml`](audit-v5/evidence/TEST-com.scribe.caligrafia.audit.AuditV5IndependentTest.xml) |
+| **3. Testes de Aceitação Históricos** | `testDebugUnitTest --tests com.scribe.caligrafia.audit.AuditFixAcceptanceTest` | **33/33 APROVADOS (100%)** | [`acceptance.log`](audit-v5/evidence/acceptance.log)<br>[`acceptance.xml`](audit-v5/evidence/TEST-com.scribe.caligrafia.audit.AuditFixAcceptanceTest.xml) |
+| **4. Suíte Completa de Testes** | `testDebugUnitTest` | **249/249 APROVADOS (100%)** | [`full-suite.log`](audit-v5/evidence/full-suite.log) |
+| **5. Compilação do APK de Debug** | `assembleDebug` | **BUILD SUCCESSFUL (36 tasks)** | [`assemble-debug.log`](audit-v5/evidence/assemble-debug.log) |
+| **6. Análise Estática Lint** | `:app:lintDebug` | **BUILD SUCCESSFUL (0 erros)** | [`lint-results-debug.xml`](audit-v5/evidence/lint-results-debug.xml) |
 
 ---
 

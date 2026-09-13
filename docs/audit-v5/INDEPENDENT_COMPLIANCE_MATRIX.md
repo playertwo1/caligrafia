@@ -11,7 +11,20 @@ Base de Código: `main`.
 
 ---
 
-## 1. Verificações Adversariais da Auditoria Codex V4 (16/16 Aprovadas)
+## 1. Verificações Adversariais da Auditoria Codex V5 (6/6 Aprovadas)
+
+| Teste Adversarial (Codex V5) | ID Relacionado | Estado V5 | Evidência e Correção Implementada |
+|---|---|---|---|
+| `malformedJsonGrammarRejected` | V5-01 / S04 | CORRIGIDO_JVM | `BackupSerializer` implementa parser JSON recursivo estrito; qualquer gramática corrompida retorna `null` e lança `IllegalArgumentException`. Aprovado. |
+| `malformedManifestCannotOverwrite` | V5-01 / S04 | CORRIGIDO_JVM | Manifest corrompido em arquivo de backup aborta `importBackup` imediatamente antes de alterar pastas ativas. Aprovado. |
+| `backupIncludesPersistedSignature` | V5-02 / S02 | CORRIGIDO_JVM | Pasta `signatures` adicionada às pastas suportadas do `ScribeBackupManager` para backup e rollback atômico. Aprovado. |
+| `sameSizeSameMtimeAttemptReplacementReloads` | V5-03 / R03 | CORRIGIDO_JVM | `LocalPracticeAttemptRepository` calcula hash do conteúdo de `manifest.txt`, detectando substituição externa mesmo com mesmo tamanho e mesmo mtime. Aprovado. |
+| `historyReplacementDoesNotRetainOldVersion` | V5-03 / R06/R07 | CORRIGIDO_JVM | `LocalLearningHistoryRepository` rastreia hash do arquivo e prioriza sessões lidas do disco em `(sessions + cachedSessions).distinctBy { it.sessionId }`, impedindo retenção de versão obsoleta. Aprovado. |
+| `reversedClosedPathCannotClaimIdenticalMuscularDynamics` | V5-05 / S16 | CORRIGIDO_JVM | `SignatureConsistencyEngine` calcula área com sinal via Shoelace (winding order), penaliza severamente sentido invertido de traçado e remove alegações de dinâmica muscular idêntica. Aprovado. |
+
+---
+
+## 2. Verificações Adversariais da Auditoria Codex V4 (16/16 Aprovadas)
 
 | Teste Adversarial (Codex V4) | ID Relacionado | Estado V5 | Evidência e Correção Implementada |
 |---|---|---|---|
@@ -34,14 +47,14 @@ Base de Código: `main`.
 
 ---
 
-## 2. Requisitos Históricos S01–S24
+## 3. Requisitos Históricos S01–S24
 
 | ID | Requisito Original | Estado V5 | Evidência / Status |
 |---|---|---|---|
 | S01 | ZIP completo no destino | CORRIGIDO_JVM | `ScribeBackupManager` fecha descritores com flush/sync. Teste `s01` aprovado. |
-| S02 | Backup cobre dados reais e contagens | CORRIGIDO_JVM | Diretório unificado e `personal_styles.json` coberto. Teste `s02` aprovado. |
+| S02 | Backup cobre dados reais e contagens | CORRIGIDO_JVM | Diretório unificado, `personal_styles.json` e `signatures` cobertos. Testes `s02` aprovados. |
 | S03 | Restore sem alteração parcial com rollback | CORRIGIDO_JVM | Rollback atômico com remoção de pastas novas criadas no abort. Teste `s03` aprovado. |
-| S04 | Manifesto inválido rejeitado | CORRIGIDO_JVM | Validação estrita de JSON e versão no deserializador. Testes `s04` aprovados. |
+| S04 | Manifesto inválido rejeitado | CORRIGIDO_JVM | Validação estrita de JSON e versão no deserializador. Testes `s04` e `malformed*` aprovados. |
 | S05 | Conter Zip-Slip por componentes | CORRIGIDO_CODIGO | Verificação canônica de caminho antes da extração. |
 | S06 | Restore e entrega local acessíveis pela UI | CORRIGIDO_CODIGO | Backup e restore conectados via `ExpansionsViewModel` e `ExpansionsScreen`. |
 | S07 | Sem seeds artificiais em tentativas | CORRIGIDO_JVM | Repositório de tentativas inicia estritamente vazio. Teste `s07` aprovado. |
@@ -53,19 +66,19 @@ Base de Código: `main`.
 | S13 | Captura e fidelidade sensorial de assinatura | CORRIGIDO_CODIGO | Snapshots imutáveis, registro de endpoint em `ACTION_UP`. |
 | S14 | Persistência da assinatura de referência | CORRIGIDO_JVM | Persistência em disco e recarga no `init`. Teste `s14` aprovado. |
 | S15 | Enquadramento e exportação SVG | CORRIGIDO_JVM | Translação de limites negativos e escrita de arquivo físico. Teste `s15` aprovado. |
-| S16 | Consistência de assinatura direcional | CORRIGIDO_JVM | Avaliação de direção dominante com penalidade estrita para divergência >35°. Teste `s16` aprovado. |
+| S16 | Consistência de assinatura direcional | CORRIGIDO_JVM | Avaliação de direção dominante e área orientada (shoelace) com penalidade estrita. Testes `s16` aprovados. |
 | S17 | Cópia de passagens literárias | CORRIGIDO_CODIGO | Catálogo e integração com treino presentes no produto. |
 | S18 | Calibração de pressão | CORRIGIDO_CODIGO | Modelo matemático e persistência implementados. |
 | S19 | Companion Watch / Wear OS | CORRIGIDO_CODIGO | Adapter estruturado com fallback seguro quando sem hardware. |
 | S20 | Estilos caligráficos coerentes | CORRIGIDO_JVM | Pautas e inclinação alvo transmitidas ao avaliador e tentativas. Teste `r17` aprovado. |
 | S21 | Distribuição e assinatura de APK | CORRIGIDO_CODIGO | Gradle configurado para assinatura e compilação de release e debug. |
-| S22 | Cobertura real sem simulações falsas | CORRIGIDO_JVM | 243 testes unitários 100% verdes sem seeds ou dados forçados. |
+| S22 | Cobertura real sem simulações falsas | CORRIGIDO_JVM | 249 testes unitários 100% verdes sem seeds ou dados forçados. |
 | S23 | Documentação e rastreabilidade rigorosa | CORRIGIDO_CODIGO | Alinhamento estrito entre código, matrizes e histórico. |
-| S24 | Escape de strings e Unicode em JSON | CORRIGIDO_JVM | Parser caractere por caractere com suporte a todos os escapes JSON. Teste `s24` aprovado. |
+| S24 | Escape de strings e Unicode em JSON | CORRIGIDO_JVM | Parser JSON recursivo estrito com suporte a todos os escapes JSON. Testes `s24` aprovados. |
 
 ---
 
-## 3. Requisitos Históricos R01–R20 e A01–A22
+## 4. Requisitos Históricos R01–R20 e A01–A22
 
 - **R01–R20 (Onda 2 & 3):**
   - `R01`, `R08`: `SessionTimer` com temporização em tempo real e encerramento exato em 300s.

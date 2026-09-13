@@ -50,11 +50,15 @@ object SignatureConsistencyEngine {
 
         var netDx = 0f
         var netDy = 0f
+        var signedArea = 0.0
         for (stroke in strokes) {
             val pts = stroke.points
             if (pts.size >= 2) {
                 netDx += pts.last().x - pts.first().x
                 netDy += pts.last().y - pts.first().y
+                for (i in 0 until pts.size - 1) {
+                    signedArea += (pts[i].x * pts[i + 1].y - pts[i + 1].x * pts[i].y).toDouble()
+                }
             }
         }
         val dominantAngle = if (netDx != 0f || netDy != 0f) {
@@ -62,6 +66,11 @@ object SignatureConsistencyEngine {
             var deg = Math.toDegrees(rad).toFloat()
             if (deg < 0) deg += 360f
             deg
+        } else {
+            0f
+        }
+        val windingSign = if (kotlin.math.abs(signedArea) > 50.0) {
+            if (signedArea > 0) 1f else -1f
         } else {
             0f
         }
@@ -79,7 +88,8 @@ object SignatureConsistencyEngine {
             totalLengthPx = totalLength,
             aspectRatio = aspectRatio,
             penUpCount = penUpCount,
-            dominantAngleDegrees = dominantAngle
+            dominantAngleDegrees = dominantAngle,
+            windingSign = windingSign
         )
     }
 
@@ -135,8 +145,11 @@ object SignatureConsistencyEngine {
         val normalizedAngleDiff = if (angleDiff > 180f) 360f - angleDiff else angleDiff
         val angleScore = (100f - normalizedAngleDiff * (100f / 90f)).coerceIn(0f, 100f)
 
+        // 6. Alinhamento de sentido de rotação/trajetória (winding order)
+        val isOppositeWinding = baseline.windingSign != 0f && attempt.windingSign != 0f && (baseline.windingSign * attempt.windingSign < 0)
+
         // Score ponderado final
-        val repeatabilityScore = (
+        val rawScore = (
             strokeScore * 0.25f +
             durationScore * 0.20f +
             aspectScore * 0.20f +
@@ -144,22 +157,33 @@ object SignatureConsistencyEngine {
             angleScore * 0.20f
         ).coerceIn(0f, 100f)
 
-        val isConsistent = repeatabilityScore >= 75f && normalizedAngleDiff <= 35f
+        val repeatabilityScore = if (isOppositeWinding) {
+            (rawScore * 0.35f).coerceAtMost(35f)
+        } else {
+            rawScore
+        }
+
+        val isConsistent = repeatabilityScore >= 75f && normalizedAngleDiff <= 35f && !isOppositeWinding
 
         val title: String
         val details: String
         val tip: String
 
         when {
+            isOppositeWinding -> {
+                title = "Sentido de Traçado Invertido"
+                details = "A trajetória da assinatura foi percorrida no sentido inverso ao da referência gravada."
+                tip = "Mantenha o mesmo sentido natural de escrita dos contornos e floreios."
+            }
             normalizedAngleDiff > 35f -> {
                 title = "Direção e Orientação Inconsistentes"
                 details = "A orientação geométrica dos traços diverge da referência (desvio angular de ${normalizedAngleDiff.toInt()}°)."
                 tip = "Atente para a inclinação e direção natural do traçado da assinatura."
             }
             repeatabilityScore >= 90f -> {
-                title = "Excelente Repetibilidade Motora!"
-                details = "Sua assinatura apresenta ritmo, proporção e dinâmica muscular praticamente idênticos à referência gravada."
-                tip = "Mantenha esse mesmo ponto de apoio no punho para garantir assinaturas autênticas em documentos."
+                title = "Excelente Consistência Geométrica!"
+                details = "Sua assinatura apresenta ritmo, proporção e velocidade de traçado altamente consistentes com a referência gravada."
+                tip = "Mantenha esse mesmo ponto de apoio no punho para garantir estabilidade do traço."
             }
             repeatabilityScore >= 75f -> {
                 title = "Assinatura Consistente"

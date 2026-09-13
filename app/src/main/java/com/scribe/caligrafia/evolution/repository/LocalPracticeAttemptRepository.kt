@@ -31,12 +31,14 @@ class LocalPracticeAttemptRepository(
     private val strokeCache = mutableMapOf<String, List<Stroke>>()
     private var lastKnownModified: Long = 0L
     private var lastKnownLength: Long = -1L
+    private var lastKnownHash: Int = 0
 
     private fun checkAndReloadIfModifiedExternally() {
         if (!manifestFile.exists()) return
         val mod = manifestFile.lastModified()
         val len = manifestFile.length()
-        if (mod != lastKnownModified || len != lastKnownLength) {
+        val currentHash = try { manifestFile.readBytes().contentHashCode() } catch (_: Throwable) { 0 }
+        if (mod != lastKnownModified || len != lastKnownLength || currentHash != lastKnownHash) {
             loadManifest()
         }
     }
@@ -166,14 +168,17 @@ class LocalPracticeAttemptRepository(
             cachedMetadata.clear()
             lastKnownModified = 0L
             lastKnownLength = -1L
+            lastKnownHash = 0
             return
         }
 
         lastKnownModified = manifestFile.lastModified()
         lastKnownLength = manifestFile.length()
+        val bytes = try { manifestFile.readBytes() } catch (_: Throwable) { ByteArray(0) }
+        lastKnownHash = bytes.contentHashCode()
         cachedMetadata.clear()
         try {
-            val lines = manifestFile.readLines(StandardCharsets.UTF_8)
+            val lines = bytes.toString(StandardCharsets.UTF_8).lines()
             for (line in lines) {
                 val parts = line.split("|")
                 if (parts.size >= 8) {
@@ -213,6 +218,7 @@ class LocalPracticeAttemptRepository(
             Files.move(temp.toPath(), manifestFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
             lastKnownModified = manifestFile.lastModified()
             lastKnownLength = manifestFile.length()
+            lastKnownHash = try { manifestFile.readBytes().contentHashCode() } catch (_: Throwable) { 0 }
         } catch (e: Throwable) {
             if (temp.exists()) temp.delete()
             throw e

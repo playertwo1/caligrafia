@@ -31,7 +31,8 @@ data class SignatureMetrics(
     val totalLengthPx: Float,
     val aspectRatio: Float,
     val penUpCount: Int,
-    val dominantAngleDegrees: Float = 0f
+    val dominantAngleDegrees: Float = 0f,
+    val windingSign: Float = 0f
 )
 
 /**

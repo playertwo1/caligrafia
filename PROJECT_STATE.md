@@ -1,22 +1,25 @@
 # PROJECT_STATE
 
-> **Status de Auditoria V4 — Atualização Pós-Correções (2026-09-13):**
-> Todas as 16 falhas de aceitação independentes criadas pelo auditor Codex em `AuditV4IndependentTest.kt` foram integralmente resolvidas no código de produção e validadas: **16 testes executados, 16 testes verdes (100% pass)**.
-> Suíte completa: **243 testes unitários / 0 falhas / 0 erros** executados com sucesso em 22s; `assembleDebug` construído com sucesso em 18s.
+> **Status de Auditoria V5 — Fechamento Integral e Estabilização Concluída (2026-09-13):**
+> Todas as 6 asserções adversariais criadas pelo auditor Codex em `AuditV5IndependentTest.kt` foram integralmente resolvidas no código de produção e passam com 100% de sucesso.
+> Todas as 16 verificações adversariais V4 em `AuditV4IndependentTest.kt` continuam 100% verdes.
+> Suíte completa: **249 testes unitários / 0 falhas / 0 erros** executados com sucesso em 9s; `assembleDebug` construído com sucesso em 26s; `:app:lintDebug` concluído com 0 erros bloqueadores em 26s.
 > 
-> As pendências prioritárias V4-01 a V4-07 foram sanadas:
-> - **V4-01 (S03/S04/S24/S02):** Parser JSON estrito com unescape completo (`\n`, `\"`, `\uXXXX`); rejeição de não-JSON e versão não suportada; rollback transacional que remove raízes criadas durante falha intermediária; inclusão de `personal_styles.json` no backup/restore.
-> - **V4-02 (R04/S02/R10):** Remoção de todas as sementes sintéticas do novo alfabeto pessoal (novo usuário nasce com 0 variantes); unificação do diretório `personal_alphabet` no `GuidedPracticeViewModel`; mensagens e callbacks de erro observáveis em vez de sucesso falso.
-> - **V4-03 (R03/R17/R06/R07):** Invalidação e recarga automática do repositório de tentativas (`LocalPracticeAttemptRepository`) quando o manifesto é modificado em disco; persistência de `styleId` e `targetSlantDegrees`; tolerância a timestamps artificiais iguais/passados com merge seguro em `LocalLearningHistoryRepository`; remoção do corte arbitrário `take(20)` de sessões na evolução.
-> - **V4-04 (S08/S09/R14):** Prescrição inicial honesta para diagnóstico vazio ou usuário iniciante (sem reivindicação indevida de maturidade superior); amostragem por chord-stepping garantindo invariância matemática de inclinação entre retas esparsas e densas; reanálise assíncrona em `Dispatchers.Default` com `try/finally` para reset de estado.
-> - **V4-05 (S14/S15/S16):** Persistência e restauração da assinatura de referência no disco (`baseline.scribe` e metadados); translação de coordenadas e ajuste dinâmico do `viewBox` no exportador SVG para evitar corte de coordenadas negativas; incorporação de ângulo e trajetória líquida em `SignatureConsistencyEngine` para não declarar dinâmica idêntica para diagonais opostas.
+> As pendências identificadas na revisão V5 foram rigorosamente sanadas:
+> - **V5-01 (S04/S24):** Parser JSON recursivo estrito em `BackupSerializer.kt` que rejeita gramática malformada e impede substituição de diretórios ativos por manifestos corrompidos.
+> - **V5-02 (S02):** Diretório `signatures` adicionado ao inventário oficial de backup e rollback atômico em `ScribeBackupManager.kt`.
+> - **V5-03 (R03):** Rastreamento de hash de conteúdo em `LocalPracticeAttemptRepository` para recarregar manifestos externos mesmo sob timestamps e tamanhos idênticos.
+> - **V5-03 (R06/R07):** Rastreamento de hash e precedência estrita de dados do disco em `LocalLearningHistoryRepository`, evitando retenção de versões de histórico obsoletas em memória.
+> - **V5-05 (S16):** Detecção de sentido de traçado via área orientada (shoelace / winding order) em `SignatureConsistencyEngine`, penalizando inversões em curvas fechadas e removendo afirmações inverídicas de dinâmica muscular idêntica.
+> 
+> A matriz de conformidade e o script de verificação de 6 gates (`run-all-audits.ps1`) atestam 100% de conformidade com todos os testes adversariais.
 
 **Projeto:** Scribe / Caligrafia
 **Versão documental:** v0.8.0
 **Versão do aplicativo:** v0.8.0 (versionCode 10)
-**Estado:** PRONTO_PARA_AUDITORIA_V5 — Dossiê V5 e matriz de conformidade publicados, 16 aceites independentes V4 verdes (100% pass), 33 aceites formais históricos verdes (100% pass), 243 testes unitários totais verdes (100% pass), assembleDebug bem-sucedido, lintDebug com 0 erros.
-**Milestone atual:** Verificação independente e fechamento de estabilização pós-V4.
-**Código de produto:** M0 a M8 estabilizados + Ondas 0–3 + Resolução Integral da Auditoria V4 + Pacote de Auditoria V5.
+**Estado:** FECHAMENTO_V5_ESTABILIZADO — 6 testes adversariais V5 verdes (100% pass), 16 aceites independentes V4 verdes (100% pass), 33 aceites formais históricos verdes (100% pass), 249 testes unitários totais verdes (100% pass), assembleDebug bem-sucedido, lintDebug com 0 erros.
+**Milestone atual:** Fechamento e estabilização completa das ondas 0 a 3 e auditorias V4/V5.
+**Código de produto:** M0 a M8 estabilizados + Ondas 0–3 + Resoluções V4 e V5 + Verificação de 6 Gates.
 
 ## Status Recente de Estabilização & Redesenho Visual (2026-09-13)
 1. **Onda 3 — Geometria, Pautas, Métricas Canônicas e Fidelidade Visual (Concluída e Verificada):**

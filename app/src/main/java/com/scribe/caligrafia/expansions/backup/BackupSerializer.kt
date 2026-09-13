@@ -25,41 +25,214 @@ object BackupSerializer {
     }
 
     fun deserializeManifest(json: String): BackupManifest? {
+        val map = parseJsonObject(json) ?: return null
+        val formatVersion = map["formatVersion"] as? String ?: return null
+        if (formatVersion != "1.0") {
+            return null // Versão não suportada
+        }
+        val appVersion = map["appVersion"] as? String ?: "0.8.0"
+        val appVersionCode = (map["appVersionCode"] as? Number)?.toInt() ?: 10
+        val createdAtMs = (map["createdAtMs"] as? Number)?.toLong() ?: System.currentTimeMillis()
+        val deviceInfo = map["deviceInfo"] as? String ?: "Android"
+        val notebookCount = (map["notebookCount"] as? Number)?.toInt() ?: 0
+        val pageCount = (map["pageCount"] as? Number)?.toInt() ?: 0
+        val personalGlyphCount = (map["personalGlyphCount"] as? Number)?.toInt() ?: 0
+        val lessonHistoryCount = (map["lessonHistoryCount"] as? Number)?.toInt() ?: 0
+        val practiceAttemptCount = (map["practiceAttemptCount"] as? Number)?.toInt() ?: 0
+        val hasTeacherDiagnostic = map["hasTeacherDiagnostic"] as? Boolean ?: false
+
+        return BackupManifest(
+            formatVersion = formatVersion,
+            appVersion = appVersion,
+            appVersionCode = appVersionCode,
+            createdAtMs = createdAtMs,
+            deviceInfo = deviceInfo,
+            notebookCount = notebookCount,
+            pageCount = pageCount,
+            personalGlyphCount = personalGlyphCount,
+            lessonHistoryCount = lessonHistoryCount,
+            practiceAttemptCount = practiceAttemptCount,
+            hasTeacherDiagnostic = hasTeacherDiagnostic
+        )
+    }
+
+    fun parseJsonObject(json: String): Map<String, Any?>? {
         val trimmed = json.trim()
-        if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) {
+        if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return null
+        return JsonParser(trimmed).parseTopLevelObject()
+    }
+
+    private class JsonParser(private val trimmed: String) {
+        private var index = 0
+
+        fun parseTopLevelObject(): Map<String, Any?>? {
+            val map = parseObject() ?: return null
+            skipWhitespace()
+            return if (index == trimmed.length) map else null
+        }
+
+        fun parseObject(): Map<String, Any?>? {
+            skipWhitespace()
+            if (index >= trimmed.length || trimmed[index] != '{') return null
+            index++ // skip {
+            val map = mutableMapOf<String, Any?>()
+            skipWhitespace()
+            if (index < trimmed.length && trimmed[index] == '}') {
+                index++
+                return map
+            }
+            while (index < trimmed.length) {
+                skipWhitespace()
+                val key = parseString() ?: return null
+                skipWhitespace()
+                if (index >= trimmed.length || trimmed[index] != ':') return null
+                index++ // skip :
+                skipWhitespace()
+                val value = parseValue()
+                map[key] = value
+                skipWhitespace()
+                if (index >= trimmed.length) return null
+                if (trimmed[index] == ',') {
+                    index++
+                    skipWhitespace()
+                    if (index < trimmed.length && trimmed[index] == '}') return null
+                } else if (trimmed[index] == '}') {
+                    index++
+                    return map
+                } else {
+                    return null
+                }
+            }
             return null
         }
-        return try {
-            val formatVersion = extractString(trimmed, "formatVersion") ?: return null
-            if (formatVersion != "1.0") {
-                return null // Versão não suportada
-            }
-            val appVersion = extractString(trimmed, "appVersion") ?: "0.8.0"
-            val appVersionCode = extractInt(trimmed, "appVersionCode") ?: 10
-            val createdAtMs = extractLong(trimmed, "createdAtMs") ?: System.currentTimeMillis()
-            val deviceInfo = extractString(trimmed, "deviceInfo") ?: "Android"
-            val notebookCount = extractInt(trimmed, "notebookCount") ?: 0
-            val pageCount = extractInt(trimmed, "pageCount") ?: 0
-            val personalGlyphCount = extractInt(trimmed, "personalGlyphCount") ?: 0
-            val lessonHistoryCount = extractInt(trimmed, "lessonHistoryCount") ?: 0
-            val practiceAttemptCount = extractInt(trimmed, "practiceAttemptCount") ?: 0
-            val hasTeacherDiagnostic = extractBoolean(trimmed, "hasTeacherDiagnostic") ?: false
 
-            BackupManifest(
-                formatVersion = formatVersion,
-                appVersion = appVersion,
-                appVersionCode = appVersionCode,
-                createdAtMs = createdAtMs,
-                deviceInfo = deviceInfo,
-                notebookCount = notebookCount,
-                pageCount = pageCount,
-                personalGlyphCount = personalGlyphCount,
-                lessonHistoryCount = lessonHistoryCount,
-                practiceAttemptCount = practiceAttemptCount,
-                hasTeacherDiagnostic = hasTeacherDiagnostic
-            )
-        } catch (_: Throwable) {
-            null
+        private fun skipWhitespace() {
+            while (index < trimmed.length && trimmed[index].isWhitespace()) {
+                index++
+            }
+        }
+
+        private fun parseString(): String? {
+            if (index >= trimmed.length || trimmed[index] != '"') return null
+            index++ // skip opening quote
+            val sb = StringBuilder()
+            while (index < trimmed.length) {
+                val c = trimmed[index++]
+                if (c == '\\') {
+                    if (index >= trimmed.length) return null
+                    when (trimmed[index++]) {
+                        '"' -> sb.append('"')
+                        '\\' -> sb.append('\\')
+                        '/' -> sb.append('/')
+                        'b' -> sb.append('\b')
+                        'f' -> sb.append('\u000C')
+                        'n' -> sb.append('\n')
+                        'r' -> sb.append('\r')
+                        't' -> sb.append('\t')
+                        'u' -> {
+                            if (index + 4 > trimmed.length) return null
+                            val hex = trimmed.substring(index, index + 4)
+                            val code = hex.toIntOrNull(16) ?: return null
+                            sb.append(code.toChar())
+                            index += 4
+                        }
+                        else -> return null
+                    }
+                } else if (c == '"') {
+                    return sb.toString()
+                } else if (c < ' ' && c != '\t' && c != '\r' && c != '\n') {
+                    return null
+                } else {
+                    sb.append(c)
+                }
+            }
+            return null
+        }
+
+        private fun parseNumber(): Number? {
+            val start = index
+            if (index < trimmed.length && (trimmed[index] == '-' || trimmed[index] == '+')) {
+                index++
+            }
+            var hasDigits = false
+            while (index < trimmed.length && trimmed[index].isDigit()) {
+                index++
+                hasDigits = true
+            }
+            if (!hasDigits) return null
+            var isDouble = false
+            if (index < trimmed.length && trimmed[index] == '.') {
+                isDouble = true
+                index++
+                while (index < trimmed.length && trimmed[index].isDigit()) {
+                    index++
+                }
+            }
+            if (index < trimmed.length && (trimmed[index] == 'e' || trimmed[index] == 'E')) {
+                isDouble = true
+                index++
+                if (index < trimmed.length && (trimmed[index] == '-' || trimmed[index] == '+')) index++
+                while (index < trimmed.length && trimmed[index].isDigit()) index++
+            }
+            val numStr = trimmed.substring(start, index)
+            return if (isDouble) numStr.toDoubleOrNull() else numStr.toLongOrNull()
+        }
+
+        fun parseValue(): Any? {
+            skipWhitespace()
+            if (index >= trimmed.length) return null
+            return when (trimmed[index]) {
+                '"' -> parseString()
+                '{' -> parseObject()
+                '[' -> parseArray()
+                't' -> {
+                    if (trimmed.startsWith("true", index)) {
+                        index += 4
+                        true
+                    } else null
+                }
+                'f' -> {
+                    if (trimmed.startsWith("false", index)) {
+                        index += 5
+                        false
+                    } else null
+                }
+                'n' -> {
+                    if (trimmed.startsWith("null", index)) {
+                        index += 4
+                        null
+                    } else null
+                }
+                '-', in '0'..'9' -> parseNumber()
+                else -> null
+            }
+        }
+
+        fun parseArray(): List<Any?>? {
+            if (index >= trimmed.length || trimmed[index] != '[') return null
+            index++ // skip [
+            val list = mutableListOf<Any?>()
+            skipWhitespace()
+            if (index < trimmed.length && trimmed[index] == ']') {
+                index++
+                return list
+            }
+            while (index < trimmed.length) {
+                val value = parseValue()
+                list.add(value)
+                skipWhitespace()
+                if (index >= trimmed.length) return null
+                if (trimmed[index] == ',') {
+                    index++
+                    skipWhitespace()
+                } else if (trimmed[index] == ']') {
+                    index++
+                    return list
+                } else {
+                    return null
+                }
+            }
+            return null
         }
     }
 
@@ -69,72 +242,5 @@ object BackupSerializer {
             .replace("\n", "\\n")
             .replace("\r", "\\r")
             .replace("\t", "\\t")
-    }
-
-    private fun extractString(json: String, key: String): String? {
-        val keyIdx = json.indexOf("\"$key\"")
-        if (keyIdx < 0) return null
-        val colonIdx = json.indexOf(':', keyIdx + key.length + 2)
-        if (colonIdx < 0) return null
-        val startQuote = json.indexOf('"', colonIdx + 1)
-        if (startQuote < 0) return null
-
-        val sb = StringBuilder()
-        var i = startQuote + 1
-        var escaped = false
-        while (i < json.length) {
-            val c = json[i]
-            if (escaped) {
-                when (c) {
-                    '"' -> sb.append('"')
-                    '\\' -> sb.append('\\')
-                    '/' -> sb.append('/')
-                    'b' -> sb.append('\b')
-                    'f' -> sb.append('\u000C')
-                    'n' -> sb.append('\n')
-                    'r' -> sb.append('\r')
-                    't' -> sb.append('\t')
-                    'u' -> {
-                        if (i + 4 < json.length) {
-                            val hex = json.substring(i + 1, i + 5)
-                            val code = hex.toIntOrNull(16)
-                            if (code != null) {
-                                sb.append(code.toChar())
-                                i += 4
-                            } else {
-                                sb.append('u')
-                            }
-                        } else {
-                            sb.append('u')
-                        }
-                    }
-                    else -> sb.append(c)
-                }
-                escaped = false
-            } else if (c == '\\') {
-                escaped = true
-            } else if (c == '"') {
-                return sb.toString()
-            } else {
-                sb.append(c)
-            }
-            i++
-        }
-        return null
-    }
-
-    private fun extractInt(json: String, key: String): Int? {
-        val pattern = "\"$key\"\\s*:\\s*(-?\\d+)".toRegex()
-        return pattern.find(json)?.groupValues?.get(1)?.toIntOrNull()
-    }
-
-    private fun extractLong(json: String, key: String): Long? {
-        val pattern = "\"$key\"\\s*:\\s*(-?\\d+)".toRegex()
-        return pattern.find(json)?.groupValues?.get(1)?.toLongOrNull()
-    }
-
-    private fun extractBoolean(json: String, key: String): Boolean? {
-        val pattern = "\"$key\"\\s*:\\s*(true|false)".toRegex()
-        return pattern.find(json)?.groupValues?.get(1)?.toBooleanStrictOrNull()
     }
 }

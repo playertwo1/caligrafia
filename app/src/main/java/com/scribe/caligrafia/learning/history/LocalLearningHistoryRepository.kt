@@ -22,6 +22,7 @@ class LocalLearningHistoryRepository(
     private var cachedRepetitionItems = mutableMapOf<String, SpacedRepetitionItem>()
     private var lastKnownModified: Long = 0L
     private var lastKnownLength: Long = -1L
+    private var lastKnownHash: Int = 0
 
     init {
         synchronized(lock) {
@@ -34,22 +35,21 @@ class LocalLearningHistoryRepository(
      */
     fun recordSession(
         session: CompletedSessionRecord,
-        updatedRepetition: SpacedRepetitionItem? = null
+        updatedItem: SpacedRepetitionItem? = null
     ) {
         synchronized(lock) {
             checkAndReloadIfModifiedExternally()
-            if (cachedSessions.none { it.sessionId == session.sessionId }) {
-                cachedSessions.add(0, session) // Mais recente primeiro
-            }
-            if (updatedRepetition != null) {
-                cachedRepetitionItems[updatedRepetition.targetId] = updatedRepetition
+            cachedSessions.removeAll { it.sessionId == session.sessionId }
+            cachedSessions.add(0, session)
+            if (updatedItem != null) {
+                cachedRepetitionItems[updatedItem.targetId] = updatedItem
             }
             saveToDisk()
         }
     }
 
     /**
-     * Retorna a lista de itens de repetição espaçada registrados.
+     * Retorna os itens de repetição espaçada que estão pendentes de revisão.
      */
     fun getRepetitionItems(): List<SpacedRepetitionItem> {
         synchronized(lock) {
@@ -59,7 +59,7 @@ class LocalLearningHistoryRepository(
     }
 
     /**
-     * Retorna o resumo consolidado de progresso caligráfico.
+     * Retorna o resumo completo de progresso do usuário para alimentar a tela de Evolução.
      */
     fun getProgressSummary(): LearningProgressSummary {
         synchronized(lock) {
@@ -91,7 +91,8 @@ class LocalLearningHistoryRepository(
         if (!historyFile.exists()) return
         val currentMod = historyFile.lastModified()
         val currentLen = historyFile.length()
-        if (currentMod != lastKnownModified || currentLen != lastKnownLength) {
+        val currentHash = try { historyFile.readBytes().contentHashCode() } catch (_: Throwable) { 0 }
+        if (currentMod != lastKnownModified || currentLen != lastKnownLength || currentHash != lastKnownHash) {
             loadFromDisk()
         }
     }
@@ -102,9 +103,11 @@ class LocalLearningHistoryRepository(
         try {
             lastKnownModified = historyFile.lastModified()
             lastKnownLength = historyFile.length()
-            val jsonText = historyFile.readText(StandardCharsets.UTF_8)
+            val bytes = try { historyFile.readBytes() } catch (_: Throwable) { ByteArray(0) }
+            lastKnownHash = bytes.contentHashCode()
+            val jsonText = bytes.toString(StandardCharsets.UTF_8)
             val (sessions, repetitions) = LearningHistorySerializer.deserialize(jsonText)
-            val mergedSessions = (cachedSessions + sessions).distinctBy { it.sessionId }
+            val mergedSessions = (sessions + cachedSessions).distinctBy { it.sessionId }
                 .sortedByDescending { it.timestampMs }
             cachedSessions.clear()
             cachedSessions.addAll(mergedSessions)
@@ -144,6 +147,7 @@ class LocalLearningHistoryRepository(
             )
             lastKnownModified = historyFile.lastModified()
             lastKnownLength = historyFile.length()
+            lastKnownHash = try { historyFile.readBytes().contentHashCode() } catch (_: Throwable) { 0 }
         } catch (e: Throwable) {
             if (tempFile.exists()) tempFile.delete()
             throw e

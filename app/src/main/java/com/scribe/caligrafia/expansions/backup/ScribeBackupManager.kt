@@ -24,6 +24,7 @@ class ScribeBackupManager(private val baseDir: File) {
         "attempts",
         "teacher",
         "custom_fonts",
+        "signatures",
         // Legados mantidos para compatibilidade retroativa com pacotes antigos
         "alphabet",
         "learning",
@@ -221,7 +222,7 @@ class ScribeBackupManager(private val baseDir: File) {
 
             // Criar cópia de segurança do estado ativo para rollback em caso de falha
             val activeFolders = listOf(
-                "notebooks", "personal_alphabet", "attempts", "teacher", "custom_fonts",
+                "notebooks", "personal_alphabet", "attempts", "teacher", "custom_fonts", "signatures",
                 "learning_history.json", "personal_styles.json", "alphabet", "practice_attempts", "fonts"
             )
             for (item in activeFolders) {

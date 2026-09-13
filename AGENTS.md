@@ -13,9 +13,9 @@ Construir o Scribe incrementalmente. O maior risco é o ink engine; não começa
 ## Prioridade atual
 **Estabilização dos marcos existentes e verificação independente V5.**
 
-A auditoria independente mais recente realizada pelo Codex é a [V4 de 2026-09-13](docs/ANTIGRAVITY_AUDIT_REVIEW_V4.md). Todas as 16 asserções adversariais criadas pelo Codex em `AuditV4IndependentTest.kt` foram resolvidas no código de produção e agora passam com 100% de aprovação (243 testes unitários no total, 0 falhas).
+A auditoria independente mais recente realizada pelo Codex inclui a [V4 de 2026-09-13](docs/ANTIGRAVITY_AUDIT_REVIEW_V4.md) e a revisão V5. Todas as 16 asserções adversariais V4 em `AuditV4IndependentTest.kt` e todas as 6 asserções adversariais V5 em `AuditV5IndependentTest.kt` foram resolvidas no código de produção e agora passam com 100% de aprovação (249 testes unitários no total, 0 falhas).
 
-O dossiê de fechamento submetido para nova conferência do auditor é o [Dossiê de Fechamento V5](docs/AUDIT_REPORT_V5_CLOSURE.md), com instruções em [CODEX_AUDIT_INSTRUCTIONS_V5.md](docs/CODEX_AUDIT_INSTRUCTIONS_V5.md), matriz em [INDEPENDENT_COMPLIANCE_MATRIX.md](docs/audit-v5/INDEPENDENT_COMPLIANCE_MATRIX.md) e script de verificação de 5 gates em [run-all-audits.ps1](docs/audit-v5/run-all-audits.ps1).
+O dossiê de fechamento submetido para conferência final do auditor é o [Dossiê de Fechamento V5](docs/AUDIT_REPORT_V5_CLOSURE.md), com instruções em [CODEX_AUDIT_INSTRUCTIONS_V5.md](docs/CODEX_AUDIT_INSTRUCTIONS_V5.md), matriz em [INDEPENDENT_COMPLIANCE_MATRIX.md](docs/audit-v5/INDEPENDENT_COMPLIANCE_MATRIX.md) e script de verificação de 6 gates em [run-all-audits.ps1](docs/audit-v5/run-all-audits.ps1).
 
 Os requisitos dependentes do hardware físico do Samsung Galaxy S25 Ultra e do relógio Wear OS físico permanecem categorizados transparentemente como `PENDENTE_DISPOSITIVO` até validação em bancada física.
 
