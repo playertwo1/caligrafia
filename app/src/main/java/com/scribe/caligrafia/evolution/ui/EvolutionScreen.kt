@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,6 +47,7 @@ import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -63,8 +65,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.scribe.caligrafia.core.model.Stroke
+import com.scribe.caligrafia.evolution.engine.ReplaySyncMode
 import com.scribe.caligrafia.evolution.model.BeforeAfterComparison
 import com.scribe.caligrafia.evolution.model.CalendarDayRecord
+import com.scribe.caligrafia.evolution.model.PracticeAttemptRecord
+import com.scribe.caligrafia.ink.replay.ReplayFrame
 import com.scribe.caligrafia.ink.replay.ReplaySpeed
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -150,7 +155,8 @@ fun EvolutionScreen(
                 EvolutionTab.BEFORE_AFTER -> BeforeAfterTabContent(
                     comparisons = uiState.availableComparisons,
                     selected = uiState.selectedComparison,
-                    onSelect = { viewModel.selectComparison(it) }
+                    onSelect = { viewModel.selectComparison(it) },
+                    onOpenSingleReplay = { viewModel.openSingleReplay(it) }
                 )
                 EvolutionTab.OVERLAY -> OverlayTabContent(
                     comparisons = uiState.availableComparisons,
@@ -168,7 +174,21 @@ fun EvolutionScreen(
                     onPause = { viewModel.pauseDualReplay() },
                     onStop = { viewModel.stopDualReplay() },
                     onSeek = { viewModel.seekDualReplay(it) },
-                    onSetSpeed = { viewModel.setDualReplaySpeed(it) }
+                    onSetSpeed = { viewModel.setDualReplaySpeed(it) },
+                    onSetSyncMode = { viewModel.setDualReplaySyncMode(it) }
+                )
+            }
+
+            if (uiState.isSingleReplayActive && uiState.singleReplayAttempt != null) {
+                SingleReplayDialog(
+                    attempt = uiState.singleReplayAttempt!!,
+                    frame = uiState.singleReplayFrame,
+                    onPlay = { viewModel.playSingleReplay() },
+                    onPause = { viewModel.pauseSingleReplay() },
+                    onStop = { viewModel.stopSingleReplay() },
+                    onSeek = { viewModel.seekSingleReplay(it) },
+                    onSetSpeed = { viewModel.setSingleReplaySpeed(it) },
+                    onDismiss = { viewModel.closeSingleReplay() }
                 )
             }
         }
@@ -363,7 +383,8 @@ private fun EvolutionEmptyState(
 private fun BeforeAfterTabContent(
     comparisons: List<BeforeAfterComparison>,
     selected: BeforeAfterComparison?,
-    onSelect: (String) -> Unit
+    onSelect: (String) -> Unit,
+    onOpenSingleReplay: (PracticeAttemptRecord) -> Unit
 ) {
     if (comparisons.isEmpty()) {
         EvolutionEmptyState()
@@ -411,11 +432,21 @@ private fun BeforeAfterTabContent(
                         StrokePreviewCanvas(
                             strokes = selected.beforeAttempt.strokes,
                             strokeColor = Color(0xFFE11D48),
+                            slantDegrees = selected.beforeAttempt.targetSlantDegrees ?: 52f,
                             modifier = Modifier.fillMaxWidth().height(160.dp)
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(text = "Nota: ${selected.beforeAttempt.scorePercent}%", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         Text(text = "Ângulo: ${selected.beforeAttempt.averageSlantDegrees.toInt()}°", fontSize = 11.sp, color = Color(0xFF64748B))
+                        Spacer(modifier = Modifier.height(6.dp))
+                        TextButton(
+                            onClick = { onOpenSingleReplay(selected.beforeAttempt) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Ver Replay", fontSize = 11.sp)
+                        }
                     }
                 }
 
@@ -442,11 +473,21 @@ private fun BeforeAfterTabContent(
                         StrokePreviewCanvas(
                             strokes = selected.afterAttempt.strokes,
                             strokeColor = Color(0xFF2563EB),
+                            slantDegrees = selected.afterAttempt.targetSlantDegrees ?: 52f,
                             modifier = Modifier.fillMaxWidth().height(160.dp)
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(text = "Nota: ${selected.afterAttempt.scorePercent}%", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF059669))
                         Text(text = "Ângulo: ${selected.afterAttempt.averageSlantDegrees.toInt()}°", fontSize = 11.sp, color = Color(0xFF64748B))
+                        Spacer(modifier = Modifier.height(6.dp))
+                        TextButton(
+                            onClick = { onOpenSingleReplay(selected.afterAttempt) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Ver Replay", fontSize = 11.sp)
+                        }
                     }
                 }
             }
@@ -545,19 +586,24 @@ private fun OverlayTabContent(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    val slant = selected.beforeAttempt.targetSlantDegrees ?: selected.afterAttempt.targetSlantDegrees ?: 52f
+                    val allPairStrokes = selected.beforeAttempt.strokes + selected.afterAttempt.strokes
+
                     Canvas(modifier = Modifier.fillMaxSize()) {
-                        drawGuidelineBackground(size.width, size.height, 52f)
+                        drawGuidelineBackground(size.width, size.height, slant)
                         // Traço Antes (Coral) com transparência modulada pelo slider
                         drawStrokeSequence(
                             strokes = selected.beforeAttempt.strokes,
                             overrideColor = Color(0xFFE11D48),
-                            alpha = (1.0f - overlayAlpha).coerceIn(0.15f, 1f)
+                            alpha = (1.0f - overlayAlpha).coerceIn(0.15f, 1f),
+                            referenceStrokesForBounds = allPairStrokes
                         )
                         // Traço Depois (Azul) com transparência modulada pelo slider
                         drawStrokeSequence(
                             strokes = selected.afterAttempt.strokes,
                             overrideColor = Color(0xFF2563EB),
-                            alpha = overlayAlpha.coerceIn(0.15f, 1f)
+                            alpha = overlayAlpha.coerceIn(0.15f, 1f),
+                            referenceStrokesForBounds = allPairStrokes
                         )
                     }
                 }
@@ -603,7 +649,8 @@ private fun DualReplayTabContent(
     onPause: () -> Unit,
     onStop: () -> Unit,
     onSeek: (Float) -> Unit,
-    onSetSpeed: (ReplaySpeed) -> Unit
+    onSetSpeed: (ReplaySpeed) -> Unit,
+    onSetSyncMode: (ReplaySyncMode) -> Unit
 ) {
     if (comparisons.isEmpty()) {
         EvolutionEmptyState()
@@ -619,6 +666,8 @@ private fun DualReplayTabContent(
         ComparisonTargetSelector(comparisons = comparisons, selectedId = selected?.targetId, onSelect = onSelect)
 
         if (selected != null) {
+            val slant = selected.beforeAttempt.targetSlantDegrees ?: selected.afterAttempt.targetSlantDegrees ?: 52f
+
             // Telas de Replay Lado a Lado
             Row(
                 modifier = Modifier.fillMaxWidth().weight(1f),
@@ -634,8 +683,12 @@ private fun DualReplayTabContent(
                         Text(text = "Antes (Inicial)", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFFE11D48))
                         Spacer(modifier = Modifier.height(4.dp))
                         Canvas(modifier = Modifier.fillMaxSize()) {
-                            drawGuidelineBackground(size.width, size.height, 52f)
-                            drawStrokeSequence(frame.visibleStrokesA, overrideColor = Color(0xFFE11D48))
+                            drawGuidelineBackground(size.width, size.height, slant)
+                            drawStrokeSequence(
+                                strokes = frame.visibleStrokesA,
+                                overrideColor = Color(0xFFE11D48),
+                                referenceStrokesForBounds = selected.beforeAttempt.strokes
+                            )
                         }
                     }
                 }
@@ -650,8 +703,12 @@ private fun DualReplayTabContent(
                         Text(text = "Depois (Atual)", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF2563EB))
                         Spacer(modifier = Modifier.height(4.dp))
                         Canvas(modifier = Modifier.fillMaxSize()) {
-                            drawGuidelineBackground(size.width, size.height, 52f)
-                            drawStrokeSequence(frame.visibleStrokesB, overrideColor = Color(0xFF2563EB))
+                            drawGuidelineBackground(size.width, size.height, slant)
+                            drawStrokeSequence(
+                                strokes = frame.visibleStrokesB,
+                                overrideColor = Color(0xFF2563EB),
+                                referenceStrokesForBounds = selected.afterAttempt.strokes
+                            )
                         }
                     }
                 }
@@ -664,6 +721,34 @@ private fun DualReplayTabContent(
                 shape = RoundedCornerShape(10.dp)
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
+                    // F3.07: Seletor de Modo de Sincronização
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Sincronização:",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF475569)
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            FilterChip(
+                                selected = frame.syncMode == ReplaySyncMode.REAL_TIME,
+                                onClick = { onSetSyncMode(ReplaySyncMode.REAL_TIME) },
+                                label = { Text("Tempo Real", fontSize = 10.sp) }
+                            )
+                            FilterChip(
+                                selected = frame.syncMode == ReplaySyncMode.NORMALIZED,
+                                onClick = { onSetSyncMode(ReplaySyncMode.NORMALIZED) },
+                                label = { Text("Normalizado", fontSize = 10.sp) }
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
                     Slider(
                         value = frame.progress,
                         onValueChange = onSeek,
@@ -737,11 +822,12 @@ private fun ComparisonTargetSelector(
 private fun StrokePreviewCanvas(
     strokes: List<Stroke>,
     strokeColor: Color,
+    slantDegrees: Float = 52f,
     modifier: Modifier = Modifier
 ) {
     Canvas(modifier = modifier) {
-        drawGuidelineBackground(size.width, size.height, 52f)
-        drawStrokeSequence(strokes, overrideColor = strokeColor)
+        drawGuidelineBackground(size.width, size.height, slantDegrees)
+        drawStrokeSequence(strokes, overrideColor = strokeColor, referenceStrokesForBounds = strokes)
     }
 }
 
@@ -796,11 +882,13 @@ private fun DrawScope.drawGuidelineBackground(width: Float, height: Float, slant
 private fun DrawScope.drawStrokeSequence(
     strokes: List<Stroke>,
     overrideColor: Color? = null,
-    alpha: Float = 1.0f
+    alpha: Float = 1.0f,
+    referenceStrokesForBounds: List<Stroke>? = null
 ) {
-    if (strokes.isEmpty()) return
+    val boundsSource = if (!referenceStrokesForBounds.isNullOrEmpty()) referenceStrokesForBounds else strokes
+    if (boundsSource.isEmpty()) return
 
-    val allPts = strokes.flatMap { it.points }
+    val allPts = boundsSource.flatMap { it.points }
     if (allPts.isEmpty()) return
 
     val minX = allPts.minOf { it.x }
@@ -810,7 +898,7 @@ private fun DrawScope.drawStrokeSequence(
     val strokeW = (maxX - minX).coerceAtLeast(1f)
     val strokeH = (maxY - minY).coerceAtLeast(1f)
 
-    // Escala e centraliza preservando o aspecto do traço dentro do preview
+    // F3.08: Escala e centraliza de forma estável com bounding box derivado das referências completas
     val padding = 16f
     val availableW = (size.width - 2 * padding).coerceAtLeast(1f)
     val availableH = (size.height - 2 * padding).coerceAtLeast(1f)
@@ -826,6 +914,8 @@ private fun DrawScope.drawStrokeSequence(
     fun transform(x: Float, y: Float): Offset {
         return if (shouldScale) Offset(x * scale + offsetX, y * scale + offsetY) else Offset(x, y)
     }
+
+    if (strokes.isEmpty()) return
 
     for (stroke in strokes) {
         val strokeColor = overrideColor ?: Color(stroke.color ?: android.graphics.Color.BLACK)
@@ -859,6 +949,109 @@ private fun DrawScope.drawStrokeSequence(
             )
         }
     }
+}
+
+/**
+ * F3.06: Modal de Replay Individual para qualquer tentativa (SCR-503).
+ */
+@Composable
+private fun SingleReplayDialog(
+    attempt: PracticeAttemptRecord,
+    frame: ReplayFrame,
+    onPlay: () -> Unit,
+    onPause: () -> Unit,
+    onStop: () -> Unit,
+    onSeek: (Float) -> Unit,
+    onSetSpeed: (ReplaySpeed) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column {
+                Text(
+                    text = "Replay Individual: ${attempt.targetTitle}",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0F172A)
+                )
+                Text(
+                    text = "Data: ${formatDate(attempt.timestampMs)} • Nota: ${attempt.scorePercent}% • Slant: ${attempt.averageSlantDegrees.toInt()}°",
+                    fontSize = 12.sp,
+                    color = Color(0xFF64748B)
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFFFAFAFA))
+                        .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(8.dp))
+                ) {
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        drawGuidelineBackground(size.width, size.height, attempt.targetSlantDegrees ?: 52f)
+                        drawStrokeSequence(
+                            strokes = frame.visibleStrokes,
+                            overrideColor = Color(0xFF2563EB),
+                            referenceStrokesForBounds = attempt.strokes
+                        )
+                    }
+                }
+
+                Slider(
+                    value = frame.progress,
+                    onValueChange = onSeek,
+                    valueRange = 0f..1f,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        IconButton(onClick = if (frame.isPlaying) onPause else onPlay) {
+                            Icon(
+                                imageVector = if (frame.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = "Play/Pause",
+                                tint = Color(0xFF2563EB)
+                            )
+                        }
+                        IconButton(onClick = onStop) {
+                            Icon(
+                                imageVector = Icons.Default.Stop,
+                                contentDescription = "Stop",
+                                tint = Color(0xFF64748B)
+                            )
+                        }
+                    }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        ReplaySpeed.entries.forEach { speed ->
+                            FilterChip(
+                                selected = frame.speed == speed,
+                                onClick = { onSetSpeed(speed) },
+                                label = { Text(speed.displayName, fontSize = 10.sp) }
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Fechar")
+            }
+        }
+    )
 }
 
 private fun formatDate(timestampMs: Long): String {

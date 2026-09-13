@@ -29,7 +29,9 @@ data class AlphabetUiState(
     val isCompilingStyle: Boolean = false,
     val lastCompiledStyle: ScribeStyle? = null,
     val compilationSuccessDialogVisible: Boolean = false,
-    val feedbackMessage: String? = null
+    val feedbackMessage: String? = null,
+    val canCompileStyle: Boolean = false,
+    val compilationRequirementMessage: String = ""
 )
 
 /**
@@ -47,7 +49,8 @@ class AlphabetViewModel @JvmOverloads constructor(
     ),
     private val styleEngine: StyleEngine = StyleEngine(
         customFontsDir = File(application.filesDir, "custom_fonts")
-    )
+    ),
+    private val styleCompiler: com.scribe.caligrafia.alphabet.engine.PersonalStyleCompiler = com.scribe.caligrafia.alphabet.engine.PersonalStyleCompiler()
 ) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(AlphabetUiState())
@@ -56,13 +59,17 @@ class AlphabetViewModel @JvmOverloads constructor(
     init {
         viewModelScope.launch {
             repository.getAlphabet().collect { alphabet ->
+                val canCompile = styleCompiler.canCompile(alphabet)
+                val reqMessage = styleCompiler.getCompilationRequirementMessage(alphabet)
                 _uiState.update { current ->
                     val updatedSelectedGlyph = current.selectedGlyph?.let { sel ->
                         alphabet.glyphs[sel.id]
                     }
                     current.copy(
                         alphabet = alphabet,
-                        selectedGlyph = updatedSelectedGlyph
+                        selectedGlyph = updatedSelectedGlyph,
+                        canCompileStyle = canCompile,
+                        compilationRequirementMessage = reqMessage
                     )
                 }
             }
@@ -118,6 +125,24 @@ class AlphabetViewModel @JvmOverloads constructor(
                         feedbackMessage = "Versão excluída."
                     )
                 }
+            }
+        }
+    }
+
+    fun renameVariant(glyphId: String, variantId: String, newLabel: String) {
+        viewModelScope.launch {
+            val success = repository.renameVariant(glyphId, variantId, newLabel)
+            if (success) {
+                _uiState.update { it.copy(feedbackMessage = "Versão renomeada para '$newLabel'.") }
+            }
+        }
+    }
+
+    fun duplicateVariant(glyphId: String, variantId: String) {
+        viewModelScope.launch {
+            val duplicated = repository.duplicateVariant(glyphId, variantId)
+            if (duplicated != null) {
+                _uiState.update { it.copy(feedbackMessage = "Versão duplicada (${duplicated.label}).") }
             }
         }
     }

@@ -9,7 +9,7 @@ class ScribeStyleTest {
     @Test
     fun builtInStyles_allHaveValidPropertiesAndDuctusRules() {
         val styles = BuiltInStyles.ALL
-        assertEquals("Devem existir exatamente 3 estilos pré-instalados", 3, styles.size)
+        assertEquals("Devem existir exatamente 6 estilos pré-instalados", 6, styles.size)
 
         for (style in styles) {
             assertTrue("ID não pode ser vazio", style.id.isNotBlank())

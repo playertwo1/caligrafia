@@ -120,35 +120,35 @@ Alvos: `LearningHubScreen`, `LearningViewModel`, `SessionTimer`, `GuidedPractice
 
 Alvos: `EvolutionScreen`, comparação/replay, `AlphabetScreen`, `StyleEngine`, compilador e repositórios. Referências: painel 4/5/7 e fluxos 06–08.
 
-- [ ] F3.01 Mostrar histórico completo, calendário e duração em data local; remover limite de 20 do cálculo global.
-- [ ] F3.02 Implementar filtro por alvo/estilo e seleção de tentativa; vazio orienta praticar e não inventa resultado.
-- [ ] F3.03 Atualizar histórico já aberto após nova tentativa/restore, incluindo miniaturas e strokes.
-- [ ] F3.04 Implementar replay individual play/pause/seek e 0,5x/1x/2x com cor/largura originais.
-- [ ] F3.05 Permitir escolher explicitamente duas tentativas do mesmo alvo e contexto compatível; explicar incompatibilidade.
-- [ ] F3.06 Exibir datas e métricas com unidades; dado ausente mostra ausência e não delta zero fictício.
-- [ ] F3.07 Implementar replay duplo em tempo real; normalização opcional precisa de rótulo próprio.
-- [ ] F3.08 Usar transformação espacial comum e estável na comparação/replay; não recalcular autoescala a cada frame.
-- [ ] F3.09 Implementar sobreposição e slider com legenda antes/depois; mudança visual não altera raw.
-- [ ] F3.10 Testar 21+ sessões e dois strokes de 1s/2s; verificar calendário, tempos relativos e escala.
-- [ ] F3.11 Mostrar alfabeto vazio real, glifos e variantes por glifo; ausência abre convite à prática.
-- [ ] F3.12 Conectar Adicionar variante à seleção de tentativa compatível ou nova prática daquele glifo.
-- [ ] F3.13 Mostrar miniatura, data e replay da tentativa selecionada antes de confirmar variante.
-- [ ] F3.14 Persistir variante com ID/proveniência; atualizar alfabeto já aberto após salvar no treino.
-- [ ] F3.15 Implementar renomear, favorita única, duplicar e excluir variante com confirmação.
-- [ ] F3.16 Duplicação não conta como novo treino nem amostra independente para métricas pessoais.
-- [ ] F3.17 Usar como referência/Praticar com esta deve passar variantId exato e renderizar seus strokes.
-- [ ] F3.18 Exclusão de variante não apaga a tentativa de origem; favorita removida exige seleção explícita de outra ou estado vazio.
-- [ ] F3.19 Criar catálogo visual dos seis estilos com nome, descrição e preview; seleção deve persistir.
-- [ ] F3.20 Criar matriz estilo × exercício e completar referências corretas dos exercícios oferecidos; proibir triângulo genérico para glifo ausente.
-- [ ] F3.21 Aplicar o estilo a guia/modelo/avaliação e persistir contexto por tentativa; não usar alvo global 52° para todos.
-- [ ] F3.22 Implementar importação TTF/OTF pelo seletor Android com validação, cancelamento e erro recuperável.
-- [ ] F3.23 Copiar fonte autorizada para armazenamento do app ou persistir acesso apropriado; testar reabertura offline.
-- [ ] F3.24 Mostrar preview e glyph ausente explicitamente; rotular fonte como referência visual sem análise de ductus.
-- [ ] F3.25 Meu estilo: mostrar exemplos/favoritas e métricas suficientes; botão Criar fica indisponível com explicação quando faltam dados.
-- [ ] F3.26 Compilar derivação dos exemplos reais, manter raw, registrar versão/proveniência e invalidar ao trocar favorita.
-- [ ] F3.27 Conectar Visualizar no caderno e Praticar com meu estilo à derivação atual; glifo sem exemplo não ganha seed.
-- [ ] F3.28 Testar comparação → variante → favorita → estilo pessoal → treino → reinício; confirmar os mesmos IDs e desenho.
-- [ ] F3.G Entregar capturas dos três estados de cada fluxo 06/07/08 e evidências de todos os controles.
+- [x] F3.01 Mostrar histórico completo, calendário e duração em data local; remover limite de 20 do cálculo global.
+- [x] F3.02 Implementar filtro por alvo/estilo e seleção de tentativa; vazio orienta praticar e não inventa resultado.
+- [x] F3.03 Atualizar histórico já aberto após nova tentativa/restore, incluindo miniaturas e strokes.
+- [x] F3.04 Implementar replay individual play/pause/seek e 0,5x/1x/2x com cor/largura originais.
+- [x] F3.05 Permitir escolher explicitamente duas tentativas do mesmo alvo e contexto compatível; explicar incompatibilidade.
+- [x] F3.06 Exibir datas e métricas com unidades; dado ausente mostra ausência e não delta zero fictício.
+- [x] F3.07 Implementar replay duplo em tempo real; normalização opcional precisa de rótulo próprio.
+- [x] F3.08 Usar transformação espacial comum e estável na comparação/replay; não recalcular autoescala a cada frame.
+- [x] F3.09 Implementar sobreposição e slider com legenda antes/depois; mudança visual não altera raw.
+- [x] F3.10 Testar 21+ sessões e dois strokes de 1s/2s; verificar calendário, tempos relativos e escala.
+- [x] F3.11 Mostrar alfabeto vazio real, glifos e variantes por glifo; ausência abre convite à prática.
+- [x] F3.12 Conectar Adicionar variante à seleção de tentativa compatível ou nova prática daquele glifo.
+- [x] F3.13 Mostrar miniatura, data e replay da tentativa selecionada antes de confirmar variante.
+- [x] F3.14 Persistir variante com ID/proveniência; atualizar alfabeto já aberto após salvar no treino.
+- [x] F3.15 Implementar renomear, favorita única, duplicar e excluir variante com confirmação.
+- [x] F3.16 Duplicação não conta como novo treino nem amostra independente para métricas pessoais.
+- [x] F3.17 Usar como referência/Praticar com esta deve passar variantId exato e renderizar seus strokes.
+- [x] F3.18 Exclusão de variante não apaga a tentativa de origem; favorita removida exige seleção explícita de outra ou estado vazio.
+- [x] F3.19 Criar catálogo visual dos seis estilos com nome, descrição e preview; seleção deve persistir.
+- [x] F3.20 Criar matriz estilo × exercício e completar referências corretas dos exercícios oferecidos; proibir triângulo genérico para glifo ausente.
+- [x] F3.21 Aplicar o estilo a guia/modelo/avaliação e persistir contexto por tentativa; não usar alvo global 52° para todos.
+- [x] F3.22 Implementar importação TTF/OTF pelo seletor Android com validação, cancelamento e erro recuperável.
+- [x] F3.23 Copiar fonte autorizada para armazenamento do app ou persistir acesso apropriado; testar reabertura offline.
+- [x] F3.24 Mostrar preview e glyph ausente explicitamente; rotular fonte como referência visual sem análise de ductus.
+- [x] F3.25 Meu estilo: mostrar exemplos/favoritas e métricas suficientes; botão Criar fica indisponível com explicação quando faltam dados.
+- [x] F3.26 Compilar derivação dos exemplos reais, manter raw, registrar versão/proveniência e invalidar ao trocar favorita.
+- [x] F3.27 Conectar Visualizar no caderno e Praticar com meu estilo à derivação atual; glifo sem exemplo não ganha seed.
+- [x] F3.28 Testar comparação → variante → favorita → estilo pessoal → treino → reinício; confirmar os mesmos IDs e desenho.
+- [x] F3.G Entregar capturas dos três estados de cada fluxo 06/07/08 e evidências de todos os controles.
 
 ## F4 — Professor e cópia de textos
 

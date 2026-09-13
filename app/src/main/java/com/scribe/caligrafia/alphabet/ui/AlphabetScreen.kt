@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Star
@@ -45,6 +46,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -56,7 +58,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -144,6 +148,8 @@ fun AlphabetScreen(
                 completionPct = uiState.alphabet.completionPercentage,
                 averageScore = uiState.alphabet.averageScore,
                 isCompiling = uiState.isCompilingStyle,
+                canCompile = uiState.canCompileStyle,
+                requirementMessage = uiState.compilationRequirementMessage,
                 onCompile = { viewModel.compilePersonalStyle() }
             )
 
@@ -181,23 +187,34 @@ fun AlphabetScreen(
 
     // Modal de Detalhes e Curadoria do Glifo
     if (uiState.selectedGlyph != null) {
+        val selectedGlyph = uiState.selectedGlyph!!
         GlyphDetailModal(
-            glyph = uiState.selectedGlyph!!,
+            glyph = selectedGlyph,
             activeStrokes = uiState.selectedVariantStrokes,
             onDismiss = { viewModel.selectGlyph(null) },
             onSetFavorite = { variantId ->
-                viewModel.setFavoriteVariant(uiState.selectedGlyph!!.id, variantId)
+                viewModel.setFavoriteVariant(selectedGlyph.id, variantId)
+            },
+            onRenameVariant = { variantId, newLabel ->
+                viewModel.renameVariant(selectedGlyph.id, variantId, newLabel)
+            },
+            onDuplicateVariant = { variantId ->
+                viewModel.duplicateVariant(selectedGlyph.id, variantId)
             },
             onDeleteVariant = { variantId ->
-                viewModel.deleteVariant(uiState.selectedGlyph!!.id, variantId)
+                viewModel.deleteVariant(selectedGlyph.id, variantId)
             },
             onSelectVariantPreview = { variantId ->
                 viewModel.loadVariantPreview(variantId)
             },
             onNavigateToPractice = {
-                val glyph = uiState.selectedGlyph!!
+                val glyph = selectedGlyph
                 viewModel.selectGlyph(null)
                 onNavigateToPractice?.invoke(glyph.id)
+            },
+            onPracticeWithVariant = { variantId ->
+                viewModel.selectGlyph(null)
+                onNavigateToPractice?.invoke("${selectedGlyph.id}:$variantId")
             }
         )
     }
@@ -227,6 +244,8 @@ private fun AlphabetSummaryCard(
     completionPct: Float,
     averageScore: Float,
     isCompiling: Boolean,
+    canCompile: Boolean,
+    requirementMessage: String,
     onCompile: () -> Unit
 ) {
     Card(
@@ -284,10 +303,26 @@ private fun AlphabetSummaryCard(
                 trackColor = Color(0xFFE2E8F0)
             )
 
+            if (!canCompile && requirementMessage.isNotBlank()) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFFFFBEB), RoundedCornerShape(8.dp))
+                        .padding(10.dp)
+                ) {
+                    Text(
+                        text = requirementMessage,
+                        fontSize = 11.sp,
+                        color = Color(0xFFB45309)
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
             Button(
                 onClick = onCompile,
-                enabled = !isCompiling && completedGlyphs > 0,
+                enabled = !isCompiling && canCompile,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF2563EB),
@@ -481,9 +516,12 @@ private fun GlyphDetailModal(
     activeStrokes: List<Stroke>,
     onDismiss: () -> Unit,
     onSetFavorite: (String) -> Unit,
+    onRenameVariant: (String, String) -> Unit,
+    onDuplicateVariant: (String) -> Unit,
     onDeleteVariant: (String) -> Unit,
     onSelectVariantPreview: (String) -> Unit,
-    onNavigateToPractice: () -> Unit
+    onNavigateToPractice: () -> Unit,
+    onPracticeWithVariant: (String) -> Unit
 ) {
     val scrollState = rememberScrollState()
 
@@ -570,8 +608,11 @@ private fun GlyphDetailModal(
                             variant = variant,
                             isFavorite = isFav,
                             onSetFavorite = { onSetFavorite(variant.id) },
+                            onRename = { onRenameVariant(variant.id, it) },
+                            onDuplicate = { onDuplicateVariant(variant.id) },
                             onDelete = { onDeleteVariant(variant.id) },
-                            onSelect = { onSelectVariantPreview(variant.id) }
+                            onSelect = { onSelectVariantPreview(variant.id) },
+                            onPracticeWithVariant = { onPracticeWithVariant(variant.id) }
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                     }
@@ -607,16 +648,87 @@ private fun GlyphDetailModal(
 }
 
 /**
- * Linha de variante individual no modal de curadoria.
+ * Linha de variante individual no modal de curadoria com suporte a renomeação, duplicação, exclusão e prática.
  */
 @Composable
 private fun VariantRowItem(
     variant: GlyphVariant,
     isFavorite: Boolean,
     onSetFavorite: () -> Unit,
+    onRename: (String) -> Unit,
+    onDuplicate: () -> Unit,
     onDelete: () -> Unit,
-    onSelect: () -> Unit
+    onSelect: () -> Unit,
+    onPracticeWithVariant: () -> Unit
 ) {
+    var showRenameDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var renameText by remember { mutableStateOf(variant.label) }
+
+    if (showRenameDialog) {
+        AlertDialog(
+            onDismissRequest = { showRenameDialog = false },
+            title = { Text("Renomear Variante", fontWeight = FontWeight.Bold, fontSize = 16.sp) },
+            text = {
+                Column {
+                    Text("Digite o novo rótulo para esta versão:", fontSize = 12.sp, color = Color(0xFF64748B))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = renameText,
+                        onValueChange = { renameText = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    if (renameText.isNotBlank()) {
+                        onRename(renameText)
+                        showRenameDialog = false
+                    }
+                }) {
+                    Text("Salvar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRenameDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = { Text("Excluir Variante?", fontWeight = FontWeight.Bold, fontSize = 16.sp) },
+            text = {
+                Text(
+                    "Tem certeza que deseja excluir '${variant.label}'? Os traços originais da tentativa continuarão preservados em seu histórico de treino.",
+                    fontSize = 13.sp,
+                    color = Color(0xFF475569)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        onDelete()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
+                ) {
+                    Text("Excluir")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -630,75 +742,103 @@ private fun VariantRowItem(
         ),
         shape = RoundedCornerShape(8.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = variant.label,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        color = Color(0xFF1E293B)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Box(
-                        modifier = Modifier
-                            .background(Color(0xFFECFDF5), RoundedCornerShape(4.dp))
-                            .padding(horizontal = 4.dp, vertical = 2.dp)
-                    ) {
+        Column(modifier = Modifier.padding(10.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "${variant.score.toInt()}%",
-                            fontSize = 9.sp,
+                            text = variant.label,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF059669)
+                            fontSize = 13.sp,
+                            color = Color(0xFF1E293B)
                         )
-                    }
-                    if (isFavorite) {
                         Spacer(modifier = Modifier.width(6.dp))
                         Box(
                             modifier = Modifier
-                                .background(Color(0xFFDBEAFE), RoundedCornerShape(4.dp))
+                                .background(Color(0xFFECFDF5), RoundedCornerShape(4.dp))
                                 .padding(horizontal = 4.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = "Favorita",
+                                text = "${variant.score.toInt()}%",
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1D4ED8)
+                                color = Color(0xFF059669)
                             )
                         }
+                        if (isFavorite) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .background(Color(0xFFDBEAFE), RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "Favorita",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF1D4ED8)
+                                )
+                            }
+                        }
+                    }
+                    Text(
+                        text = "Slant: ${variant.slantAngleDegrees.toInt()}° • ${formatDate(variant.createdAtTimestamp)}",
+                        fontSize = 10.sp,
+                        color = Color(0xFF64748B)
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onSetFavorite) {
+                        Icon(
+                            imageVector = if (isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
+                            contentDescription = "Favorito",
+                            tint = if (isFavorite) Color(0xFFEAB308) else Color(0xFF94A3B8),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    IconButton(onClick = { showRenameDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Renomear",
+                            tint = Color(0xFF64748B),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+
+                    IconButton(onClick = onDuplicate) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = "Duplicar",
+                            tint = Color(0xFF2563EB),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+
+                    IconButton(onClick = { showDeleteConfirmDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Excluir",
+                            tint = Color(0xFFEF4444),
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
                 }
-                Text(
-                    text = "Slant: ${variant.slantAngleDegrees.toInt()}° • ${formatDate(variant.createdAtTimestamp)}",
-                    fontSize = 10.sp,
-                    color = Color(0xFF64748B)
-                )
             }
 
-            Row {
-                IconButton(onClick = onSetFavorite) {
-                    Icon(
-                        imageVector = if (isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
-                        contentDescription = "Favorito",
-                        tint = if (isFavorite) Color(0xFFEAB308) else Color(0xFF94A3B8),
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Excluir",
-                        tint = Color(0xFFEF4444),
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
+            Spacer(modifier = Modifier.height(6.dp))
+            OutlinedButton(
+                onClick = onPracticeWithVariant,
+                modifier = Modifier.fillMaxWidth().height(32.dp),
+                shape = RoundedCornerShape(6.dp),
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+            ) {
+                Text("Usar como Referência / Praticar com esta", fontSize = 10.sp)
             }
         }
     }

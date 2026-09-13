@@ -38,4 +38,13 @@ data class ReplayFrame(
     val progressFraction: Float = if (totalDurationMs > 0L) (currentPositionMs.toFloat() / totalDurationMs).coerceIn(0f, 1f) else 0f,
     val status: ReplayStatus = ReplayStatus.IDLE,
     val speed: ReplaySpeed = ReplaySpeed.NORMAL
-)
+) {
+    val visibleStrokes: List<Stroke>
+        get() = if (activeStroke != null) completedStrokes + activeStroke else completedStrokes
+
+    val isPlaying: Boolean
+        get() = status == ReplayStatus.PLAYING
+
+    val progress: Float
+        get() = progressFraction
+}

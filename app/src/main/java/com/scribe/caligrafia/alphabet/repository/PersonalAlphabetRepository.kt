@@ -44,6 +44,16 @@ interface PersonalAlphabetRepository {
     suspend fun setFavoriteVariant(glyphId: String, variantId: String): Boolean
 
     /**
+     * F3.15: Renomeia o rótulo da variante.
+     */
+    suspend fun renameVariant(glyphId: String, variantId: String, newLabel: String): Boolean
+
+    /**
+     * F3.15 & F3.16: Duplica uma variante existente sem criar novo treino nem amostra independente para métricas pessoais.
+     */
+    suspend fun duplicateVariant(glyphId: String, variantId: String): GlyphVariant?
+
+    /**
      * Remove uma variante gravada.
      */
     suspend fun deleteVariant(glyphId: String, variantId: String): Boolean

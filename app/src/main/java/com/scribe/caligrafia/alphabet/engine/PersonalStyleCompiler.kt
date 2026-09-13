@@ -24,6 +24,30 @@ import kotlin.math.roundToInt
  */
 class PersonalStyleCompiler {
 
+    companion object {
+        const val MIN_COMPLETED_GLYPHS = 3
+    }
+
+    /**
+     * F3.25: Verifica se há dados e métricas suficientes de escrita real para compilar o estilo pessoal.
+     */
+    fun canCompile(alphabet: PersonalAlphabet): Boolean {
+        val completedCount = alphabet.glyphs.values.count { it.isCompleted && it.activeVariant != null }
+        return completedCount >= MIN_COMPLETED_GLYPHS
+    }
+
+    /**
+     * F3.25: Explicação clara sobre requisitos mínimos quando faltam dados.
+     */
+    fun getCompilationRequirementMessage(alphabet: PersonalAlphabet): String {
+        val completedCount = alphabet.glyphs.values.count { it.isCompleted && it.activeVariant != null }
+        return if (completedCount >= MIN_COMPLETED_GLYPHS) {
+            "Dados suficientes para compilar seu estilo pessoal ($completedCount glifos curados)."
+        } else {
+            "Dados insuficientes: adicione e favorite ao menos $MIN_COMPLETED_GLYPHS glifos com escrita real antes de compilar seu estilo (atual: $completedCount de $MIN_COMPLETED_GLYPHS)."
+        }
+    }
+
     /**
      * Compila um [ScribeStyle] a partir do [PersonalAlphabet] do usuário.
      *
@@ -39,33 +63,17 @@ class PersonalStyleCompiler {
         val activeVariants = alphabet.glyphs.values
             .mapNotNull { it.activeVariant }
 
-        val slantAngle = calculateAverageSlant(activeVariants)
+        val slantAngle = if (activeVariants.isNotEmpty()) calculateAverageSlant(activeVariants) else 68.0f
         val ratio = estimateGuidelineRatio(alphabet)
-        val strokeWidth = calculateAverageStrokeWidth(activeVariants)
-        val contrast = calculateContrastRatio(activeVariants)
+        val strokeWidth = if (activeVariants.isNotEmpty()) calculateAverageStrokeWidth(activeVariants) else 4.0f
+        val contrast = if (activeVariants.isNotEmpty()) calculateContrastRatio(activeVariants) else 1.0f
 
-        val sampleAlphabetBuilder = StringBuilder()
-        // Adiciona caracteres minúsculos existentes ou fallback
-        val lowercaseSymbols = alphabet.glyphs.values
-            .filter { it.category == AlphabetCategory.LOWERCASE && it.isCompleted }
+        // F3.27: Glifo sem exemplo não ganha seed sintético. Inclui apenas glifos reais curados.
+        val completedSymbols = alphabet.glyphs.values
+            .filter { it.isCompleted && it.activeVariant != null }
             .map { it.symbol }
-        if (lowercaseSymbols.isNotEmpty()) {
-            sampleAlphabetBuilder.append(lowercaseSymbols.joinToString(""))
-        } else {
-            sampleAlphabetBuilder.append("abcdefghijklmnopqrstuvwxyz")
-        }
-
-        sampleAlphabetBuilder.append(" ")
-
-        // Adiciona maiúsculas
-        val uppercaseSymbols = alphabet.glyphs.values
-            .filter { it.category == AlphabetCategory.UPPERCASE && it.isCompleted }
-            .map { it.symbol }
-        if (uppercaseSymbols.isNotEmpty()) {
-            sampleAlphabetBuilder.append(uppercaseSymbols.joinToString(""))
-        } else {
-            sampleAlphabetBuilder.append("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-        }
+            .distinct()
+        val sampleAlphabet = completedSymbols.joinToString(" ")
 
         val ductus = listOf(
             DuctusRule(
@@ -85,13 +93,13 @@ class PersonalStyleCompiler {
         return ScribeStyle(
             id = styleId,
             name = styleName,
-            description = "Estilo pessoal derivado da curadoria de ${activeVariants.size} glifos do seu alfabeto (inclinação ${slantAngle.roundToInt()}°).",
+            description = "Estilo pessoal derivado da curadoria de ${activeVariants.size} glifos reais do seu alfabeto (inclinação ${slantAngle.roundToInt()}°). Proveniência: ${activeVariants.map { it.id }.joinToString(", ")}.",
             category = StyleCategory.PERSONAL,
             recommendedRatio = ratio,
             defaultSlantAngle = slantAngle,
             recommendedStrokeWidthPx = strokeWidth,
             contrastRatio = contrast,
-            sampleAlphabet = sampleAlphabetBuilder.toString().trim(),
+            sampleAlphabet = sampleAlphabet,
             ductusRules = ductus,
             isCustom = true
         )

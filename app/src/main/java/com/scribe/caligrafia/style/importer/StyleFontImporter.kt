@@ -78,7 +78,7 @@ object StyleFontImporter {
         return ScribeStyle(
             id = styleId,
             name = styleName,
-            description = "Estilo importado a partir da fonte ${file.name}. Utilizado como gabarito estético e visual para prática caligráfica.",
+            description = "Estilo importado a partir da fonte ${file.name}. Referência visual estética para prática caligráfica, sem análise de ductus (F3.24).",
             category = StyleCategory.CUSTOM_FONT,
             recommendedRatio = GuidelineRatio.Ratio212,
             defaultSlantAngle = slantAngle,
@@ -88,8 +88,8 @@ object StyleFontImporter {
             ductusRules = listOf(
                 DuctusRule(
                     ruleIndex = 1,
-                    title = "Reprodução de Gabarito Visual",
-                    instruction = "Pratique sobrepondo os traços vetoriais da S Pen ao desenho de referência da fonte importada.",
+                    title = "Gabarito Visual de Referência",
+                    instruction = "Utilize como referência visual de traçado livre. A fonte não possui ductus analítico decomposto.",
                     pressureBehavior = PressureBehavior.UNIFORM
                 )
             ),

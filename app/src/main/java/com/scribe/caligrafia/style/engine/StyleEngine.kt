@@ -88,6 +88,48 @@ class StyleEngine(
     }
 
     /**
+     * F3.22 & F3.23: Importa fonte a partir de um fluxo de entrada (ex: seletor de documentos Android),
+     * copiando o arquivo de forma atômica para o diretório interno do aplicativo (custom_fonts/),
+     * garantindo validação de Magic Bytes e persistência offline sem perdas.
+     */
+    fun importCustomFontStream(
+        inputStream: java.io.InputStream,
+        originalFileName: String,
+        customName: String? = null,
+        slantAngle: Float = 60.0f
+    ): Result<ScribeStyle> {
+        return try {
+            val fontsDir = customFontsDir ?: File(storageDir ?: File("."), "custom_fonts")
+            if (!fontsDir.exists()) fontsDir.mkdirs()
+
+            val sanitizedName = originalFileName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
+            val targetFile = File(fontsDir, sanitizedName)
+            val tempFile = File.createTempFile("font_import_", ".tmp", fontsDir)
+
+            tempFile.outputStream().use { fos ->
+                inputStream.copyTo(fos)
+                fos.flush()
+            }
+
+            if (!StyleFontImporter.isValidFontFile(tempFile)) {
+                tempFile.delete()
+                return Result.failure(java.io.IOException("Arquivo não é uma fonte TrueType (.ttf) ou OpenType (.otf) válida."))
+            }
+
+            java.nio.file.Files.move(
+                tempFile.toPath(),
+                targetFile.toPath(),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                java.nio.file.StandardCopyOption.ATOMIC_MOVE
+            )
+
+            importCustomFont(targetFile, customName, slantAngle)
+        } catch (e: Throwable) {
+            Result.failure(e)
+        }
+    }
+
+    /**
      * Registra ou atualiza um estilo customizado (ex: estilo compilado pelo PersonalStyleCompiler).
      */
     fun registerCustomStyle(style: ScribeStyle) {

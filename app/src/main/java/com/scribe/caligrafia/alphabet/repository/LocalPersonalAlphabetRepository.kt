@@ -151,10 +151,89 @@ class LocalPersonalAlphabetRepository(
             val updatedMap = currentAlphabet.glyphs.toMutableMap()
             updatedMap[glyphId] = updatedGlyph
 
+            // F3.26: Invalida a compilação de estilo pessoal ao trocar a favorita
+            val newAlphabet = currentAlphabet.copy(
+                glyphs = updatedMap,
+                lastCompiledStyleId = null,
+                lastCompiledTimestamp = null
+            )
+            saveAlphabetManifest(newAlphabet)
+            alphabetFlow.value = newAlphabet
+            true
+        }
+    }
+
+    /**
+     * F3.15: Renomeia o rótulo amigável da variante.
+     */
+    override suspend fun renameVariant(glyphId: String, variantId: String, newLabel: String): Boolean = withContext(ioDispatcher) {
+        mutationMutex.withLock {
+            val currentAlphabet = alphabetFlow.value
+            val glyph = currentAlphabet.glyphs[glyphId] ?: return@withLock false
+            val variant = glyph.variants.firstOrNull { it.id == variantId } ?: return@withLock false
+
+            val updatedVariants = glyph.variants.map { v ->
+                if (v.id == variantId) v.copy(label = newLabel.trim()) else v
+            }
+
+            val updatedGlyph = glyph.copy(
+                variants = updatedVariants,
+                updatedAtTimestamp = System.currentTimeMillis()
+            )
+
+            val updatedMap = currentAlphabet.glyphs.toMutableMap()
+            updatedMap[glyphId] = updatedGlyph
+
             val newAlphabet = currentAlphabet.copy(glyphs = updatedMap)
             saveAlphabetManifest(newAlphabet)
             alphabetFlow.value = newAlphabet
             true
+        }
+    }
+
+    /**
+     * F3.15 & F3.16: Duplica uma variante existente sem criar novo treino nem amostra independente para métricas pessoais.
+     */
+    override suspend fun duplicateVariant(glyphId: String, variantId: String): GlyphVariant? = withContext(ioDispatcher) {
+        mutationMutex.withLock {
+            val currentAlphabet = alphabetFlow.value
+            val glyph = currentAlphabet.glyphs[glyphId] ?: return@withLock null
+            val original = glyph.variants.firstOrNull { it.id == variantId } ?: return@withLock null
+
+            val strokes = getVariantStrokes(variantId)
+            val nextVersion = (glyph.variants.maxOfOrNull { it.version } ?: 0) + 1
+            val newVariantId = "var_${glyphId}_v${nextVersion}_${UUID.randomUUID()}"
+
+            strokePersistence.save(newVariantId, strokes)
+            strokeCache[newVariantId] = strokes
+
+            val duplicated = GlyphVariant(
+                id = newVariantId,
+                glyphId = glyphId,
+                version = nextVersion,
+                label = "${original.label} (cópia)",
+                score = original.score,
+                slantAngleDegrees = original.slantAngleDegrees,
+                isFavorite = false,
+                strokes = strokes,
+                strokeCount = strokes.size,
+                createdAtTimestamp = System.currentTimeMillis(),
+                sourceAttemptId = original.sourceAttemptId
+            )
+
+            val updatedVariants = glyph.variants + duplicated
+            val updatedGlyph = glyph.copy(
+                variants = updatedVariants,
+                updatedAtTimestamp = System.currentTimeMillis()
+            )
+
+            val updatedMap = currentAlphabet.glyphs.toMutableMap()
+            updatedMap[glyphId] = updatedGlyph
+
+            val newAlphabet = currentAlphabet.copy(glyphs = updatedMap)
+            saveAlphabetManifest(newAlphabet)
+            alphabetFlow.value = newAlphabet
+            duplicated
         }
     }
 
@@ -166,8 +245,9 @@ class LocalPersonalAlphabetRepository(
             val variantToDelete = glyph.variants.firstOrNull { it.id == variantId } ?: return@withLock false
             val remainingVariants = glyph.variants.filter { it.id != variantId }
 
-            val newSelectedId = if (glyph.selectedVariantId == variantId) {
-                remainingVariants.firstOrNull { it.isFavorite }?.id ?: remainingVariants.lastOrNull()?.id
+            // F3.18: Exclusão de variante não apaga a tentativa de origem; favorita removida exige seleção explícita de outra ou estado vazio.
+            val newSelectedId = if (glyph.selectedVariantId == variantId || variantToDelete.isFavorite) {
+                null
             } else {
                 glyph.selectedVariantId
             }
@@ -182,12 +262,17 @@ class LocalPersonalAlphabetRepository(
             val updatedMap = currentAlphabet.glyphs.toMutableMap()
             updatedMap[glyphId] = updatedGlyph
 
-            val newAlphabet = currentAlphabet.copy(glyphs = updatedMap)
+            // F3.26: Invalida a compilação anterior ao excluir variante/favorita
+            val newAlphabet = currentAlphabet.copy(
+                glyphs = updatedMap,
+                lastCompiledStyleId = null,
+                lastCompiledTimestamp = null
+            )
             // R10: Salva o manifesto atômico primeiro antes de deletar o arquivo físico
             saveAlphabetManifest(newAlphabet)
             alphabetFlow.value = newAlphabet
 
-            // Remove arquivo .scribe associado apenas após o manifesto salvo com sucesso
+            // Remove arquivo .scribe da variante do alfabeto (NUNCA afeta a tentativa de origem)
             val scribeFile = strokePersistence.getFile(variantId)
             if (scribeFile.exists()) scribeFile.delete()
             strokeCache.remove(variantId)

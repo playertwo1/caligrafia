@@ -86,7 +86,7 @@ data class ReferenceGlyph(
     val strokes: List<ReferenceStroke>
 ) {
     init {
-        require(strokes.isNotEmpty()) { "Um glifo de referência deve possuir pelo menos um traço." }
+        // F3.20: Permite strokes vazios para prática livre de glifos sem modelo analítico
         require(widthToXHeightRatio > 0.1f) { "Largura do glifo deve ser positiva e maior que 0.1" }
     }
 

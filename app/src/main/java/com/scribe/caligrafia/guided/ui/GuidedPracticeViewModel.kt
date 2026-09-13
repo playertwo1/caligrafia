@@ -315,7 +315,8 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
                 .removePrefix("glyph_digit_")
 
             // Procura no catálogo primeiro por símbolo exato
-            target = ReferenceGlyphCatalog.ALL_GLYPHS.find { it.symbol == letterPart }
+            target = com.scribe.caligrafia.style.model.StyleExerciseMatrix.getReference(clean, _state.value.currentStyle.id)
+                ?: ReferenceGlyphCatalog.ALL_GLYPHS.find { it.symbol == letterPart }
                 ?: ReferenceGlyphCatalog.ALL_GLYPHS.find { it.symbol.equals(letterPart, ignoreCase = true) }
                 ?: ReferenceGlyphCatalog.ALL_GLYPHS.find { it.id == clean || it.id == "letter_$letterPart" }
                 ?: _state.value.availableGlyphs.find { it.symbol == letterPart }
@@ -327,6 +328,10 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
         selectGlyph(glyph)
     }
 
+    /**
+     * F3.20: Cria glifo dinâmico sem recorrer a triângulo artificial para glifos ausentes.
+     * Os traços de referência permanecem vazios quando não há modelo vetorial canônico.
+     */
     private fun createDynamicGlyph(symbolOrId: String): ReferenceGlyph {
         val letter = symbolOrId.removePrefix("glyph_lower_").removePrefix("glyph_upper_").removePrefix("glyph_digit_")
         val isLower = symbolOrId.startsWith("glyph_lower_") || (letter.length == 1 && letter[0].isLowerCase())
@@ -337,19 +342,9 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
             symbol = displaySymbol,
             name = "Glifo '$displaySymbol'",
             category = category,
-            instructions = "Pratique a forma do glifo '$displaySymbol' com atenção ao paralelismo e altura-x.",
+            instructions = "Pratique a forma do glifo '$displaySymbol' mantendo atenção ao paralelismo e altura-x.",
             widthToXHeightRatio = 1.0f,
-            strokes = listOf(
-                ReferenceStroke(
-                    orderIndex = 1,
-                    points = listOf(
-                        ReferencePoint(0.2f, 0.0f),
-                        ReferencePoint(0.5f, 0.8f),
-                        ReferencePoint(0.8f, 0.0f)
-                    ),
-                    hint = DirectionalHint(1, ReferencePoint(0.2f, 0.0f), 0.5f, 0.8f, "Traço de referência")
-                )
-            )
+            strokes = emptyList() // F3.20: Proibido triângulo genérico para glifo ausente
         )
     }
 
