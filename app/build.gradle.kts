@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -19,15 +22,34 @@ android {
 
     signingConfigs {
         create("release") {
-            val keystoreFile = rootProject.file("keystore/scribe-release.jks")
+            val propsFile = rootProject.file("keystore/keystore.properties")
+            val props = Properties()
+            if (propsFile.exists()) {
+                FileInputStream(propsFile).use { props.load(it) }
+            }
+
+            val keystorePath = props.getProperty("RELEASE_STORE_FILE")
+                ?: (project.findProperty("RELEASE_STORE_FILE") as? String)
+                ?: System.getenv("RELEASE_STORE_FILE")
+                ?: "keystore/scribe-release.jks"
+            val keystoreFile = rootProject.file(keystorePath)
+
             if (keystoreFile.exists()) {
                 storeFile = keystoreFile
-                storePassword = (project.findProperty("RELEASE_KEYSTORE_PASSWORD") as? String)
-                    ?: System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: ""
-                keyAlias = (project.findProperty("RELEASE_KEY_ALIAS") as? String)
-                    ?: System.getenv("RELEASE_KEY_ALIAS") ?: "scribe_release_key"
-                keyPassword = (project.findProperty("RELEASE_KEY_PASSWORD") as? String)
-                    ?: System.getenv("RELEASE_KEY_PASSWORD") ?: ""
+                storePassword = props.getProperty("RELEASE_STORE_PASSWORD")
+                    ?: (project.findProperty("RELEASE_KEYSTORE_PASSWORD") as? String)
+                    ?: System.getenv("RELEASE_KEYSTORE_PASSWORD")
+                    ?: ""
+                keyAlias = props.getProperty("RELEASE_KEY_ALIAS")
+                    ?: (project.findProperty("RELEASE_KEY_ALIAS") as? String)
+                    ?: System.getenv("RELEASE_KEY_ALIAS")
+                    ?: "scribe_release_key"
+                keyPassword = props.getProperty("RELEASE_KEY_PASSWORD")
+                    ?: (project.findProperty("RELEASE_KEY_PASSWORD") as? String)
+                    ?: System.getenv("RELEASE_KEY_PASSWORD")
+                    ?: ""
+                enableV1Signing = true
+                enableV2Signing = true
             }
         }
     }
@@ -39,9 +61,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            val releaseKeystore = rootProject.file("keystore/scribe-release.jks")
-            if (releaseKeystore.exists()) {
-                signingConfig = signingConfigs.getByName("release")
+            val releaseSigning = signingConfigs.getByName("release")
+            if (releaseSigning.storeFile?.exists() == true && !releaseSigning.storePassword.isNullOrBlank()) {
+                signingConfig = releaseSigning
             }
         }
         debug {

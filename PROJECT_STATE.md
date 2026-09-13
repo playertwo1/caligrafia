@@ -17,9 +17,9 @@
 **Projeto:** Scribe / Caligrafia
 **Versão documental:** v0.8.0
 **Versão do aplicativo:** v0.8.0 (versionCode 10)
-**Estado:** FECHAMENTO_V5_ESTABILIZADO — 6 testes adversariais V5 verdes (100% pass), 16 aceites independentes V4 verdes (100% pass), 33 aceites formais históricos verdes (100% pass), 249 testes unitários totais verdes (100% pass), assembleDebug bem-sucedido, lintDebug com 0 erros.
-**Milestone atual:** Fechamento e estabilização completa das ondas 0 a 3 e auditorias V4/V5.
-**Código de produto:** M0 a M8 estabilizados + Ondas 0–3 + Resoluções V4 e V5 + Verificação de 6 Gates.
+**Estado:** FECHAMENTO_V5_ESTABILIZADO — 6 testes adversariais V5 verdes (100% pass), 16 aceites independentes V4 verdes (100% pass), 33 aceites formais históricos verdes (100% pass), 249 testes unitários totais verdes (100% pass), assembleDebug bem-sucedido, lintDebug com 0 erros, APK Release assinado com 4 secrets e ícone adaptativo integrado.
+**Milestone atual:** Fechamento e estabilização completa das ondas 0 a 3, auditorias V4/V5 e geração de APK Release.
+**Código de produto:** M0 a M8 estabilizados + Ondas 0–3 + Resoluções V4 e V5 + Ícone Oficial + APK Release Assinado.
 
 ## Status Recente de Estabilização & Redesenho Visual (2026-09-13)
 1. **Onda 3 — Geometria, Pautas, Métricas Canônicas e Fidelidade Visual (Concluída e Verificada):**
