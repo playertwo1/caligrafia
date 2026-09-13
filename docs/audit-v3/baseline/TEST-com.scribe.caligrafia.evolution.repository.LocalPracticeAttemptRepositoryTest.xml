@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.evolution.repository.LocalPracticeAttemptRepositoryTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-09-13T01:49:49.125Z" hostname="DESTKTOPFAEL" time="0.056">
+  <properties/>
+  <testcase name="saveAttempt_persistsAndReloadsAcrossInstances" classname="com.scribe.caligrafia.evolution.repository.LocalPracticeAttemptRepositoryTest" time="0.036"/>
+  <testcase name="init_seedsInitialDemonstrationSamples" classname="com.scribe.caligrafia.evolution.repository.LocalPracticeAttemptRepositoryTest" time="0.02"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

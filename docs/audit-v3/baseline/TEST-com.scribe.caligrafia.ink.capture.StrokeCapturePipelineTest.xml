@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.ink.capture.StrokeCapturePipelineTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-09-13T01:49:49.380Z" hostname="DESTKTOPFAEL" time="0.006">
+  <properties/>
+  <testcase name="testToolTypeFromMotionEventResolvesStylusButtonAsEraser" classname="com.scribe.caligrafia.ink.capture.StrokeCapturePipelineTest" time="0.001"/>
+  <testcase name="testStylusPreemptsActiveFingerStrokeInStylusAndTouchMode" classname="com.scribe.caligrafia.ink.capture.StrokeCapturePipelineTest" time="0.001"/>
+  <testcase name="testInMemoryRepositoryOperations" classname="com.scribe.caligrafia.ink.capture.StrokeCapturePipelineTest" time="0.0"/>
+  <testcase name="testStrokeCaptureLifecycle" classname="com.scribe.caligrafia.ink.capture.StrokeCapturePipelineTest" time="0.002"/>
+  <testcase name="testActionCancelProducesCancelledStroke" classname="com.scribe.caligrafia.ink.capture.StrokeCapturePipelineTest" time="0.001"/>
+  <testcase name="testFingerRejectedInStylusOnlyMode" classname="com.scribe.caligrafia.ink.capture.StrokeCapturePipelineTest" time="0.0"/>
+  <testcase name="testSensorValuesNotInvented" classname="com.scribe.caligrafia.ink.capture.StrokeCapturePipelineTest" time="0.0"/>
+  <testcase name="testIgnoreSecondaryPointerWhileActive" classname="com.scribe.caligrafia.ink.capture.StrokeCapturePipelineTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

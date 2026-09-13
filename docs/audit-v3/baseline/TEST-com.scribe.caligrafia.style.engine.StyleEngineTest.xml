@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.style.engine.StyleEngineTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-09-13T01:49:49.714Z" hostname="DESTKTOPFAEL" time="0.012">
+  <properties/>
+  <testcase name="getStyle_withUnknownOrNullId_executesGracefulFallback" classname="com.scribe.caligrafia.style.engine.StyleEngineTest" time="0.002"/>
+  <testcase name="removeCustomStyle_unregistersCorrectly" classname="com.scribe.caligrafia.style.engine.StyleEngineTest" time="0.005"/>
+  <testcase name="engineProvidesBuiltInStylesByDefault" classname="com.scribe.caligrafia.style.engine.StyleEngineTest" time="0.002"/>
+  <testcase name="importCustomFont_registersStyle_and_handlesMissingFileFallback" classname="com.scribe.caligrafia.style.engine.StyleEngineTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

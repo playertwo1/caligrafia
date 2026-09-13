@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.learning.session.SessionTimerTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-09-13T01:49:49.575Z" hostname="DESTKTOPFAEL" time="0.003">
+  <properties/>
+  <testcase name="startSession_initializesWithWarmUpPhase" classname="com.scribe.caligrafia.learning.session.SessionTimerTest" time="0.002"/>
+  <testcase name="recordAttempt_updatesCountAndAverage" classname="com.scribe.caligrafia.learning.session.SessionTimerTest" time="0.0"/>
+  <testcase name="pauseAndResume_controlsTicking" classname="com.scribe.caligrafia.learning.session.SessionTimerTest" time="0.001"/>
+  <testcase name="naturalPhaseTransition_whenSecondsElapse" classname="com.scribe.caligrafia.learning.session.SessionTimerTest" time="0.0"/>
+  <testcase name="tickOneSecond_incrementsSeconds" classname="com.scribe.caligrafia.learning.session.SessionTimerTest" time="0.0"/>
+  <testcase name="skipToNextPhase_advancesPhaseSequentially" classname="com.scribe.caligrafia.learning.session.SessionTimerTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

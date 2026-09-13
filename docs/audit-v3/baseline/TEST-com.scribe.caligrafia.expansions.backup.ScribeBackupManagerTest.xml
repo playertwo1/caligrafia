@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.expansions.backup.ScribeBackupManagerTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-09-13T01:49:49.186Z" hostname="DESTKTOPFAEL" time="0.137">
+  <properties/>
+  <testcase name="importCorruptedZip_returnsFailureResult" classname="com.scribe.caligrafia.expansions.backup.ScribeBackupManagerTest" time="0.005"/>
+  <testcase name="exportAndImport_restoresAllFilesAndPreservesStructure" classname="com.scribe.caligrafia.expansions.backup.ScribeBackupManagerTest" time="0.129"/>
+  <testcase name="backupSerializer_serializesAndDeserializesCorrectly" classname="com.scribe.caligrafia.expansions.backup.ScribeBackupManagerTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

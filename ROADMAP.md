@@ -1,3 +1,4 @@
+> **Revisão independente vigente:** fechamento M0–M8 não aprovado na v0.8.0. Os status de conclusão históricos abaixo são alegações do implementador. Ver [auditoria V3](docs/ANTIGRAVITY_AUDIT_REVIEW_V3.md) e [referências visuais com instruções](docs/design/fluxos-v1/README.md). A construção visual deve seguir as ondas de estabilização.
 # ROADMAP — Scribe
 
 ## M0 — Stylus Lab [CONCLUÍDO — v0.1.0]
@@ -36,4 +37,19 @@ Motor biomecânico determinístico de 4 dimensões (`MotorDiagnosticEngine`: est
 
 ## M8 — Expansões e Refinamento do Produto [CONCLUÍDO — v0.8.0]
 Sistema de backup e restauração atômica offline `.scribepack` (ZIP com manifesto JSON puro), Laboratório de Assinaturas e Monogramas com cálculo determinístico de repetibilidade e exportação vetorial SVG e PNG transparente, Modo Cópia de Textos Longos com pangramas e poesias clássicas em português (WPM caligráfico deliberado), três novos estilos pedagógicos expandidos (Gótica Textura Quadrata, Itálica Chanceleresca e Uncial Clássica), calibrador de curvas de resposta de pressão da S Pen, adaptador Wear OS / Galaxy Watch com alerta postural e haptics de timer, e tela central `ExpansionsScreen`.
+
+
+## Referências visuais para construção da interface
+
+Por solicitação do usuário, o projeto contém **13 imagens de referência**: um painel geral com 12 telas e 12 imagens complementares, cada uma com três estados de um fluxo.
+
+- [Painel geral das telas](docs/design/scribe-visao-12-telas-v1.png).
+- [Índice das 12 referências de fluxos e instruções para o Antigravity](docs/design/fluxos-v1/README.md).
+- [Auditoria independente V3: achados, dependências e ondas de estabilização](docs/ANTIGRAVITY_AUDIT_REVIEW_V3.md).
+
+**Direção visual:** papel claro, tinta azul-marinho, ações em azul, guias discretas, controles nativos e espaço amplo para S Pen no Galaxy S25 Ultra. Usar as imagens como base de composição e interação; consultar o guia antes de copiar textos, valores, navegação ou controles.
+
+**Ordem de trabalho:** corrigir o comportamento da onda correspondente e então aplicar a referência visual ao fluxo. Cada ação visível precisa funcionar de ponta a ponta. Não criar novas features, contas, cloud ou redesign amplo por elementos incidentais dos mockups. Opções adicionais ficam como propostas, não como escopo automaticamente autorizado. As imagens não aprovam milestones nem substituem os critérios da auditoria.
+
+**Aceite visual por fluxo:** registrar qual imagem foi usada, implementar estados vazio/carregando/sucesso/erro pertinentes, verificar handlers e persistência, comparar screenshots reais com a referência e validar legibilidade, alvos de toque e área de escrita no aparelho. Registrar diferenças justificadas em PROJECT_STATE. Não usar as imagens geradas como evidência de aplicativo funcionando.
 

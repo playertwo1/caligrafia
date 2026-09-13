@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.teacher.repository.LocalTeacherRepositoryTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-09-13T01:49:49.761Z" hostname="DESTKTOPFAEL" time="0.076">
+  <properties/>
+  <testcase name="saveDiagnostic and getLatestDiagnostic persists and reloads correctly" classname="com.scribe.caligrafia.teacher.repository.LocalTeacherRepositoryTest" time="0.021"/>
+  <testcase name="savePrescription and markPrescriptionCompleted updates completion state" classname="com.scribe.caligrafia.teacher.repository.LocalTeacherRepositoryTest" time="0.027"/>
+  <testcase name="getLatestDiagnostic returns fallback diagnostic when no prior data exists" classname="com.scribe.caligrafia.teacher.repository.LocalTeacherRepositoryTest" time="0.01"/>
+  <testcase name="saveInsights and getRecentInsights preserves all entries" classname="com.scribe.caligrafia.teacher.repository.LocalTeacherRepositoryTest" time="0.018"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

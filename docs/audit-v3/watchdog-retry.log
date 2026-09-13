@@ -1,0 +1,37 @@
+==================================================
+           SCRIBE WATCHDOG & AUDITOR              
+==================================================
+
+[1/4] Verificando regras estáticas de arquitetura...
+ [OK] Nenhuma WebView detectada.
+ [OK] Nenhuma dependência de nuvem/backend não autorizada detectada.
+
+[2/4] Executando testes unitários automatizados...
+ [OK] Todos os testes unitários passaram com sucesso.
+
+[3/4] Compilando APK de Depuração...
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:packageDebug'.
+> java.io.IOException: Unable to delete directory 'C:\Users\fael\Documents\Codex\2026-09-12\puxe-o-git-https-github-com\.audit-worktree\app\build\intermediates\incremental\packageDebug\tmp'
+    Failed to delete some children. This might happen because a process has files open or has its working directory set in the target directory.
+    - C:\Users\fael\Documents\Codex\2026-09-12\puxe-o-git-https-github-com\.audit-worktree\app\build\intermediates\incremental\packageDebug\tmp\debug\zip-cache
+    - C:\Users\fael\Documents\Codex\2026-09-12\puxe-o-git-https-github-com\.audit-worktree\app\build\intermediates\incremental\packageDebug\tmp\debug
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 3s
+ [FALHA] Compilação do APK falhou (exit code 1).
+
+[4/4] Verificando integridade dos artefatos...
+ [OK] APK verificado: C:\Users\fael\Documents\Codex\2026-09-12\puxe-o-git-https-github-com\.audit-worktree\app\build\outputs\apk\debug\app-debug.apk (21.48 MB)
+
+==================================================
+ AUDITORIA: REPROVADA. Corrija as falhas antes de prosseguir.
+==================================================

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.alphabet.engine.PersonalStyleCompilerTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-09-13T01:49:48.718Z" hostname="DESTKTOPFAEL" time="0.055">
+  <properties/>
+  <testcase name="estimateGuidelineRatio_withTallAscenders_estimatesSpencerianOrCopperplate" classname="com.scribe.caligrafia.alphabet.engine.PersonalStyleCompilerTest" time="0.025"/>
+  <testcase name="calculateAverageSlant_withRecordedAngles_calculatesAccurateAverage" classname="com.scribe.caligrafia.alphabet.engine.PersonalStyleCompilerTest" time="0.002"/>
+  <testcase name="compile_generatesValidPersonalScribeStyle" classname="com.scribe.caligrafia.alphabet.engine.PersonalStyleCompilerTest" time="0.019"/>
+  <testcase name="calculateAverageSlant_emptyList_returnsDefaultSixtyDegrees" classname="com.scribe.caligrafia.alphabet.engine.PersonalStyleCompilerTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

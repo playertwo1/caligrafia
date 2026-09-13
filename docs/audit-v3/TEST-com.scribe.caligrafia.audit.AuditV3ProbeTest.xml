@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.audit.AuditV3ProbeTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-09-13T01:52:24.038Z" hostname="DESTKTOPFAEL" time="0.109">
+  <properties/>
+  <testcase name="oppositeSignatureDiagonalsReceivePerfectConsistency" classname="com.scribe.caligrafia.audit.AuditV3ProbeTest" time="0.005"/>
+  <testcase name="everyPrescribedFocusIsMissingFromRealCatalog" classname="com.scribe.caligrafia.audit.AuditV3ProbeTest" time="0.007"/>
+  <testcase name="exportedZipHasNoCentralDirectory" classname="com.scribe.caligrafia.audit.AuditV3ProbeTest" time="0.031"/>
+  <testcase name="failedRestoreLeavesEarlierDirectoryChanged" classname="com.scribe.caligrafia.audit.AuditV3ProbeTest" time="0.026"/>
+  <testcase name="backupOmitsActualProductionPaths" classname="com.scribe.caligrafia.audit.AuditV3ProbeTest" time="0.011"/>
+  <testcase name="zipSlipContainmentPredicateAllowsSiblingPrefix" classname="com.scribe.caligrafia.audit.AuditV3ProbeTest" time="0.007"/>
+  <testcase name="absentSensorIsReportedAsMeasuredGoodPressure" classname="com.scribe.caligrafia.audit.AuditV3ProbeTest" time="0.003"/>
+  <testcase name="baselineListAliasingAllowsClearToEraseReference" classname="com.scribe.caligrafia.audit.AuditV3ProbeTest" time="0.001"/>
+  <testcase name="noWritingProducesMaturityAndMasteryPrescription" classname="com.scribe.caligrafia.audit.AuditV3ProbeTest" time="0.002"/>
+  <testcase name="invalidManifestOverwritesExistingDataSuccessfully" classname="com.scribe.caligrafia.audit.AuditV3ProbeTest" time="0.016"/>
+  <system-out><![CDATA[MISSING_FOCUS [to, t, a, it, l]
+ZIPFILE_ERROR java.util.zip.ZipException: zip END header not found
+PARTIAL_RESTORE success=false oldPage=changed
+BACKUP_ENTRIES [manifest.json, teacher/diagnostic.json] teacherFlag=false
+EMPTY score=70.0 maturity=PRACTITIONER rationale=Seu traço apresenta maturidade caligráfica superior. Este treino desafia sua memória muscular com assistência visual mínima.
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

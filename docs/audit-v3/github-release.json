@@ -1,0 +1,20 @@
+{
+  "tag_name": "v0.8.0",
+  "target_commitish": "main",
+  "html_url": "https://github.com/playertwo1/caligrafia/releases/tag/v0.8.0",
+  "published_at": "2026-09-12T22:33:17Z",
+  "assets": [
+    {
+      "name": "app-debug.apk",
+      "size": 22732123,
+      "browser_download_url": "https://github.com/playertwo1/caligrafia/releases/download/v0.8.0/app-debug.apk",
+      "digest": "sha256:15398cf8c63ae46447c678d39d47df851fd9024b6300b33e69f8de166b848421"
+    },
+    {
+      "name": "app-release-unsigned.apk",
+      "size": 16528809,
+      "browser_download_url": "https://github.com/playertwo1/caligrafia/releases/download/v0.8.0/app-release-unsigned.apk",
+      "digest": "sha256:888d3b53397eeb816562c177d6185e2740c6446766cde453f647a5765e798ddd"
+    }
+  ]
+}

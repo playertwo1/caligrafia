@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.alphabet.repository.LocalPersonalAlphabetRepositoryTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-09-13T01:49:48.780Z" hostname="DESTKTOPFAEL" time="0.245">
+  <properties/>
+  <testcase name="deleteVariant_removesVariantAndCleansUpFile" classname="com.scribe.caligrafia.alphabet.repository.LocalPersonalAlphabetRepositoryTest" time="0.114"/>
+  <testcase name="compileAndSavePersonalStyle_registersAndUpdatesManifest" classname="com.scribe.caligrafia.alphabet.repository.LocalPersonalAlphabetRepositoryTest" time="0.039"/>
+  <testcase name="setFavoriteVariant_updatesActiveVariant" classname="com.scribe.caligrafia.alphabet.repository.LocalPersonalAlphabetRepositoryTest" time="0.04"/>
+  <testcase name="initialization_loadsCanonicalGlyphsAndSeeds" classname="com.scribe.caligrafia.alphabet.repository.LocalPersonalAlphabetRepositoryTest" time="0.024"/>
+  <testcase name="addVariant_persistsStrokesAndUpdatesGlyph" classname="com.scribe.caligrafia.alphabet.repository.LocalPersonalAlphabetRepositoryTest" time="0.028"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

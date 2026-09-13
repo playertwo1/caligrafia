@@ -140,3 +140,9 @@ Não iniciar backend, nuvem ou marketplace antes dos milestones correspondentes.
   - *Qualidade:* 196 testes unitários 100% aprovados, 0 erros de lint, Watchdog 4/4 aprovado. Versão bump para v0.8.0 (versionCode 10). APKs de release assinado (16.53 MB) e debug (22.73 MB) compilados e distribuídos no Google Drive e GitHub.
 
 
+
+## Revisão independente e referências visuais — 2026-09-12
+
+Estado vigente: ESTABILIZACAO_OBRIGATORIA. O fechamento M0–M8 declarado acima não foi aprovado pela auditoria independente de bb09dc4. Consultar [V3](docs/ANTIGRAVITY_AUDIT_REVIEW_V3.md) e as pendências históricas V1/V2. Nenhum defeito de produto foi corrigido por esta publicação documental.
+
+Publicadas 13 imagens: [painel geral](docs/design/scribe-visao-12-telas-v1.png) e [12 fluxos detalhados](docs/design/fluxos-v1/README.md). O guia contém índice e ajustes necessários nos mockups. Usar como base visual dentro da onda de correção correspondente; não promover gates por aparência. Próxima tarefa: confirmar instruções atualizadas, executar onda 0 da V3 e mapear cada fluxo corrigido à sua referência visual.

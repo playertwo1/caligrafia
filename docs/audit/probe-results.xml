@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.audit.AuditProbeTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-09-12T15:25:59.515Z" hostname="DESTKTOPFAEL" time="0.099">
+  <properties/>
+  <testcase name="replayDropsStyle" classname="com.scribe.caligrafia.audit.AuditProbeTest" time="0.023"/>
+  <testcase name="failedSaveDestroysPreviousFile" classname="com.scribe.caligrafia.audit.AuditProbeTest" time="0.018"/>
+  <testcase name="exportReturnsInvalidPngUnderStubbedGraphics" classname="com.scribe.caligrafia.audit.AuditProbeTest" time="0.029"/>
+  <testcase name="eraserMissesBridgeBetweenEvents" classname="com.scribe.caligrafia.audit.AuditProbeTest" time="0.007"/>
+  <testcase name="zeroSensorValuesAreLost" classname="com.scribe.caligrafia.audit.AuditProbeTest" time="0.007"/>
+  <testcase name="tinyIncompleteAttemptPassesAndReferenceSlantDisagrees" classname="com.scribe.caligrafia.audit.AuditProbeTest" time="0.009"/>
+  <system-out><![CDATA[REPLAY color=null width=null
+SAVE failed=UTFDataFormatException; old page no longer readable
+PNG bytes=8, decodable=false
+ERASER remaining=1
+ZERO pressure=null tilt=null orientation=null
+EVALUATOR full=87, referenceAngle=76.504265; tiny=87, passed=true
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

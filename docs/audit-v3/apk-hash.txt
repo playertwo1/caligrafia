@@ -1,0 +1,5 @@
+
+Algorithm : SHA256
+Hash      : 888D3B53397EEB816562C177D6185E2740C6446766CDE453F647A5765E798DDD
+Path      : C:\Users\fael\Documents\Codex\2026-09-12\puxe-o-git-https-github-com\.audit-artifacts\v0.8.0-release.apk
+

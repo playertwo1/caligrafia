@@ -1,0 +1,200 @@
+[
+  {
+    "name": "com.scribe.caligrafia.alphabet.engine.PersonalStyleCompilerTest",
+    "tests": "4",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.alphabet.repository.LocalPersonalAlphabetRepositoryTest",
+    "tests": "5",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.alphabet.repository.PersonalAlphabetSerializerTest",
+    "tests": "2",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.audit.AuditFixAcceptanceTest",
+    "tests": "7",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.core.model.GuidelineConfigTest",
+    "tests": "9",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.evolution.engine.AttemptComparatorTest",
+    "tests": "2",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.evolution.engine.CalendarConsistencyHelperTest",
+    "tests": "2",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.evolution.engine.DualReplayEngineTest",
+    "tests": "4",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.evolution.repository.LocalPracticeAttemptRepositoryTest",
+    "tests": "2",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.guided.catalog.ReferenceGlyphCatalogTest",
+    "tests": "4",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.guided.evaluator.GeometricFeedbackEvaluatorTest",
+    "tests": "4",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.guided.ui.GuidedPracticeViewModelTest",
+    "tests": "4",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.ink.capture.StrokeCapturePipelineTest",
+    "tests": "8",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.ink.capture.StrokeEraserTest",
+    "tests": "5",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.ink.capture.UndoRedoStackTest",
+    "tests": "8",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.ink.gesture.EdgeGestureExclusionHelperTest",
+    "tests": "3",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.ink.lifecycle.StylusLifecycleTest",
+    "tests": "7",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.ink.palm.PalmRejectionPolicyTest",
+    "tests": "7",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.ink.persistence.PersistenceSpikeTest",
+    "tests": "4",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.ink.renderer.SmoothedReferenceRendererTest",
+    "tests": "4",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.ink.replay.StrokeReplayEngineTest",
+    "tests": "9",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.inspector.DeviceCapabilityInspectorTest",
+    "tests": "3",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.learning.history.LearningHistorySerializerTest",
+    "tests": "1",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.learning.history.LocalLearningHistoryRepositoryTest",
+    "tests": "2",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.learning.model.CurriculumCatalogTest",
+    "tests": "6",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.learning.review.ReviewSchedulerTest",
+    "tests": "5",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.learning.session.SessionTimerTest",
+    "tests": "6",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.notebook.export.PageExporterTest",
+    "tests": "2",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.notebook.repository.NotebookRepositoryTest",
+    "tests": "7",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.style.engine.StyleEngineTest",
+    "tests": "4",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.style.importer.StyleFontImporterTest",
+    "tests": "2",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.style.model.ScribeStyleTest",
+    "tests": "4",
+    "failures": "0",
+    "errors": "0"
+  },
+  {
+    "name": "com.scribe.caligrafia.viewmodel.ViewModelInstantiationTest",
+    "tests": "6",
+    "failures": "0",
+    "errors": "0"
+  }
+]

@@ -1,0 +1,7 @@
+allprojects {
+ tasks.withType(Test).configureEach {
+  binaryResultsDirectory = layout.buildDirectory.dir('audit-probes/binary')
+  reports.junitXml.outputLocation = layout.buildDirectory.dir('audit-probes/xml')
+  reports.html.outputLocation = layout.buildDirectory.dir('audit-probes/html')
+ }
+}

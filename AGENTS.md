@@ -11,7 +11,25 @@ Construir o Scribe incrementalmente. O maior risco é o ink engine; não começa
 5. Não introduza backend/cloud no MVP sem requisito explícito.
 
 ## Prioridade atual
-**M0 — Stylus Lab.**
+**Estabilização dos marcos existentes — auditorias A01–A22, R01–R20 e S01–S24.**
+
+A revisão mais recente é a [V3 de v0.8.0/bb09dc4](docs/ANTIGRAVITY_AUDIT_REVIEW_V3.md). O fechamento M0–M8 não foi aprovado. Seguir primeiro seu plano de estabilização e usar a V2 como detalhamento das pendências históricas. Auditar M7/M8 já existentes não autoriza novas expansões. Confirmar que estas instruções estão presentes no checkout usado pelo Antigravity; o AGENTS remoto auditado estava desatualizado.
+
+Os marcos M0–M6 declarados nos relatórios não estão automaticamente aprovados. O usuário solicitou contenção explícita de escopo para o Antigravity. Ler e seguir o [plano obrigatório da segunda auditoria](docs/ANTIGRAVITY_AUDIT_REVIEW_V2.md#plano-obrigatório-de-estabilização-para-o-antigravity) antes de alterar código. Não iniciar M7 nem expansões por iniciativa própria.
+
+## Protocolo de contenção e comprovação
+1. Identificar SHA/branch e preservar alterações locais. A V2 refere-se a 728ea0d e a V3 a bb09dc4; não corrigir checkout antigo por engano.
+2. Escolher um ID ou grupo dependente da onda atual. Registrar causa, chamador real da UI, mudança mínima e teste discriminante antes da implementação.
+3. Seguir as ondas do relatório: baseline/dados artificiais → estado/persistência/timer → integração da escrita real → geometria/métricas → performance/dispositivo → consolidação/revisão.
+4. Não criar novas features, redesign geral, backend/IA ou upgrades amplos de dependências para substituir correções. Refatorações necessárias devem ser pequenas e justificadas pelo achado.
+5. Não usar seeds, defaults, stubs ou catches silenciosos como prova de recurso funcionando. Exemplos nunca entram em métricas/estilos pessoais; dado ausente não vira medida inventada.
+6. Testar o percurso completo quando o item for de integração. Classe isolada, dependency no Gradle, tela visível e testes verdes não equivalem a recurso entregue.
+7. Preservar testes diagnósticos históricos; converter expectativas em testes de aceitação corretos, sem alterar teste para normalizar o bug.
+8. Registrar por ID: estado, SHA, arquivos, comando, resultado, evidência, limites e próxima ação. Usar PARCIAL/PENDENTE_DISPOSITIVO quando necessário; não fechar a categoria inteira por corrigir um exemplo.
+9. Não afirmar aprovação do Codex, teste físico, latência comprovada ou conclusão 100% sem evidência correspondente. Distinguir autorrevisão de revisão independente.
+10. Falta de aparelho não impede trabalho independente: corrigir e validar o que for possível, mantendo a etapa física pendente. Não fabricar resultado nem promover gate por tempo gasto/versão/test count.
+11. Preservar dados reais em migrações; não limpar diretórios do usuário nem recriar seeds como recuperação de corrupção.
+12. Ao concluir a onda, atualizar PROJECT_STATE e matriz de auditoria. Prosseguir apenas para a próxima onda cujos pré-requisitos estejam satisfeitos, sem iniciar milestones novos.
 
 ## Aparelho-alvo e integração Samsung
 - Aparelho principal: Samsung Galaxy S25 Ultra com sua S Pen original. Validar capacidades e desempenho no aparelho real.
@@ -29,5 +47,8 @@ Build e testes relevantes devem passar; falhas conhecidas são registradas; depe
 ## Ao concluir uma tarefa
 Reportar arquivos alterados, decisão, testes, limitações e próxima tarefa recomendada. Atualizar PROJECT_STATE.md.
 
-## Estado de fundação
-Este repositório foi criado primeiro como pedra fundamental documental. Não interprete a existência do roadmap como autorização para implementar todos os marcos. Quando o desenvolvimento for explicitamente iniciado, comece por SCR-001 e SCR-002.
+## Histórico de fundação e escopo atual
+O repositório nasceu como fundação documental; SCR-001/SCR-002 eram o ponto de partida histórico. A etapa atual é estabilizar a implementação existente conforme a auditoria, sem recriar o projeto nem reiniciar o bootstrap. A existência do roadmap continua não sendo autorização para implementar todos os marcos.
+
+## Referências visuais solicitadas pelo usuário
+Antes de construir ou ajustar a UI, consultar [o painel geral](docs/design/scribe-visao-12-telas-v1.png) e [o guia das 12 imagens de fluxos](docs/design/fluxos-v1/README.md). Usar como direção visual; seguir as correções de texto/valores/navegação do guia e os requisitos funcionais da auditoria. Os mockups não são prova de entrega e seus elementos incidentais não autorizam features novas. Registrar imagem usada, diferenças justificadas e evidência real do fluxo em PROJECT_STATE.

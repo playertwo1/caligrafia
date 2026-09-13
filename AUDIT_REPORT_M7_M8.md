@@ -1,3 +1,4 @@
+> **Revisão independente vigente:** fechamento M0–M8 não aprovado na v0.8.0. Os status de conclusão históricos abaixo são alegações do implementador. Ver [auditoria V3](docs/ANTIGRAVITY_AUDIT_REVIEW_V3.md) e [referências visuais com instruções](docs/design/fluxos-v1/README.md). A construção visual deve seguir as ondas de estabilização.
 # AUDIT_REPORT_M7_M8 — Relatório de Auditoria Técnica para o Codex (v0.6.0 → v0.8.0)
 
 **Projeto:** Scribe (Caligrafia Vetorial com S Pen / Stylus)  
@@ -211,3 +212,17 @@ A arquitetura manteve estrita fidelidade aos compromissos assumidos:
 - O aplicativo é 100% autônomo, local-first e imune a falhas de conexão de rede.
 - As integrações de hardware (S Pen no S25 Ultra e Galaxy Watch) residem atrás de adapters limpos e testáveis.
 - A estabilidade de compilação, o rigor nos testes (196 testes verdes) e a conformidade estática asseguram um software robusto pronto para uso real.
+
+## Referências visuais para construção da interface
+
+Por solicitação do usuário, o projeto contém **13 imagens de referência**: um painel geral com 12 telas e 12 imagens complementares, cada uma com três estados de um fluxo.
+
+- [Painel geral das telas](docs/design/scribe-visao-12-telas-v1.png).
+- [Índice das 12 referências de fluxos e instruções para o Antigravity](docs/design/fluxos-v1/README.md).
+- [Auditoria independente V3: achados, dependências e ondas de estabilização](docs/ANTIGRAVITY_AUDIT_REVIEW_V3.md).
+
+**Direção visual:** papel claro, tinta azul-marinho, ações em azul, guias discretas, controles nativos e espaço amplo para S Pen no Galaxy S25 Ultra. Usar as imagens como base de composição e interação; consultar o guia antes de copiar textos, valores, navegação ou controles.
+
+**Ordem de trabalho:** corrigir o comportamento da onda correspondente e então aplicar a referência visual ao fluxo. Cada ação visível precisa funcionar de ponta a ponta. Não criar novas features, contas, cloud ou redesign amplo por elementos incidentais dos mockups. Opções adicionais ficam como propostas, não como escopo automaticamente autorizado. As imagens não aprovam milestones nem substituem os critérios da auditoria.
+
+**Aceite visual por fluxo:** registrar qual imagem foi usada, implementar estados vazio/carregando/sucesso/erro pertinentes, verificar handlers e persistência, comparar screenshots reais com a referência e validar legibilidade, alvos de toque e área de escrita no aparelho. Registrar diferenças justificadas em PROJECT_STATE. Não usar as imagens geradas como evidência de aplicativo funcionando.

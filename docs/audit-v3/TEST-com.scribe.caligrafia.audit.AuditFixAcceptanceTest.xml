@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-09-13T01:52:22.619Z" hostname="DESTKTOPFAEL" time="0.084">
+  <properties/>
+  <testcase name="incompleteAttemptFailsAndReferenceSlantMatches52Degrees" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.027"/>
+  <testcase name="zeroSensorValuesArePreserved" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.01"/>
+  <testcase name="replayPreservesStyleDuringActiveStroke" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.006"/>
+  <testcase name="eraserBridgesAcrossEventsAndErasesCrossingStroke" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.004"/>
+  <testcase name="failedSavePreservesPreviousValidFile" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.027"/>
+  <testcase name="exportDoesNotReturnFakeEightByteFile" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.005"/>
+  <testcase name="eraserNeverDeliversCompletedStrokeOrPreview" classname="com.scribe.caligrafia.audit.AuditFixAcceptanceTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
