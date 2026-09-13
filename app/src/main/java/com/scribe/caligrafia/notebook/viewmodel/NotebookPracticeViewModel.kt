@@ -237,6 +237,27 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
         }
     }
 
+    fun renameNotebook(notebook: Notebook, newTitle: String) {
+        val cleanTitle = newTitle.trim()
+        if (cleanTitle.isEmpty() || cleanTitle.length > 40) return
+        viewModelScope.launch(Dispatchers.IO) {
+            notebookRepository.renameNotebook(notebook.id, cleanTitle)
+            val updatedList = notebookRepository.getNotebooks()
+            val current = if (_uiState.value.currentNotebook?.id == notebook.id) {
+                _uiState.value.currentNotebook?.copy(title = cleanTitle)
+            } else {
+                _uiState.value.currentNotebook
+            }
+            _uiState.update {
+                it.copy(
+                    allNotebooks = updatedList,
+                    currentNotebook = current,
+                    notificationMessage = "Caderno renomeado para '$cleanTitle'."
+                )
+            }
+        }
+    }
+
     fun onStrokesModified() {
         _uiState.update {
             it.copy(
@@ -376,6 +397,42 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
                         totalPoints = 0,
                         notificationMessage = "Página ${newIndex + 1} criada com sucesso"
                     )
+                }
+            }
+        }
+    }
+
+    fun duplicatePage(pageId: String) {
+        val notebook = _uiState.value.currentNotebook ?: return
+        val currentPage = _uiState.value.currentPage
+        val currentStrokes = strokeRepository.allStrokes
+
+        viewModelScope.launch(Dispatchers.IO) {
+            pagePersistenceMutex.withLock {
+                if (currentPage != null) {
+                    notebookRepository.savePageStrokes(currentPage, currentStrokes)
+                }
+
+                val duplicated = notebookRepository.duplicatePage(notebook.id, pageId)
+                if (duplicated != null) {
+                    pagesList = notebookRepository.getPages(notebook.id)
+                    val newIndex = pagesList.indexOfFirst { it.id == duplicated.id }.coerceAtLeast(0)
+                    val targetStrokes = notebookRepository.loadPageStrokes(duplicated)
+                    strokeRepository.loadStrokes(targetStrokes)
+
+                    _uiState.update {
+                        it.copy(
+                            currentPage = duplicated,
+                            currentPageIndex = newIndex,
+                            totalPages = pagesList.size,
+                            pages = pagesList,
+                            canUndo = strokeRepository.canUndo,
+                            canRedo = strokeRepository.canRedo,
+                            strokeCount = strokeRepository.count,
+                            totalPoints = strokeRepository.totalPointsCount,
+                            notificationMessage = "Página duplicada com sucesso."
+                        )
+                    }
                 }
             }
         }

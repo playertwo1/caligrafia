@@ -34,16 +34,19 @@ import java.io.OutputStreamWriter
 import java.util.UUID
 
 enum class ExpansionsTab(val title: String) {
-    TEACHER("Diagnóstico"),
     ALPHABET("Meu Alfabeto"),
-    TEXTS("Textos"),
+    TEACHER("Professor"),
+    STYLES("Estilos"),
     SIGNATURE("Assinaturas"),
+    TEXTS("Cópia de Textos"),
     BACKUP("Backup"),
-    SPEN_SETTINGS("Caneta S Pen")
+    SPEN_SETTINGS("S Pen e Watch"),
+    STYLUS_LAB("Laboratório"),
+    PREFERENCES("Preferências")
 }
 
 data class ExpansionsUiState(
-    val activeTab: ExpansionsTab = ExpansionsTab.TEACHER,
+    val activeTab: ExpansionsTab = ExpansionsTab.ALPHABET,
     // Assinatura
     val baselineAttempt: SignatureAttempt? = null,
     val currentStrokes: List<Stroke> = emptyList(),
@@ -64,6 +67,11 @@ data class ExpansionsUiState(
     val postureAlertMinutes: Int = 15,
     val isPostureReminderEnabled: Boolean = true,
     val isWatchConnected: Boolean = false,
+    // Preferências (Fluxo 12)
+    val isLeftHanded: Boolean = false,
+    val isHighContrast: Boolean = false,
+    val showGuideNumbers: Boolean = true,
+    val dailyPracticeGoalMinutes: Int = 15,
     // Notificações
     val snackbarMessage: String? = null
 )
@@ -92,18 +100,71 @@ class ExpansionsViewModel @JvmOverloads constructor(
             prefs.getString("pressure_curve", null)?.let { PressureCurveType.valueOf(it) }
         } catch (_: Throwable) { null } ?: PressureCurveType.LINEAR
 
+        val isLeftHanded = try {
+            val prefs = application.getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
+            prefs.getBoolean("is_left_handed", false)
+        } catch (_: Throwable) { false }
+        val isHighContrast = try {
+            val prefs = application.getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
+            prefs.getBoolean("is_high_contrast", false)
+        } catch (_: Throwable) { false }
+        val showGuideNumbers = try {
+            val prefs = application.getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
+            prefs.getBoolean("show_guide_numbers", true)
+        } catch (_: Throwable) { true }
+        val dailyGoal = try {
+            val prefs = application.getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
+            prefs.getInt("daily_goal_minutes", 15)
+        } catch (_: Throwable) { 15 }
+
         _uiState.update {
             it.copy(
                 isWatchConnected = watchBridge.isWatchConnected(),
                 postureAlertMinutes = watchBridge.postureAlertThresholdMinutes,
                 isPostureReminderEnabled = watchBridge.isPostureReminderEnabled,
-                pressureCurve = savedCurve
+                pressureCurve = savedCurve,
+                isLeftHanded = isLeftHanded,
+                isHighContrast = isHighContrast,
+                showGuideNumbers = showGuideNumbers,
+                dailyPracticeGoalMinutes = dailyGoal
             )
         }
     }
 
     fun setTab(tab: ExpansionsTab) {
         _uiState.update { it.copy(activeTab = tab) }
+    }
+
+    fun setLeftHanded(enabled: Boolean) {
+        _uiState.update { it.copy(isLeftHanded = enabled) }
+        try {
+            val prefs = getApplication<Application>().getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
+            prefs.edit().putBoolean("is_left_handed", enabled).apply()
+        } catch (_: Throwable) {}
+    }
+
+    fun setHighContrast(enabled: Boolean) {
+        _uiState.update { it.copy(isHighContrast = enabled) }
+        try {
+            val prefs = getApplication<Application>().getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
+            prefs.edit().putBoolean("is_high_contrast", enabled).apply()
+        } catch (_: Throwable) {}
+    }
+
+    fun setShowGuideNumbers(enabled: Boolean) {
+        _uiState.update { it.copy(showGuideNumbers = enabled) }
+        try {
+            val prefs = getApplication<Application>().getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
+            prefs.edit().putBoolean("show_guide_numbers", enabled).apply()
+        } catch (_: Throwable) {}
+    }
+
+    fun setDailyPracticeGoalMinutes(minutes: Int) {
+        _uiState.update { it.copy(dailyPracticeGoalMinutes = minutes) }
+        try {
+            val prefs = getApplication<Application>().getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
+            prefs.edit().putInt("daily_goal_minutes", minutes).apply()
+        } catch (_: Throwable) {}
     }
 
     // --- Assinaturas ---

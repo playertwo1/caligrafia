@@ -6,23 +6,17 @@ Por solicitação do usuário, o planejamento foi convertido em [ordens detalhad
 
 Os status históricos de fechamento abaixo não anulam as duas falhas reproduzidas no [parecer V5 de revalidação](docs/ANTIGRAVITY_AUDIT_REVIEW_V5_RECHECK.md). O checklist exige verificar a base atual antes de corrigir ou marcar qualquer requisito. Validação desta entrega: IDs únicos, cobertura F0–F7, links e diff; testes Android não se aplicam à alteração documental.
 
-> **Status de Auditoria V5 & Refinamento dos Fluxos do Roadmap — Concluído (2026-09-13):**
-> Todas as 6 asserções adversariais V5 em `AuditV5IndependentTest.kt` e todas as 16 verificações adversariais V4 em `AuditV4IndependentTest.kt` continuam 100% verdes.
-> Suíte completa: **252 testes unitários / 0 falhas / 0 erros** executados com sucesso; `assembleDebug` construído com sucesso em 20s.
-> 
-> Refinamentos adicionais integrados conforme o Roadmap e achados técnicos:
-> - **Slant Contextual por Tentativa (V4-04):** `MotorDiagnosticEngine` avalia cada tentativa respeitando `attempt.targetSlantDegrees ?: targetSlantDegrees`, suportando diagnósticos precisos em estilos mistos.
-> - **Curvas de Pressão S Pen no Renderizador (S18 / V4-07):** `SmoothedReferenceRenderer` aplica `PressureCalibration.transform(pressure, pressureCurve)` na projeção de largura visual do traço sem alterar os pontos brutos imutáveis em `.scribe`.
-> - **Integração de Passagens e Cópia Longa (SCR-803 / V4-07):** Aba "Textos" habilitada em `ExpansionsScreen` com seleção de categorias, pangramas e botão "Praticar Texto no Caderno", configurando automaticamente o estilo recomendado e navegando ao Caderno.
-> - **Conexão Real do Hub de Aprendizado (M4 / R02 / V4-03):** `GuidedPracticeScreen` e `MainActivity` conectam o `LearningHubScreen` diretamente ao canvas; avaliações de escrita real no canvas alimentam automaticamente o `LearningViewModel.recordAttempt(scorePercent)` via gancho reativo `onAttemptEvaluated`.
-> - **Importação e Seleção de Fontes Personalizadas (R17 / V4-07):** `NotebookPracticeViewModel.importCustomFont` atualiza o catálogo dinâmico de estilos e adapta as pautas; `NotebookPracticeScreen` expõe seletor em chips para alternar estilos no caderno.
+> **Status de Execução Supervisionada — Fases F0 e F1 Concluídas (2026-09-13):**
+> - **Fase F0 (Integridade de Dados e Contratos):** Concluída com 100% de aprovação. BASELINE, DATA_CONTRACT e ROUTE_ACTION_MATRIX documentados; parser JSON estrito (rejeição de sintaxe quebrada/valores omitidos) e invalidação de cache de traços integrados.
+> - **Fase F1 (Navegação, Biblioteca e Caderno):** Concluída com 100% de aprovação. Busca insensível a caixa/acentos na biblioteca, validação de criação (1–40 caracteres com erro inline), renomeação e exclusão com diálogo de confirmação, duplicação e exclusão de páginas com isolamento total de traços vetoriais, e Menu Mais completo com 9 destinos mapeados e badges PARCIAL documentados.
+> - **Suíte Completa:** **264 testes unitários / 0 falhas / 0 erros**; `assembleDebug` construído com sucesso em 26s.
 
 **Projeto:** Scribe / Caligrafia
-**Versão documental:** v0.8.1
-**Versão do aplicativo:** v0.8.1 (versionCode 11)
-**Estado:** REFINADO_ROADMAP_ESTABILIZADO — 252 testes unitários verdes (100% pass), assembleDebug bem-sucedido, fluxos do roadmap integrados de ponta a ponta.
-**Milestone atual:** Refinamento dos marcos do Roadmap (M0 a M8) e encerramento de pendências técnicas.
-**Código de produto:** M0 a M8 100% integrados e auditados + Ícone Oficial + APK Release Assinado.
+**Versão documental:** v0.8.2
+**Versão do aplicativo:** v0.8.2 (versionCode 12)
+**Estado:** F0_F1_CONCLUIDOS — 264 testes unitários verdes (100% pass), assembleDebug bem-sucedido, F0 e F1 concluídas e testadas de ponta a ponta.
+**Milestone atual:** Fase F2 — Aulas, objetivos, treino e feedback (Roadmap Funcional).
+**Código de produto:** F0 e F1 100% integradas, testadas e auditadas.
 
 ## Status Recente de Estabilização & Redesenho Visual (2026-09-13)
 1. **Onda 3 — Geometria, Pautas, Métricas Canônicas e Fidelidade Visual (Concluída e Verificada):**

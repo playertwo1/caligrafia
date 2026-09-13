@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -74,6 +75,7 @@ fun NotebookPagesBottomSheet(
     currentPageIndex: Int,
     onSelectPage: (Int) -> Unit,
     onAddPage: (GuidelineConfig) -> Unit,
+    onDuplicatePage: ((String) -> Unit)? = null,
     onDeletePage: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -276,17 +278,33 @@ fun NotebookPagesBottomSheet(
                                     )
                                 }
 
-                                if (pages.size > 1) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
                                     IconButton(
-                                        onClick = { pageToDelete = page },
+                                        onClick = {
+                                            onDuplicatePage?.invoke(page.id)
+                                            onDismiss()
+                                        },
                                         modifier = Modifier.size(28.dp)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Delete,
-                                            contentDescription = "Excluir página",
-                                            tint = Color(0xFF94A3B8),
-                                            modifier = Modifier.size(16.dp)
+                                            imageVector = Icons.Default.ContentCopy,
+                                            contentDescription = "Duplicar página",
+                                            tint = Color(0xFF64748B),
+                                            modifier = Modifier.size(15.dp)
                                         )
+                                    }
+                                    if (pages.size > 1) {
+                                        IconButton(
+                                            onClick = { pageToDelete = page },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = "Excluir página",
+                                                tint = Color(0xFF94A3B8),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }

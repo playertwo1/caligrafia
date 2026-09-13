@@ -172,4 +172,75 @@ class NotebookRepositoryTest {
         assertEquals(GuidelineRatio.Ratio212, deserializedPage.guidelineConfig.ratio)
         assertEquals(52f, deserializedPage.guidelineConfig.slant?.angleDegrees ?: 0f, 0.001f)
     }
+
+    @Test
+    fun renameNotebook_valid_title_updates_title_and_updatedAt() = runBlocking {
+        val nb = repository.createNotebook("Título Antigo")
+        val oldUpdated = nb.updatedAt
+
+        Thread.sleep(10)
+        val success = repository.renameNotebook(nb.id, "  Novo Título Valioso  ")
+        assertTrue("Renomear deve retornar true", success)
+
+        val updated = repository.getNotebook(nb.id)
+        assertNotNull(updated)
+        assertEquals("Novo Título Valioso", updated!!.title)
+        assertTrue("updatedAt deve ter sido atualizado", updated.updatedAt >= oldUpdated)
+    }
+
+    @Test
+    fun renameNotebook_invalid_blank_or_too_long_returns_false() = runBlocking {
+        val nb = repository.createNotebook("Título Original")
+
+        val emptyResult = repository.renameNotebook(nb.id, "   ")
+        assertFalse("Não deve aceitar título em branco", emptyResult)
+
+        val tooLongResult = repository.renameNotebook(nb.id, "A".repeat(41))
+        assertFalse("Não deve aceitar título com mais de 40 caracteres", tooLongResult)
+
+        val unchanged = repository.getNotebook(nb.id)
+        assertEquals("Título Original", unchanged!!.title)
+    }
+
+    @Test
+    fun duplicatePage_clones_page_with_new_ids_and_preserves_strokes() = runBlocking {
+        val nb = repository.createNotebook("Caderno Duplicação")
+        val originalPage = repository.getPages(nb.id)[0]
+
+        val stroke = Stroke(
+            id = "stroke-orig-1",
+            tool = ToolType.STYLUS,
+            points = listOf(StrokePoint(15f, 25f, 500L, 0.6f, 0.1f, 0.2f)),
+            startedAtMs = 500L,
+            endedAtMs = 520L
+        )
+        repository.savePageStrokes(originalPage, listOf(stroke))
+
+        val duplicatedPage = repository.duplicatePage(nb.id, originalPage.id)
+        assertNotNull("Página duplicada não pode ser nula", duplicatedPage)
+        assertTrue("Nova página deve ter ID diferente", duplicatedPage!!.id != originalPage.id)
+        assertEquals("Deve estar no final da lista de páginas", 1, duplicatedPage.pageIndex)
+
+        // Verificar strokes duplicados
+        val dupStrokes = repository.loadPageStrokes(duplicatedPage)
+        assertEquals(1, dupStrokes.size)
+        assertTrue("Stroke clonado deve ter ID único", dupStrokes[0].id != stroke.id)
+        assertEquals(stroke.points.size, dupStrokes[0].points.size)
+        assertEquals(15f, dupStrokes[0].points[0].x, 0.001f)
+        assertEquals(0.6f, dupStrokes[0].points[0].pressure!!, 0.001f)
+
+        // Modificar a cópia não deve alterar o original
+        val newStroke = Stroke(
+            id = "stroke-copy-extra",
+            tool = ToolType.STYLUS,
+            points = listOf(StrokePoint(100f, 200f, 600L)),
+            startedAtMs = 600L,
+            endedAtMs = 610L
+        )
+        repository.savePageStrokes(duplicatedPage, listOf(dupStrokes[0], newStroke))
+
+        val origStrokesAfter = repository.loadPageStrokes(originalPage)
+        assertEquals("Original deve continuar com apenas 1 stroke", 1, origStrokesAfter.size)
+        assertEquals(stroke.id, origStrokesAfter[0].id)
+    }
 }

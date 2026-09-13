@@ -142,6 +142,7 @@ fun NotebookPracticeScreen(
             currentNotebookId = uiState.currentNotebook?.id,
             onSelectNotebook = { viewModel.selectNotebook(it) },
             onCreateNotebook = { name, cfg, coverStyle -> viewModel.createNotebook(name, cfg, coverStyle) },
+            onRenameNotebook = { nb, title -> viewModel.renameNotebook(nb, title) },
             onDeleteNotebook = { viewModel.deleteNotebook(it) }
         )
         return
@@ -158,6 +159,10 @@ fun NotebookPracticeScreen(
             },
             onAddPage = { config ->
                 viewModel.addNewPage(config)
+                canvasViewRef?.requestRedraw()
+            },
+            onDuplicatePage = { pageId ->
+                viewModel.duplicatePage(pageId)
                 canvasViewRef?.requestRedraw()
             },
             onDeletePage = { pageId ->

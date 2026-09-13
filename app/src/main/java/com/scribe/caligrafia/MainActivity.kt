@@ -219,6 +219,7 @@ class MainActivity : ComponentActivity() {
                                     viewModel = expansionsViewModel,
                                     teacherViewModel = teacherViewModel,
                                     alphabetViewModel = alphabetViewModel,
+                                    stylusLabViewModel = stylusLabViewModel,
                                     onBack = { currentTab = ScribeTab.NOTEBOOK },
                                     onNavigateToPracticeWithText = { passage ->
                                         notebookViewModel.selectStyle(passage.recommendedStyleId, adaptPageGuidelines = true)

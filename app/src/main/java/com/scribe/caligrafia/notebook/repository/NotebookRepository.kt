@@ -16,11 +16,13 @@ interface NotebookRepository {
         initialGuideline: GuidelineConfig = GuidelineConfig.copperplate(),
         coverStyle: String = "PAPEL_ARTESANAL"
     ): Notebook
+    suspend fun renameNotebook(id: String, newTitle: String): Boolean
     suspend fun deleteNotebook(id: String): Boolean
 
     suspend fun getPages(notebookId: String): List<NotebookPage>
     suspend fun getPage(pageId: String): NotebookPage?
     suspend fun addPage(notebookId: String, guidelineConfig: GuidelineConfig = GuidelineConfig.copperplate()): NotebookPage
+    suspend fun duplicatePage(notebookId: String, sourcePageId: String): NotebookPage?
     suspend fun deletePage(notebookId: String, pageId: String): Boolean
     suspend fun updatePageGuidelines(pageId: String, guidelineConfig: GuidelineConfig): Boolean
 

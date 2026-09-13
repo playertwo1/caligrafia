@@ -106,6 +106,20 @@ class LocalNotebookRepository(
         notebook
     }
 
+    override suspend fun renameNotebook(id: String, newTitle: String): Boolean = withContext(Dispatchers.IO) {
+        val cleanTitle = newTitle.trim()
+        if (cleanTitle.isEmpty() || cleanTitle.length > 40) return@withContext false
+        val notebook = getNotebook(id) ?: return@withContext false
+        val updated = notebook.copy(
+            title = cleanTitle,
+            updatedAt = System.currentTimeMillis()
+        )
+        val nbDir = File(notebooksRoot, id)
+        val manifestFile = File(nbDir, "manifest.txt")
+        atomicWriteText(manifestFile, NotebookManifestSerializer.serializeNotebook(updated))
+        true
+    }
+
     override suspend fun deleteNotebook(id: String): Boolean = withContext(Dispatchers.IO) {
         val nbDir = File(notebooksRoot, id)
         if (!nbDir.exists()) return@withContext false
@@ -179,6 +193,46 @@ class LocalNotebookRepository(
         // Atualiza o manifesto do caderno
         val updatedNb = notebook.copy(
             pageIds = notebook.pageIds + pageId,
+            updatedAt = System.currentTimeMillis()
+        )
+        val manifestFile = File(nbDir, "manifest.txt")
+        atomicWriteText(manifestFile, NotebookManifestSerializer.serializeNotebook(updatedNb))
+
+        newPage
+    }
+
+    override suspend fun duplicatePage(notebookId: String, sourcePageId: String): NotebookPage? = withContext(Dispatchers.IO) {
+        val notebook = getNotebook(notebookId) ?: return@withContext null
+        val sourcePage = getPage(sourcePageId) ?: return@withContext null
+        val sourceStrokes = loadPageStrokes(sourcePage)
+
+        val nbDir = File(notebooksRoot, notebookId)
+        val pagesDir = File(nbDir, "pages")
+        if (!pagesDir.exists()) pagesDir.mkdirs()
+
+        val newPageId = UUID.randomUUID().toString()
+        val newPage = NotebookPage(
+            id = newPageId,
+            notebookId = notebookId,
+            pageIndex = notebook.pageIds.size,
+            guidelineConfig = sourcePage.guidelineConfig,
+            documentRelativePath = "notebooks/$notebookId/pages/$newPageId.scribe"
+        )
+
+        // Salva metadados da nova página
+        val pageMetaFile = File(pagesDir, "$newPageId.meta")
+        atomicWriteText(pageMetaFile, NotebookManifestSerializer.serializePage(newPage))
+
+        // Salva traços duplicados com novos IDs únicos
+        val duplicatedStrokes = sourceStrokes.map { original ->
+            original.copy(id = UUID.randomUUID().toString())
+        }
+        val scribeFile = File(baseDir, newPage.documentRelativePath)
+        fileStrategy.save(scribeFile, duplicatedStrokes)
+
+        // Atualiza o manifesto do caderno
+        val updatedNb = notebook.copy(
+            pageIds = notebook.pageIds + newPageId,
             updatedAt = System.currentTimeMillis()
         )
         val manifestFile = File(nbDir, "manifest.txt")

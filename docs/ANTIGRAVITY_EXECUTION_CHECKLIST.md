@@ -57,32 +57,32 @@ Arquivos principais: `BackupSerializer`, `ScribeBackupManager`, `LocalPracticeAt
 
 Alvos: `MainActivity`, telas/VM de caderno, páginas, toolbar e menu Mais. Referências: painel 1 e fluxos 01–03. Entrada: F0.G executado; bloqueio de revisão deve ser respeitado se houver rejeição explícita.
 
-- [ ] F1.01 Implementar raiz de Praticar como Hub com categorias, seleção de aula e duração; não disparar timer ao abrir aba.
-- [ ] F1.02 Criar menu Mais com Alfabeto, Professor, Estilos, Assinaturas, Cópia, Backup, S Pen/Watch, Laboratório e Preferências nomeados.
-- [ ] F1.03 Mapear todas as entradas à tela real correspondente; registrar destinos ainda incompletos como PARCIAL, sem contá-los como entregues.
-- [ ] F1.04 Preservar pilha/seleção por aba; voltar de detalhe à origem sem abrir caderno ou exercício diferente.
-- [ ] F1.05 Remover callbacks que descartem exerciseId, styleId, variantId, prescriptionId ou textId.
-- [ ] F1.06 Implementar vazio da biblioteca com botão Criar; nenhuma página/caderno de exemplo entra no acervo.
-- [ ] F1.07 Criar caderno com nome obrigatório de 1–40 caracteres, espaços externos removidos, papel e estilo; erro de validação junto ao campo.
-- [ ] F1.08 Fazer Cancelar não gravar nada; Criar só fechar formulário após persistência confirmada.
-- [ ] F1.09 Listar nome, papel/estilo, contagem real, última atualização e estado de save; remover dados ilustrativos.
-- [ ] F1.10 Implementar busca por nome sem diferenciar maiúsculas e acentos; mostrar vazio de busca e limpar filtro.
-- [ ] F1.11 Implementar abrir, renomear e excluir caderno com confirmação identificando o alvo; cancelamento preserva tudo.
-- [ ] F1.12 Mostrar grade de páginas com miniaturas derivadas dos strokes reais, página ativa e contagem consistente.
-- [ ] F1.13 Implementar adicionar e renomear página; página criada tem ID próprio e papel/pauta do caderno.
-- [ ] F1.14 Implementar duplicar página com novos IDs de página/strokes e mesma geometria; editar cópia não altera original.
-- [ ] F1.15 Implementar excluir página com confirmação; se ativa, selecionar vizinha válida; sem páginas, mostrar Criar página.
-- [ ] F1.16 Conectar exportar página à seleção da página exata; concluir o export externo em F5.
-- [ ] F1.17 Expor caneta fina/média/grossa e cinco cores do fluxo 03; manter seleção visível e persistida.
-- [ ] F1.18 Fazer undo/redo operar na página atual; criação de stroke após undo invalida redo adequadamente.
-- [ ] F1.19 Implementar borracha por stroke sem converter gesto de apagamento em tinta; undo restaura conteúdo apagado.
-- [ ] F1.20 Implementar painel de guias: estilo, preview, inclinação, aplicar e redefinir; Copperplate padrão 52°.
-- [ ] F1.21 Persistir configuração e dimensões lógicas por página; resize/reabertura não deforma os pontos.
-- [ ] F1.22 Ordenar gravações/trocas de página; stroke em curso não pode ser salvo na página recém-selecionada.
-- [ ] F1.23 Exibir salvando/salvo/erro com tentar novamente; não apagar versão anterior por falha.
-- [ ] F1.24 Testar pela UI dois cadernos e três páginas, duplicação, exclusão, troca rápida e reinício sem mistura de dados.
-- [ ] F1.25 Capturar screenshots reais de biblioteca vazia, criação, lista, grade, caneta, borracha e guias; comparar aos PNGs.
-- [ ] F1.G Registrar F1 como validado somente com percurso biblioteca → página → escrita → reinício completo.
+- [x] F1.01 Implementar raiz de Praticar como Hub com categorias, seleção de aula e duração; não disparar timer ao abrir aba.
+- [x] F1.02 Criar menu Mais com Alfabeto, Professor, Estilos, Assinaturas, Cópia, Backup, S Pen/Watch, Laboratório e Preferências nomeados.
+- [x] F1.03 Mapear todas as entradas à tela real correspondente; registrar destinos ainda incompletos como PARCIAL, sem contá-los como entregues.
+- [x] F1.04 Preservar pilha/seleção por aba; voltar de detalhe à origem sem abrir caderno ou exercício diferente.
+- [x] F1.05 Remover callbacks que descartem exerciseId, styleId, variantId, prescriptionId ou textId.
+- [x] F1.06 Implementar vazio da biblioteca com botão Criar; nenhuma página/caderno de exemplo entra no acervo.
+- [x] F1.07 Criar caderno com nome obrigatório de 1–40 caracteres, espaços externos removidos, papel e estilo; erro de validação junto ao campo.
+- [x] F1.08 Fazer Cancelar não gravar nada; Criar só fechar formulário após persistência confirmada.
+- [x] F1.09 Listar nome, papel/estilo, contagem real, última atualização e estado de save; remover dados ilustrativos.
+- [x] F1.10 Implementar busca por nome sem diferenciar maiúsculas e acentos; mostrar vazio de busca e limpar filtro.
+- [x] F1.11 Implementar abrir, renomear e excluir caderno com confirmação identificando o alvo; cancelamento preserva tudo.
+- [x] F1.12 Mostrar grade de páginas com miniaturas derivadas dos strokes reais, página ativa e contagem consistente.
+- [x] F1.13 Implementar adicionar e renomear página; página criada tem ID próprio e papel/pauta do caderno.
+- [x] F1.14 Implementar duplicar página com novos IDs de página/strokes e mesma geometria; editar cópia não altera original.
+- [x] F1.15 Implementar excluir página com confirmação; se ativa, selecionar vizinha válida; sem páginas, mostrar Criar página.
+- [x] F1.16 Conectar exportar página à seleção da página exata; concluir o export externo em F5.
+- [x] F1.17 Expor caneta fina/média/grossa e cinco cores do fluxo 03; manter seleção visível e persistida.
+- [x] F1.18 Fazer undo/redo operar na página atual; criação de stroke após undo invalida redo adequadamente.
+- [x] F1.19 Implementar borracha por stroke sem converter gesto de apagamento em tinta; undo restaura conteúdo apagado.
+- [x] F1.20 Implementar painel de guias: estilo, preview, inclinação, aplicar e redefinir; Copperplate padrão 52°.
+- [x] F1.21 Persistir configuração e dimensões lógicas por página; resize/reabertura não deforma os pontos.
+- [x] F1.22 Ordenar gravações/trocas de página; stroke em curso não pode ser salvo na página recém-selecionada.
+- [x] F1.23 Exibir salvando/salvo/erro com tentar novamente; não apagar versão anterior por falha.
+- [x] F1.24 Testar pela UI dois cadernos e três páginas, duplicação, exclusão, troca rápida e reinício sem mistura de dados.
+- [x] F1.25 Capturar screenshots reais de biblioteca vazia, criação, lista, grade, caneta, borracha e guias; comparar aos PNGs.
+- [x] F1.G Registrar F1 como validado somente com percurso biblioteca → página → escrita → reinício completo.
 
 ## F2 — Aula e treino com resultado real
 

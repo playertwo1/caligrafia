@@ -22,9 +22,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -87,12 +91,134 @@ fun NotebookLibraryScreen(
     currentNotebookId: String?,
     onSelectNotebook: (Notebook) -> Unit,
     onCreateNotebook: (String, GuidelineConfig, String) -> Unit,
+    onRenameNotebook: ((Notebook, String) -> Unit)? = null,
     onDeleteNotebook: (Notebook) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showCreateSheet by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var notebookToRename by remember { mutableStateOf<Notebook?>(null) }
+    var renameText by remember { mutableStateOf("") }
+    var notebookToDelete by remember { mutableStateOf<Notebook?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
+
+    val filteredNotebooks = remember(notebooks, searchQuery) {
+        if (searchQuery.isBlank()) notebooks
+        else {
+            val q = java.text.Normalizer.normalize(searchQuery.trim().lowercase(Locale.ROOT), java.text.Normalizer.Form.NFD)
+                .replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
+            notebooks.filter {
+                val titleNorm = java.text.Normalizer.normalize(it.title.lowercase(Locale.ROOT), java.text.Normalizer.Form.NFD)
+                    .replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
+                titleNorm.contains(q)
+            }
+        }
+    }
+
+    if (notebookToRename != null) {
+        val target = notebookToRename!!
+        var localRenameError by remember(target) { mutableStateOf<String?>(null) }
+        AlertDialog(
+            onDismissRequest = { notebookToRename = null },
+            title = {
+                Text(
+                    text = "Renomear caderno",
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Serif,
+                    color = ScribeTextPrimary
+                )
+            },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = renameText,
+                        onValueChange = {
+                            if (it.length <= 40) {
+                                renameText = it
+                                localRenameError = if (it.trim().isEmpty()) "O nome não pode estar vazio" else null
+                            }
+                        },
+                        label = { Text("Nome do caderno") },
+                        isError = localRenameError != null,
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = ScribeBluePrimary,
+                            unfocusedBorderColor = ScribeSurfaceBorder
+                        )
+                    )
+                    if (localRenameError != null) {
+                        Text(
+                            text = localRenameError!!,
+                            color = Color(0xFFDC2626),
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val clean = renameText.trim()
+                        if (clean.isNotEmpty() && clean.length <= 40) {
+                            onRenameNotebook?.invoke(target, clean)
+                            notebookToRename = null
+                        } else {
+                            localRenameError = "O nome deve ter entre 1 e 40 caracteres"
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = ScribeBluePrimary)
+                ) {
+                    Text("Salvar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { notebookToRename = null }) {
+                    Text("Cancelar", color = ScribeTextSecondary)
+                }
+            }
+        )
+    }
+
+    if (notebookToDelete != null) {
+        val target = notebookToDelete!!
+        AlertDialog(
+            onDismissRequest = { notebookToDelete = null },
+            title = {
+                Text(
+                    text = "Excluir caderno?",
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Serif,
+                    color = ScribeTextPrimary
+                )
+            },
+            text = {
+                Text(
+                    text = "Tem certeza que deseja excluir o caderno '${target.title}' e todas as suas ${target.pageIds.size} páginas? Esta ação não pode ser desfeita.",
+                    fontSize = 14.sp,
+                    color = ScribeTextSecondary
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDeleteNotebook(target)
+                        notebookToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626))
+                ) {
+                    Text("Excluir definitivamente", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { notebookToDelete = null }) {
+                    Text("Cancelar", color = ScribeTextSecondary)
+                }
+            }
+        )
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -163,19 +289,72 @@ fun NotebookLibraryScreen(
                 // Estado Vazio Conforme Mockup (PNG 01 - Estado 1)
                 EmptyNotebooksView(onCreateClick = { showCreateSheet = true })
             } else {
-                // Lista de Cadernos (PNG 01 - Estado 3)
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                    contentPadding = PaddingValues(bottom = 24.dp)
-                ) {
-                    items(notebooks, key = { it.id }) { nb ->
-                        NotebookItemCard(
-                            notebook = nb,
-                            isSelected = nb.id == currentNotebookId,
-                            onClick = { onSelectNotebook(nb) },
-                            onDelete = { onDeleteNotebook(nb) }
-                        )
+                // Barra de busca
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Buscar caderno por título...", color = ScribeTextMuted, fontSize = 13.sp) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = ScribeTextSecondary, modifier = Modifier.size(18.dp)) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }, modifier = Modifier.size(24.dp)) {
+                                Icon(Icons.Default.Clear, contentDescription = "Limpar busca", tint = ScribeTextSecondary, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = ScribeBluePrimary,
+                        unfocusedBorderColor = ScribeSurfaceBorder,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    )
+                )
+
+                if (searchQuery.isNotBlank() && filteredNotebooks.isEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 40.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("Nenhum caderno encontrado", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ScribeTextPrimary)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text("Nenhum resultado para \"$searchQuery\"", fontSize = 13.sp, color = ScribeTextSecondary)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { searchQuery = "" },
+                            colors = ButtonDefaults.buttonColors(containerColor = ScribeBluePrimary),
+                            shape = RoundedCornerShape(20.dp)
+                        ) {
+                            Text("Limpar busca", fontSize = 12.sp)
+                        }
+                    }
+                } else {
+                    // Lista de Cadernos (PNG 01 - Estado 3)
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                        contentPadding = PaddingValues(bottom = 24.dp)
+                    ) {
+                        items(filteredNotebooks, key = { it.id }) { nb ->
+                            NotebookItemCard(
+                                notebook = nb,
+                                isSelected = nb.id == currentNotebookId,
+                                onClick = { onSelectNotebook(nb) },
+                                onRename = {
+                                    notebookToRename = nb
+                                    renameText = nb.title
+                                },
+                                onDelete = {
+                                    notebookToDelete = nb
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -351,6 +530,7 @@ private fun NotebookItemCard(
     notebook: Notebook,
     isSelected: Boolean,
     onClick: () -> Unit,
+    onRename: () -> Unit,
     onDelete: () -> Unit
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -430,6 +610,26 @@ private fun NotebookItemCard(
                     onDismissRequest = { menuExpanded = false }
                 ) {
                     DropdownMenuItem(
+                        text = { Text("Abrir caderno") },
+                        onClick = {
+                            menuExpanded = false
+                            onClick()
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.MenuBook, contentDescription = null)
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Renomear") },
+                        onClick = {
+                            menuExpanded = false
+                            onRename()
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.Edit, contentDescription = null)
+                        }
+                    )
+                    DropdownMenuItem(
                         text = { Text("Excluir caderno", color = Color(0xFFDC2626)) },
                         onClick = {
                             menuExpanded = false
@@ -452,6 +652,7 @@ fun CreateNotebookBottomSheet(
     onCreate: (String, GuidelineConfig, String) -> Unit
 ) {
     var notebookName by remember { mutableStateOf("") }
+    var nameError by remember { mutableStateOf<String?>(null) }
     var selectedCoverStyle by remember { mutableStateOf(NotebookCoverStyle.PAPEL_ARTESANAL) }
     var selectedPaperType by remember { mutableStateOf("COPPERPLATE_52") } // COPPERPLATE_52, ESCOLAR, BRANCO
 
@@ -480,16 +681,33 @@ fun CreateNotebookBottomSheet(
             Spacer(modifier = Modifier.height(6.dp))
             OutlinedTextField(
                 value = notebookName,
-                onValueChange = { if (it.length <= 40) notebookName = it },
+                onValueChange = {
+                    if (it.length <= 40) {
+                        notebookName = it
+                        if (nameError != null && it.trim().isNotEmpty()) {
+                            nameError = null
+                        }
+                    }
+                },
                 placeholder = { Text("Ex: Estudos de Cursiva Inglesa", color = ScribeTextMuted) },
+                isError = nameError != null,
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = ScribeBluePrimary,
-                    unfocusedBorderColor = ScribeSurfaceBorder
+                    unfocusedBorderColor = ScribeSurfaceBorder,
+                    errorBorderColor = Color(0xFFDC2626)
                 )
             )
+            if (nameError != null) {
+                Text(
+                    text = nameError!!,
+                    color = Color(0xFFDC2626),
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "${notebookName.length}/40",
@@ -650,13 +868,22 @@ fun CreateNotebookBottomSheet(
 
                 Button(
                     onClick = {
+                        val cleanName = notebookName.trim()
+                        if (cleanName.isEmpty()) {
+                            nameError = "O nome do caderno não pode estar vazio"
+                            return@Button
+                        }
+                        if (cleanName.length > 40) {
+                            nameError = "O nome deve ter no máximo 40 caracteres"
+                            return@Button
+                        }
                         val config = when (selectedPaperType) {
                             "COPPERPLATE_52" -> GuidelineConfig.copperplate()
                             "ESCOLAR" -> GuidelineConfig.school()
                             else -> GuidelineConfig.copperplate()
                         }
                         onCreate(
-                            notebookName.ifBlank { "Caderno ${selectedCoverStyle.title}" },
+                            cleanName,
                             config,
                             selectedCoverStyle.id
                         )

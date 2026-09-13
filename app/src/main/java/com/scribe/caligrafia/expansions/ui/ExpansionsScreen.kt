@@ -3,6 +3,7 @@ package com.scribe.caligrafia.expansions.ui
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -94,6 +95,7 @@ fun ExpansionsScreen(
     viewModel: ExpansionsViewModel,
     teacherViewModel: com.scribe.caligrafia.teacher.ui.TeacherViewModel? = null,
     alphabetViewModel: com.scribe.caligrafia.alphabet.ui.AlphabetViewModel? = null,
+    stylusLabViewModel: com.scribe.caligrafia.inspector.viewmodel.StylusLabViewModel? = null,
     onBack: () -> Unit,
     onNavigateToPracticeWithText: ((PassageItem) -> Unit)? = null,
     onNavigateToPractice: ((String) -> Unit)? = null,
@@ -124,7 +126,7 @@ fun ExpansionsScreen(
                             color = com.scribe.caligrafia.ui.theme.ScribeTextPrimary
                         )
                         Text(
-                            text = "Diagnóstico, Alfabeto, Assinaturas, Backup e S Pen",
+                            text = "Alfabeto, Professor, Estilos, Assinaturas, Textos, Backup, S Pen, Laboratório e Preferências",
                             fontSize = 11.sp,
                             color = com.scribe.caligrafia.ui.theme.ScribeTextMuted
                         )
@@ -182,21 +184,6 @@ fun ExpansionsScreen(
 
             // Conteúdo da aba selecionada
             when (uiState.activeTab) {
-                ExpansionsTab.TEACHER -> {
-                    if (teacherViewModel != null) {
-                        com.scribe.caligrafia.teacher.ui.TeacherScreen(
-                            viewModel = teacherViewModel,
-                            onBack = onBack,
-                            onStartPractice = { exerciseId ->
-                                onNavigateToPractice?.invoke(exerciseId)
-                            }
-                        )
-                    } else {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("Diagnóstico do Professor indisponível")
-                        }
-                    }
-                }
                 ExpansionsTab.ALPHABET -> {
                     if (alphabetViewModel != null) {
                         com.scribe.caligrafia.alphabet.ui.AlphabetScreen(
@@ -215,13 +202,41 @@ fun ExpansionsScreen(
                         }
                     }
                 }
+                ExpansionsTab.TEACHER -> {
+                    if (teacherViewModel != null) {
+                        com.scribe.caligrafia.teacher.ui.TeacherScreen(
+                            viewModel = teacherViewModel,
+                            onBack = onBack,
+                            onStartPractice = { exerciseId ->
+                                onNavigateToPractice?.invoke(exerciseId)
+                            }
+                        )
+                    } else {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("Diagnóstico do Professor indisponível")
+                        }
+                    }
+                }
+                ExpansionsTab.STYLES -> StylesCatalogContent(
+                    onNavigateToNotebookWithStyle = onNavigateToNotebookWithStyle
+                )
+                ExpansionsTab.SIGNATURE -> SignatureStudioContent(viewModel = viewModel)
                 ExpansionsTab.TEXTS -> PassagesContent(
                     viewModel = viewModel,
                     onNavigateToPracticeWithText = onNavigateToPracticeWithText
                 )
-                ExpansionsTab.SIGNATURE -> SignatureStudioContent(viewModel = viewModel)
                 ExpansionsTab.BACKUP -> BackupContent(viewModel = viewModel)
                 ExpansionsTab.SPEN_SETTINGS -> SpenAndWatchContent(viewModel = viewModel)
+                ExpansionsTab.STYLUS_LAB -> {
+                    if (stylusLabViewModel != null) {
+                        com.scribe.caligrafia.inspector.ui.InspectorScreen(viewModel = stylusLabViewModel)
+                    } else {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("Laboratório Stylus indisponível")
+                        }
+                    }
+                }
+                ExpansionsTab.PREFERENCES -> PreferencesContent(viewModel = viewModel)
             }
         }
     }
@@ -1098,6 +1113,264 @@ private fun SpenAndWatchContent(viewModel: ExpansionsViewModel) {
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Testar Pulso Háptico no Dispositivo", fontSize = 12.sp)
                     }
+                }
+            }
+        }
+    }
+}
+
+// -------------------------------------------------------------
+// 7. ABA CATÁLOGO DE ESTILOS (F1.02 / F1.03 - PARCIAL F7)
+// -------------------------------------------------------------
+
+@Composable
+private fun StylesCatalogContent(
+    onNavigateToNotebookWithStyle: ((String) -> Unit)?
+) {
+    val allCatalogStyles = remember {
+        com.scribe.caligrafia.style.model.BuiltInStyles.ALL + listOf(
+            com.scribe.caligrafia.expansions.styles.ExpandedStyles.GOTICA_TEXTURA,
+            com.scribe.caligrafia.expansions.styles.ExpandedStyles.ITALICA_CHANCELERESCA,
+            com.scribe.caligrafia.expansions.styles.ExpandedStyles.UNCIAL_CLASSICA
+        )
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
+                border = BorderStroke(1.dp, Color(0xFFBFDBFE)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Info, contentDescription = null, tint = com.scribe.caligrafia.ui.theme.ScribeBluePrimary, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Catálogo de Estilos Caligráficos",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = com.scribe.caligrafia.ui.theme.ScribeBluePrimary
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Explore os estilos históricos e canônicos do Scribe. Selecione um estilo para abrir o caderno com as pautas e ângulos ideais calculados.",
+                        fontSize = 12.sp,
+                        color = Color(0xFF334155),
+                        lineHeight = 17.sp
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Status: Estilos canônicos ativos. Importação de fontes externas TTF/OTF: PARCIAL (F7).",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF1E40AF)
+                    )
+                }
+            }
+        }
+
+        items(allCatalogStyles, key = { it.id }) { style ->
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = style.name,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Serif,
+                            fontSize = 16.sp,
+                            color = com.scribe.caligrafia.ui.theme.ScribeTextPrimary
+                        )
+                        Box(
+                            modifier = Modifier
+                                .background(Color(0xFFF1F5F9), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = "${style.defaultSlantAngle.toInt()}° inclinação",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = com.scribe.caligrafia.ui.theme.ScribeBluePrimary
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = style.description,
+                        fontSize = 12.sp,
+                        color = com.scribe.caligrafia.ui.theme.ScribeTextSecondary,
+                        lineHeight = 16.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFFFAFAFA), RoundedCornerShape(8.dp))
+                            .border(1.dp, Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
+                            .padding(10.dp)
+                    ) {
+                        Text(
+                            text = style.sampleAlphabet,
+                            fontSize = 13.sp,
+                            fontFamily = FontFamily.Serif,
+                            fontStyle = FontStyle.Italic,
+                            color = com.scribe.caligrafia.ui.theme.ScribeTextPrimary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = { onNavigateToNotebookWithStyle?.invoke(style.id) },
+                        colors = ButtonDefaults.buttonColors(containerColor = com.scribe.caligrafia.ui.theme.ScribeBluePrimary),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Praticar com este estilo no Caderno", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// -------------------------------------------------------------
+// 8. ABA PREFERÊNCIAS & ACESSIBILIDADE (Fluxo 12 - PARCIAL F6)
+// -------------------------------------------------------------
+
+@Composable
+private fun PreferencesContent(viewModel: ExpansionsViewModel) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Preferências de Escrita & Ergonomia",
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Serif,
+                        fontSize = 16.sp,
+                        color = com.scribe.caligrafia.ui.theme.ScribeTextPrimary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Ajustes de acessibilidade conforme referências do Fluxo 12.",
+                        fontSize = 12.sp,
+                        color = com.scribe.caligrafia.ui.theme.ScribeTextMuted
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Modo Canhoto", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                            Text("Inverte a posição dos controles para evitar oclusão pela mão ao escrever.", fontSize = 11.sp, color = Color(0xFF64748B))
+                        }
+                        Switch(
+                            checked = uiState.isLeftHanded,
+                            onCheckedChange = { viewModel.setLeftHanded(it) }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Alto Contraste", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                            Text("Aumenta a opacidade das pautas-guia e bordas de traçado.", fontSize = 11.sp, color = Color(0xFF64748B))
+                        }
+                        Switch(
+                            checked = uiState.isHighContrast,
+                            onCheckedChange = { viewModel.setHighContrast(it) }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Numeração das Guias", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                            Text("Exibe a altura x e proporções (ex: 2:1:2) na margem esquerda.", fontSize = 11.sp, color = Color(0xFF64748B))
+                        }
+                        Switch(
+                            checked = uiState.showGuideNumbers,
+                            onCheckedChange = { viewModel.setShowGuideNumbers(it) }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    Text(
+                        text = "Meta diária de treino: ${uiState.dailyPracticeGoalMinutes} minutos",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp,
+                        color = Color(0xFF1E293B)
+                    )
+                    Slider(
+                        value = uiState.dailyPracticeGoalMinutes.toFloat(),
+                        onValueChange = { viewModel.setDailyPracticeGoalMinutes(it.toInt()) },
+                        valueRange = 5f..60f,
+                        steps = 10,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Info, contentDescription = null, tint = Color(0xFF64748B), modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Status: Preferências locais persistidas. Agendamento de alarmes no sistema (AlarmManager): PARCIAL (F6).",
+                        fontSize = 11.sp,
+                        color = Color(0xFF475569)
+                    )
                 }
             }
         }

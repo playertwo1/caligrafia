@@ -34,3 +34,49 @@
 
 #### [F0.G] Gate F0
 - **Resultado:** Integridade confirmada. Manifestos inválidos não modificam ativos e leitores abertos recebem traços substituídos. Fase F0 concluída com sucesso.
+
+---
+
+## Fase F1 — Navegação, biblioteca e caderno completos (Concluída e Verificada)
+
+### 1. Resumo da Execução de F1
+- **Data:** 2026-09-13
+- **Total de Testes Unitários:** 264 testes passando / 0 falhas / 0 erros
+- **Build Status:** `testDebugUnitTest` SUCCESS (9s), `assembleDebug` SUCCESS (26s)
+
+### 2. Evidências Específicas por Item do Checklist
+
+#### [F1.01 - F1.05] Navegação e Hub Canônico
+- **Hub Praticar:** Raiz de Praticar (`GuidedPracticeScreen.kt`) implementada como Hub com categorias pedagógicas e seleção de aula; o timer de prática só inicia no momento em que o usuário inicia a tentativa de escrita.
+- **Menu Mais Canônico:** Expandido em `ExpansionsTab` e `ExpansionsScreen.kt` para cobrir os 9 destinos canônicos nomeados:
+  1. *Meu Alfabeto* (`AlphabetScreen`)
+  2. *Professor* (`TeacherScreen`)
+  3. *Estilos* (`StylesCatalogContent` com catálogo completo de estilos históricos)
+  4. *Assinaturas* (`SignatureStudioContent`)
+  5. *Cópia de Textos* (`PassagesContent`)
+  6. *Backup* (`BackupContent`)
+  7. *S Pen e Watch* (`SpenAndWatchContent`)
+  8. *Laboratório* (`InspectorScreen` conectado via `stylusLabViewModel`)
+  9. *Preferências* (`PreferencesContent` implementando Fluxo 12)
+- **Mapeamento de Destinos:** Todas as 9 rotas conectadas a telas reais. Destinos dependentes de serviços de sistema ou módulos futuros registrados com badges transparentes de `PARCIAL` (ex: importação de fontes TTF em F7 e AlarmManager em F6).
+- **Preservação de Pilha e Seleção:** Back stack e callbacks preservam integralmente os identificadores (`exerciseId`, `styleId`, `targetId`, `passage`).
+
+#### [F1.06 - F1.11] Biblioteca de Cadernos, Busca e Gerenciamento
+- **Estado Vazio da Biblioteca:** Apresenta card convidativo com botão "+ Novo caderno", sem seeds fictícias ou páginas fantasmas.
+- **Validação de Criação de Caderno:** Bloqueio obrigatório de nome em branco ou com mais de 40 caracteres com feedback visual de erro inline em vermelho e impedimento do submit.
+- **Busca Insensível a Caixa e Acentos:** Normalização Unicode NFD aplicada tanto na busca quanto no título; estado vazio de busca dedicado com botão "Limpar busca".
+- **Renomeação e Exclusão de Caderno:** Implementado diálogo de confirmação para renomear (1–40 caracteres) e diálogo de exclusão identificando o caderno e sua quantidade de páginas; cancelamento preserva dados intactos.
+- **Testes Unitários:** `NotebookRepositoryTest.renameNotebook_valid_title_updates_title_and_updatedAt` e `renameNotebook_invalid_blank_or_too_long_returns_false` passam 100%.
+
+#### [F1.12 - F1.16] Organização e Duplicação de Páginas
+- **Duplicação de Páginas:** Implementado `duplicatePage` em `LocalNotebookRepository.kt`. Clona a página atribuindo novo ID único de página, clonando cada stroke com novos IDs de traço mas preservando milimetricamente as coordenadas geométricas, timestamps e pressões.
+- **Isolamento de Cópia:** Comprovado por `NotebookRepositoryTest.duplicatePage_clones_page_with_new_ids_and_preserves_strokes` que modificar os traços da página duplicada não altera os traços da página original.
+- **Exclusão de Página:** Diálogo com confirmação; caso a página excluída seja a ativa, seleciona a vizinha válida mais próxima.
+
+#### [F1.17 - F1.23] Ferramentas de Escrita, Borracha e Guias
+- **Pena e Espessuras:** Fina, Média e Grossa expostas na UI com 5 tintas caligráficas canônicas (`CalligraphyColor`) e badges de seleção.
+- **Undo/Redo e Borracha:** Desfazer e refazer operam diretamente na página atual; apagamento por stroke remove vetores sem gerar tinta e permite restauração completa via Undo.
+- **Pautas-Guia e Persistência:** Copperplate 52° canônica com slider de inclinação e preview; persistência lógica por página protegida por mutex (`pagePersistenceMutex`) para evitar cruzamento de traços durante alternância rápida de páginas.
+
+#### [F1.G] Gate F1
+- **Resultado:** Percurso biblioteca → criação de caderno → páginas → escrita vetorial → duplicação → recarga 100% validado. 264 testes unitários passando. Fase F1 concluída com sucesso.
