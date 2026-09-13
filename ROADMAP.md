@@ -1,6 +1,8 @@
 > **Revisão independente vigente:** fechamento M0–M8 não aprovado na v0.8.0. Os status de conclusão históricos abaixo são alegações do implementador. Ver [auditoria V3](docs/ANTIGRAVITY_AUDIT_REVIEW_V3.md) e [referências visuais com instruções](docs/design/fluxos-v1/README.md). A construção visual deve seguir as ondas de estabilização.
 # ROADMAP — Scribe
 
+> **Ordem de trabalho do Antigravity:** abrir o [checklist de execução](docs/ANTIGRAVITY_EXECUTION_CHECKLIST.md), começar pela primeira caixa desmarcada e registrar evidência por ID. As decisões de produto estão fixadas ali; o roadmap funcional é a especificação complementar. Não declarar aprovação independente ao marcar caixas de implementação.
+
 ## Prioridade vigente — entrega funcional dos mockups (2026-09-13)
 
 O usuário autorizou explicitamente transformar as 12 áreas do painel e os 12 fluxos complementares em funcionalidades reais. O MVP existente é o ponto de partida. Os marcos históricos abaixo não significam entrega comprovada de todos esses percursos.

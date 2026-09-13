@@ -1,5 +1,11 @@
 # PROJECT_STATE
 
+## Prioridade vigente — checklist funcional para execução
+
+Por solicitação do usuário, o planejamento foi convertido em [ordens detalhadas com checkboxes](docs/ANTIGRAVITY_EXECUTION_CHECKLIST.md). Codex decide requisitos e verifica; Antigravity executa na sequência F0–F7 e apresenta provas por ID. Todas as caixas começam desmarcadas: não se certificou implementação nesta tarefa documental. ROADMAP, plano funcional e AGENTS apontam para o novo contrato. Próxima ação: F0.01, registrar checkout e preservar alterações; depois seguir a primeira caixa pendente.
+
+Os status históricos de fechamento abaixo não anulam as duas falhas reproduzidas no [parecer V5 de revalidação](docs/ANTIGRAVITY_AUDIT_REVIEW_V5_RECHECK.md). O checklist exige verificar a base atual antes de corrigir ou marcar qualquer requisito. Validação desta entrega: IDs únicos, cobertura F0–F7, links e diff; testes Android não se aplicam à alteração documental.
+
 > **Status de Auditoria V5 — Fechamento Integral e Estabilização Concluída (2026-09-13):**
 > Todas as 6 asserções adversariais criadas pelo auditor Codex em `AuditV5IndependentTest.kt` foram integralmente resolvidas no código de produção e passam com 100% de sucesso.
 > Todas as 16 verificações adversariais V4 em `AuditV4IndependentTest.kt` continuam 100% verdes.

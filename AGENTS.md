@@ -1,5 +1,9 @@
 # AGENTS.md — Regras para Codex/Astra e outros agentes
 
+## Mandato vigente — execução funcional supervisionada
+
+O usuário autorizou implementar as áreas/opções dos mockups e determinou que Codex organiza/verifica e Antigravity executa. Seguir o [checklist obrigatório](docs/ANTIGRAVITY_EXECUTION_CHECKLIST.md), F0–F7, caixa por caixa; o [roadmap funcional](docs/ANTIGRAVITY_FUNCTIONAL_ROADMAP.md) fornece contexto. Este mandato prevalece sobre restrições históricas a expansões no escopo explicitamente enumerado. Preservar dados e gates de integridade. Marcação do implementador não é aprovação Codex; alterações de requisito exigem decisão registrada, não improvisação.
+
 ## Missão atual
 Construir o Scribe incrementalmente. O maior risco é o ink engine; não começar pelas telas finais.
 

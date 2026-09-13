@@ -1,5 +1,7 @@
 # Roadmap executável — dos mockups ao Scribe funcional
 
+> **Começar pelo [checklist obrigatório de execução](ANTIGRAVITY_EXECUTION_CHECKLIST.md).** Ele determina a ordem, decisões fixas e caixas individuais com provas. Este documento detalha objetivos e escopo; não substitui o checklist. Codex organiza/verifica; Antigravity executa e comprova.
+
 ## Mandato e resultado esperado
 
 Pedido explícito do usuário em 2026-09-13: o MVP abre e permite escrever, mas faltam opções e objetivos dos PNGs de `docs/design`; implementar de verdade todas as áreas planejadas. Este documento passa a ser a sequência de produto vigente, vinculada ao ROADMAP. Substitui a restrição antiga de apenas reproduzir aparência ou manter as opções das imagens como propostas indefinidas. Mantém preservação de dados, execução incremental e comprovação por fluxo.
