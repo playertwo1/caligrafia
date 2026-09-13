@@ -9,6 +9,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -87,6 +89,7 @@ import com.scribe.caligrafia.core.model.SlantConfig
 import com.scribe.caligrafia.core.model.ToolConfig
 import com.scribe.caligrafia.core.model.ToolMode
 import com.scribe.caligrafia.notebook.viewmodel.NotebookPracticeViewModel
+import com.scribe.caligrafia.style.model.ScribeStyle
 import com.scribe.caligrafia.ui.theme.ScribeBluePrimary
 import com.scribe.caligrafia.ui.theme.ScribePaper
 import com.scribe.caligrafia.ui.theme.ScribeSurfaceBorder
@@ -388,6 +391,13 @@ fun NotebookPracticeScreen(
                         ActiveToolPanel.GUIDELINES -> {
                             GuidelinesSettingsCard(
                                 currentConfig = uiState.currentPage?.guidelineConfig ?: GuidelineConfig.copperplate(),
+                                styles = uiState.availableStyles,
+                                currentStyle = uiState.currentStyle,
+                                onSelectStyle = { styleId ->
+                                    viewModel.selectStyle(styleId, adaptPageGuidelines = true)
+                                    canvasViewRef?.guidelineConfig = viewModel.uiState.value.currentPage?.guidelineConfig
+                                    canvasViewRef?.requestRedraw()
+                                },
                                 onConfigChanged = { cfg ->
                                     viewModel.setGuidelineConfig(cfg)
                                     canvasViewRef?.guidelineConfig = cfg
@@ -650,13 +660,16 @@ private fun EraserSettingsCard(
 @Composable
 private fun GuidelinesSettingsCard(
     currentConfig: GuidelineConfig,
+    styles: List<ScribeStyle> = emptyList(),
+    currentStyle: ScribeStyle? = null,
+    onSelectStyle: (String) -> Unit = {},
     onConfigChanged: (GuidelineConfig) -> Unit
 ) {
     var slantAngle by remember { mutableStateOf(currentConfig.slant?.angleDegrees ?: 52.0f) }
 
     Column(
         modifier = Modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -664,17 +677,37 @@ private fun GuidelinesSettingsCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Pautas e Inclinação",
+                text = "Pautas e Estilos Caligráficos",
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
                 color = ScribeTextPrimary
             )
             Text(
-                text = "Copperplate: 52°",
+                text = currentStyle?.let { "${it.name}: ${it.defaultSlantAngle.toInt()}°" } ?: "${slantAngle.roundToInt()}°",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = ScribeBluePrimary
             )
+        }
+
+        // Seletor de estilos caligráficos (inclui canônicos, expandidos e fontes importadas R17)
+        if (styles.isNotEmpty()) {
+            Text(text = "Estilo Caligráfico:", fontSize = 11.sp, color = ScribeTextSecondary)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                styles.forEach { style ->
+                    val isSelected = currentStyle?.id == style.id
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { onSelectStyle(style.id) },
+                        label = { Text("${style.name} (${style.defaultSlantAngle.toInt()}°)", fontSize = 11.sp) }
+                    )
+                }
+            }
         }
 
         // Slant slider (Copperplate canônico a 52°)

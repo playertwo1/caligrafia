@@ -78,6 +78,8 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
             application.filesDir ?: java.io.File(System.getProperty("java.io.tmpdir", "."), "scribe_guided_attempts")
         )
 
+    var onAttemptEvaluated: ((glyphId: String, scorePercent: Int) -> Unit)? = null
+
     private val _state = MutableStateFlow(
         GuidedPracticeState(
             availableStyles = styleEngine.getAvailableStyles(),
@@ -261,6 +263,7 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
                 styleId = currentStyle.id
             )
             attemptRepository.saveAttempt(attemptRecord)
+            onAttemptEvaluated?.invoke(currentGlyph.id, eval.scorePercent)
         }
 
         return eval

@@ -36,6 +36,7 @@ import java.util.UUID
 enum class ExpansionsTab(val title: String) {
     TEACHER("Diagnóstico"),
     ALPHABET("Meu Alfabeto"),
+    TEXTS("Textos"),
     SIGNATURE("Assinaturas"),
     BACKUP("Backup"),
     SPEN_SETTINGS("Caneta S Pen")
@@ -86,11 +87,17 @@ class ExpansionsViewModel @JvmOverloads constructor(
 
     init {
         loadBaselineSignature()
+        val savedCurve = try {
+            val prefs = application.getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
+            prefs.getString("pressure_curve", null)?.let { PressureCurveType.valueOf(it) }
+        } catch (_: Throwable) { null } ?: PressureCurveType.LINEAR
+
         _uiState.update {
             it.copy(
                 isWatchConnected = watchBridge.isWatchConnected(),
                 postureAlertMinutes = watchBridge.postureAlertThresholdMinutes,
-                isPostureReminderEnabled = watchBridge.isPostureReminderEnabled
+                isPostureReminderEnabled = watchBridge.isPostureReminderEnabled,
+                pressureCurve = savedCurve
             )
         }
     }
@@ -349,6 +356,11 @@ class ExpansionsViewModel @JvmOverloads constructor(
     // --- S Pen & Watch ---
 
     fun setPressureCurve(curve: PressureCurveType) {
+        try {
+            val prefs = getApplication<Application>().getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
+            prefs.edit().putString("pressure_curve", curve.name).apply()
+        } catch (_: Throwable) {}
+
         _uiState.update {
             it.copy(
                 pressureCurve = curve,

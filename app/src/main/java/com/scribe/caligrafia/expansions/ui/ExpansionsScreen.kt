@@ -215,6 +215,10 @@ fun ExpansionsScreen(
                         }
                     }
                 }
+                ExpansionsTab.TEXTS -> PassagesContent(
+                    viewModel = viewModel,
+                    onNavigateToPracticeWithText = onNavigateToPracticeWithText
+                )
                 ExpansionsTab.SIGNATURE -> SignatureStudioContent(viewModel = viewModel)
                 ExpansionsTab.BACKUP -> BackupContent(viewModel = viewModel)
                 ExpansionsTab.SPEN_SETTINGS -> SpenAndWatchContent(viewModel = viewModel)
@@ -645,6 +649,18 @@ private fun PassagesContent(
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text("Finalizar e Avaliar Cadência", fontSize = 12.sp)
                             }
+                        }
+                    }
+
+                    if (onNavigateToPracticeWithText != null) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        OutlinedButton(
+                            onClick = { onNavigateToPracticeWithText(uiState.selectedPassage) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Praticar Texto no Caderno", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }

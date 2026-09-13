@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -53,8 +54,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import com.scribe.caligrafia.learning.ui.LearningHubScreen
+import com.scribe.caligrafia.learning.ui.LearningViewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -88,6 +92,7 @@ import com.scribe.caligrafia.ui.theme.ScribeTextSecondary
 @Composable
 fun GuidedPracticeScreen(
     viewModel: GuidedPracticeViewModel,
+    learningViewModel: LearningViewModel? = null,
     onNavigateBack: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
@@ -96,6 +101,22 @@ fun GuidedPracticeScreen(
     var showGlyphMenu by remember { mutableStateOf(false) }
     var showStyleMenu by remember { mutableStateOf(false) }
     var showFeedbackSheet by remember { mutableStateOf(false) }
+    var showLearningHub by rememberSaveable { mutableStateOf(false) }
+
+    val learningUiState = learningViewModel?.uiState?.collectAsState()?.value
+    val activeCurriculumSession = learningUiState?.activeSession
+
+    if (showLearningHub && learningViewModel != null) {
+        LearningHubScreen(
+            viewModel = learningViewModel,
+            onNavigateBack = { showLearningHub = false },
+            onNavigateToPractice = { targetId ->
+                viewModel.selectGlyphBySymbolOrId(targetId)
+                showLearningHub = false
+            }
+        )
+        return
+    }
 
     LaunchedEffect(state.feedbackMessage) {
         state.feedbackMessage?.let { msg ->
@@ -255,6 +276,18 @@ fun GuidedPracticeScreen(
                             }
                         }
                     }
+
+                    // Botão Aulas e Currículo M4
+                    if (learningViewModel != null) {
+                        IconButton(onClick = { showLearningHub = true }) {
+                            Icon(
+                                imageVector = Icons.Default.School,
+                                contentDescription = "Aulas e Currículo (M4)",
+                                tint = if (activeCurriculumSession != null) ScribeBluePrimary else ScribeTextSecondary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
                 }
             )
         }
@@ -265,6 +298,49 @@ fun GuidedPracticeScreen(
                 .padding(innerPadding)
                 .background(Color(0xFFF1F5F9))
         ) {
+            // Banner de Sessão Ativa do Currículo M4 (se houver aula em andamento)
+            if (activeCurriculumSession != null) {
+                Surface(
+                    color = Color(0xFFEFF6FF),
+                    border = BorderStroke(1.dp, Color(0xFFBFDBFE)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showLearningHub = true }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.School,
+                                contentDescription = null,
+                                tint = ScribeBluePrimary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "Aula M4: ${activeCurriculumSession.lesson.title} • ${activeCurriculumSession.currentPhase.title}",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = ScribeBluePrimary
+                            )
+                        }
+                        Text(
+                            text = "${activeCurriculumSession.phaseElapsedSeconds}s / ${activeCurriculumSession.phaseTotalSeconds}s",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = ScribeBluePrimary
+                        )
+                    }
+                }
+            }
+
             // 1. Barra de Opacidade do Modelo (Ghost Mode - 100% a 0% do Flow 04)
             Surface(
                 color = Color.White,

@@ -134,4 +134,43 @@ class MotorDiagnosticEngineTest {
         assertNotNull(diag.primaryWeakness)
         assertTrue(diag.overallScore in 0f..100f)
     }
+
+    @Test
+    fun `diagnoseAttempts honors targetSlantDegrees from individual attempt record`() {
+        // Gera traços a 68 graus (Cursiva Escolar)
+        val rad68 = Math.toRadians(68.0)
+        val pts = (0 until 10).map { pIdx ->
+            val dist = pIdx * 10.0
+            StrokePoint(
+                x = (300.0 - dist * cos(rad68)).toFloat(),
+                y = (100.0 + dist * sin(rad68)).toFloat(),
+                tMs = pIdx * 16L,
+                pressure = 0.5f,
+                tiltRad = null,
+                orientationRad = null
+            )
+        }
+        val stroke = createStroke("stroke_68", pts)
+        val attempt = PracticeAttemptRecord(
+            attemptId = "att_cursiva",
+            targetId = "a",
+            targetTitle = "Letra a Cursiva",
+            timestampMs = System.currentTimeMillis(),
+            strokes = listOf(stroke),
+            scorePercent = 90,
+            averageSlantDegrees = 68.0f,
+            durationMs = 2000L,
+            targetSlantDegrees = 68.0f,
+            styleId = "cursiva_escolar_br"
+        )
+
+        // Motor tem defaultTargetSlantDegrees = 52.0f, mas deve honrar os 68.0f da tentativa!
+        val diag = engine.diagnoseAttempts(listOf(attempt))
+        val slantEval = diag.dimensions[BiomechanicalDimension.SLANT_STABILITY]
+
+        assertNotNull(slantEval)
+        assertEquals(68.0f, slantEval?.targetValue ?: 0f, 0.5f)
+        assertEquals(68.0f, slantEval?.observedValue ?: 0f, 1.0f)
+        assertTrue("Deve ter pontuação excelente quando alinhado ao alvo contextual da tentativa", (slantEval?.score ?: 0f) >= 85f)
+    }
 }

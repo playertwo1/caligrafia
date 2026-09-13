@@ -44,6 +44,13 @@ class NotebookCanvasView(
             invalidate()
         }
 
+    var pressureCurve: com.scribe.caligrafia.expansions.styles.PressureCurveType
+        get() = renderer.pressureCurve
+        set(value) {
+            renderer.pressureCurve = value
+            invalidate()
+        }
+
     private var currentX = -1f
     private var currentY = -1f
     private var isHovering = false

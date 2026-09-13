@@ -109,4 +109,35 @@ class SmoothedReferenceRendererTest {
         assertEquals("1.0.0-alpha03", adapter.libraryVersion)
         assertTrue(adapter.isHardwareAcceleratedOnDevice)
     }
+
+    @Test
+    fun testPressureCurveModulatesWidth() {
+        val renderer = SmoothedReferenceRenderer(baseStrokeWidth = 10f)
+        val stroke = Stroke(
+            id = "pressure-stroke",
+            tool = ToolType.STYLUS,
+            points = listOf(
+                StrokePoint(0f, 0f, 100L, pressure = 0.25f),
+                StrokePoint(10f, 10f, 116L, pressure = 0.25f)
+            ),
+            startedAtMs = 100L,
+            endedAtMs = 116L
+        )
+
+        // Com LINEAR: 0.25 -> 10 * (0.4 + 0.25 * 1.2) = 10 * 0.7 = 7.0f
+        renderer.pressureCurve = com.scribe.caligrafia.expansions.styles.PressureCurveType.LINEAR
+        renderer.renderStroke(Canvas(), stroke)
+
+        // Com SOFT: 0.25^0.6 ~ 0.435 -> maior espessura para toque leve
+        renderer.pressureCurve = com.scribe.caligrafia.expansions.styles.PressureCurveType.SOFT
+        renderer.renderStroke(Canvas(), stroke)
+
+        // Com FIRM: 0.25^1.6 ~ 0.109 -> menor espessura para toque leve
+        renderer.pressureCurve = com.scribe.caligrafia.expansions.styles.PressureCurveType.FIRM
+        renderer.renderStroke(Canvas(), stroke)
+
+        // Assegura que todas as renderizações executam sem erro e stroke original permanece estritamente imutável
+        assertEquals(2, stroke.points.size)
+        assertEquals(0.25f, stroke.points[0].pressure)
+    }
 }

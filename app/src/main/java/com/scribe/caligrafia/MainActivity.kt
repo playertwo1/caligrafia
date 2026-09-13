@@ -7,6 +7,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -105,6 +106,12 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                LaunchedEffect(guidedPracticeViewModel, learningViewModel) {
+                    guidedPracticeViewModel.onAttemptEvaluated = { _, scorePercent ->
+                        learningViewModel.recordAttempt(scorePercent)
+                    }
+                }
+
                 Scaffold(
                     bottomBar = {
                         NavigationBar(
@@ -197,6 +204,7 @@ class MainActivity : ComponentActivity() {
                             ScribeTab.PRACTICE -> {
                                 GuidedPracticeScreen(
                                     viewModel = guidedPracticeViewModel,
+                                    learningViewModel = learningViewModel,
                                     onNavigateBack = { currentTab = ScribeTab.NOTEBOOK }
                                 )
                             }
@@ -212,7 +220,10 @@ class MainActivity : ComponentActivity() {
                                     teacherViewModel = teacherViewModel,
                                     alphabetViewModel = alphabetViewModel,
                                     onBack = { currentTab = ScribeTab.NOTEBOOK },
-                                    onNavigateToPracticeWithText = { currentTab = ScribeTab.PRACTICE },
+                                    onNavigateToPracticeWithText = { passage ->
+                                        notebookViewModel.selectStyle(passage.recommendedStyleId, adaptPageGuidelines = true)
+                                        currentTab = ScribeTab.NOTEBOOK
+                                    },
                                     onNavigateToPractice = { targetId ->
                                         guidedPracticeViewModel.selectGlyphBySymbolOrId(targetId)
                                         currentTab = ScribeTab.PRACTICE
@@ -241,6 +252,11 @@ class MainActivity : ComponentActivity() {
             guidedPracticeViewModel.onResumeLifecycle()
         } catch (e: Throwable) {
             android.util.Log.e("Scribe", "Erro no onResume do GuidedPractice", e)
+        }
+        try {
+            notebookViewModel.onResumeLifecycle()
+        } catch (e: Throwable) {
+            android.util.Log.e("Scribe", "Erro no onResume do Notebook", e)
         }
     }
 

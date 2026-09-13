@@ -84,6 +84,12 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
     private var pagesList: List<NotebookPage> = emptyList()
 
     init {
+        val savedCurve = try {
+            val prefs = application.getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
+            prefs.getString("pressure_curve", null)?.let { com.scribe.caligrafia.expansions.styles.PressureCurveType.valueOf(it) }
+        } catch (_: Throwable) { null } ?: com.scribe.caligrafia.expansions.styles.PressureCurveType.LINEAR
+        renderer.pressureCurve = savedCurve
+
         loadOrCreateDefaultNotebook()
     }
 
@@ -434,6 +440,31 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
     }
 
     /**
+     * R17: Importa uma fonte local TTF/OTF, registra como estilo e disponibiliza para o caderno.
+     */
+    fun importCustomFont(fontFile: File, name: String? = null, slantAngle: Float = 60.0f): Result<ScribeStyle> {
+        val result = styleEngine.importCustomFont(fontFile, name, slantAngle)
+        if (result.isSuccess) {
+            val imported = result.getOrNull()
+            _uiState.update {
+                it.copy(
+                    availableStyles = styleEngine.getAvailableStyles(),
+                    currentStyle = imported ?: it.currentStyle,
+                    notificationMessage = "Fonte importada com sucesso: ${imported?.name}"
+                )
+            }
+            if (imported != null) {
+                selectStyle(imported.id, adaptPageGuidelines = true)
+            }
+        } else {
+            _uiState.update {
+                it.copy(notificationMessage = "Erro ao importar fonte: ${result.exceptionOrNull()?.message}")
+            }
+        }
+        return result
+    }
+
+    /**
      * A06: Flush de segurança quando a tela é pausada ou o app entra em segundo plano.
      */
     fun onPauseLifecycle() {
@@ -445,6 +476,17 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
                 notebookRepository.savePageStrokes(page, currentStrokes)
             }
         }
+    }
+
+    /**
+     * Recarrega preferências atualizadas de hardware e curva de pressão da S Pen.
+     */
+    fun onResumeLifecycle() {
+        val savedCurve = try {
+            val prefs = getApplication<Application>().getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
+            prefs.getString("pressure_curve", null)?.let { com.scribe.caligrafia.expansions.styles.PressureCurveType.valueOf(it) }
+        } catch (_: Throwable) { null } ?: com.scribe.caligrafia.expansions.styles.PressureCurveType.LINEAR
+        renderer.pressureCurve = savedCurve
     }
 
     fun undo() {

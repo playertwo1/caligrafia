@@ -6,6 +6,8 @@ import android.graphics.Paint
 import android.graphics.Path
 import com.scribe.caligrafia.core.model.Stroke
 import com.scribe.caligrafia.core.model.StrokePoint
+import com.scribe.caligrafia.expansions.styles.PressureCalibration
+import com.scribe.caligrafia.expansions.styles.PressureCurveType
 
 /**
  * Renderizador de referência nativo em Canvas Android.
@@ -18,7 +20,8 @@ import com.scribe.caligrafia.core.model.StrokePoint
 class SmoothedReferenceRenderer(
     private val baseStrokeWidth: Float = 5.0f,
     private val strokeColor: Int = Color.rgb(15, 23, 42),      // Slate 900
-    private val activeStrokeColor: Int = Color.rgb(37, 99, 235)  // Accent Blue
+    private val activeStrokeColor: Int = Color.rgb(37, 99, 235), // Accent Blue
+    var pressureCurve: PressureCurveType = PressureCurveType.LINEAR
 ) : InkRenderer {
 
     override val type: RendererType = RendererType.SMOOTHED_REFERENCE
@@ -103,7 +106,8 @@ class SmoothedReferenceRenderer(
         if (validPressures.isEmpty()) return targetBaseWidth
 
         val avgPressure = validPressures.average().toFloat()
-        // Modulação linear: com pressão mínima 0.0 -> 40% da espessura; pressão máxima 1.0 -> 160%
-        return targetBaseWidth * (0.4f + avgPressure * 1.2f)
+        val calibratedPressure = PressureCalibration.transform(avgPressure, pressureCurve)
+        // Modulação caligráfica calibrada: com pressão mínima 0.0 -> 40% da espessura; pressão máxima 1.0 -> 160%
+        return targetBaseWidth * (0.4f + calibratedPressure * 1.2f)
     }
 }

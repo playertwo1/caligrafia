@@ -48,7 +48,7 @@ class MotorDiagnosticEngine(
             return generateEmptyDiagnostic()
         }
 
-        val slantEval = evaluateSlantStability(strokes, targetSlantDegrees)
+        val slantEval = evaluateSlantStability(strokes, attempts, targetSlantDegrees)
         val containmentEval = evaluateGuidelineContainment(strokes, attempts)
         val rhythmEval = evaluateRhythmAndCadence(strokes)
         val pressureEval = evaluatePressureControl(strokes)
@@ -88,15 +88,27 @@ class MotorDiagnosticEngine(
     // ==========================================
     private fun evaluateSlantStability(
         strokes: List<Stroke>,
+        attempts: List<PracticeAttemptRecord>,
         targetSlantDegrees: Float
     ): DimensionEvaluation {
+        // Mapeia cada traço ao seu alvo específico se originário de uma tentativa gravada
+        val strokeTargetMap = mutableMapOf<String, Float>()
+        for (attempt in attempts) {
+            val tgt = attempt.targetSlantDegrees ?: targetSlantDegrees
+            for (st in attempt.strokes) {
+                strokeTargetMap[st.id] = tgt
+            }
+        }
+
         var totalWeightedAngle = 0.0
+        var totalWeightedTarget = 0.0
         var totalWeight = 0.0
         val weightedAngles = mutableListOf<Pair<Float, Float>>()
 
         for (stroke in strokes) {
             val pts = stroke.points
             if (pts.size < 2) continue
+            val strokeTarget = strokeTargetMap[stroke.id] ?: targetSlantDegrees
 
             var i = 0
             while (i < pts.size - 1) {
@@ -122,6 +134,7 @@ class MotorDiagnosticEngine(
                     if (angleDeg < 0) angleDeg += 180f
                     if (angleDeg in 20.0f..160.0f) {
                         totalWeightedAngle += angleDeg * dist
+                        totalWeightedTarget += strokeTarget * dist
                         totalWeight += dist
                         weightedAngles.add(Pair(angleDeg, dist))
                     }
@@ -130,12 +143,18 @@ class MotorDiagnosticEngine(
             }
         }
 
+        val effectiveTargetSlant = if (totalWeight > 0.0) {
+            (totalWeightedTarget / totalWeight).toFloat()
+        } else {
+            targetSlantDegrees
+        }
+
         if (totalWeight <= 0.0 || weightedAngles.isEmpty()) {
             return DimensionEvaluation(
                 dimension = BiomechanicalDimension.SLANT_STABILITY,
                 score = 0.0f,
                 observedValue = null,
-                targetValue = targetSlantDegrees,
+                targetValue = effectiveTargetSlant,
                 status = EvaluationStatus.INSUFFICIENT_DATA,
                 shortDiagnosis = "Amostras descendentes insuficientes para cálculo de dispersão angular."
             )
@@ -146,7 +165,7 @@ class MotorDiagnosticEngine(
             (ang - meanAngle).toDouble().pow(2) * (w / totalWeight)
         }.toFloat()
         val stdDev = sqrt(variance)
-        val angularError = kotlin.math.abs(meanAngle - targetSlantDegrees)
+        val angularError = kotlin.math.abs(meanAngle - effectiveTargetSlant)
 
         // Penalidade por desvio padrão (instabilidade) e desvio em relação ao alvo formal
         val score = (100.0f - (stdDev * 5.0f) - (angularError * 2.5f)).coerceIn(0.0f, 100.0f)
@@ -161,7 +180,7 @@ class MotorDiagnosticEngine(
         val shortDiagnosis = when (status) {
             EvaluationStatus.EXCELLENT -> "Inclinação sólida: média de %.1f° com excelente paralelismo (desvio ±%.1f°).".format(meanAngle, stdDev)
             EvaluationStatus.GOOD -> "Boa inclinação (%.1f°), com variação moderada entre traços (±%.1f°).".format(meanAngle, stdDev)
-            EvaluationStatus.NEEDS_ATTENTION -> "Oscilação angular perceptível (desvio ±%.1f°). Alinhe os traços a %.1f°.".format(stdDev, targetSlantDegrees)
+            EvaluationStatus.NEEDS_ATTENTION -> "Oscilação angular perceptível (desvio ±%.1f°). Alinhe os traços a %.1f°.".format(stdDev, effectiveTargetSlant)
             EvaluationStatus.CRITICAL -> "Instabilidade angular alta (desvio ±%.1f°). Mantenha o punho fixo e deslize o braço.".format(stdDev)
             EvaluationStatus.INSUFFICIENT_DATA -> "Amostras descendentes insuficientes para cálculo de dispersão angular."
         }
@@ -170,7 +189,7 @@ class MotorDiagnosticEngine(
             dimension = BiomechanicalDimension.SLANT_STABILITY,
             score = score,
             observedValue = meanAngle,
-            targetValue = targetSlantDegrees,
+            targetValue = effectiveTargetSlant,
             status = status,
             shortDiagnosis = shortDiagnosis
         )

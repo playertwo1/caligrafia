@@ -631,6 +631,10 @@ class AuditFixAcceptanceTest {
             val userStroke = stroke(userPoints)
             strokeRepo.addStroke(userStroke)
 
+            vm.onAttemptEvaluated = { _, score ->
+                sessionTimer.recordAttempt(score.toFloat())
+            }
+
             val eval = vm.evaluateCurrentAttempt(
                 band = band,
                 originX = 100f,
@@ -638,9 +642,8 @@ class AuditFixAcceptanceTest {
                 slant = SlantConfig(52f, 80f)
             )
 
-            // A nota geométrica real é enviada para a sessão ativa
+            // A nota geométrica real é enviada automaticamente para a sessão ativa via onAttemptEvaluated
             assertTrue("A avaliação real deve produzir nota positiva", eval.scorePercent in 1..100)
-            sessionTimer.recordAttempt(eval.scorePercent.toFloat())
 
             val activeState = sessionTimer.sessionState.value
             assertNotNull(activeState)
@@ -1194,6 +1197,35 @@ class AuditFixAcceptanceTest {
             assertTrue("Arquivo SVG deve conter caminho desenhado", content.contains("<path d="))
         } finally {
             tempDir.deleteRecursively()
+        }
+    }
+
+    /**
+     * R17 (original): Importação e preview de fontes locais TTF/OTF via StyleEngine
+     * e NotebookPracticeViewModel, registrando o novo estilo e atualizando pautas e estilos disponíveis.
+     */
+    @Test
+    fun r17_original_notebookPracticeViewModelImportsAndSelectsCustomFont() {
+        val dir = Files.createTempDirectory("scribe-r17-").toFile()
+        try {
+            // Cria arquivo simulado de fonte TTF com magic bytes válidos (0x00, 0x01, 0x00, 0x00)
+            val fontFile = File(dir, "MinhaCaligrafia.ttf")
+            val validTtfHeader = byteArrayOf(0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
+            fontFile.writeBytes(validTtfHeader)
+
+            val app = Application()
+            val vm = NotebookPracticeViewModel(app)
+            val result = vm.importCustomFont(fontFile, name = "Minha Caligrafia", slantAngle = 55.0f)
+
+            assertTrue("Importação de fonte com magic bytes válidos deve ser bem sucedida", result.isSuccess)
+            val style = result.getOrNull()
+            assertNotNull(style)
+            assertEquals("Minha Caligrafia", style?.name)
+            assertEquals(55.0f, style?.defaultSlantAngle ?: 0f, 0.1f)
+            assertEquals(style?.id, vm.uiState.value.currentStyle.id)
+            assertTrue("Estilo importado deve constar em availableStyles", vm.uiState.value.availableStyles.any { it.id == style?.id })
+        } finally {
+            dir.deleteRecursively()
         }
     }
 }

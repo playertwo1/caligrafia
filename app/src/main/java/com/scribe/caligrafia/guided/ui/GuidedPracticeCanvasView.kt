@@ -50,6 +50,13 @@ class GuidedPracticeCanvasView(
             invalidate()
         }
 
+    var pressureCurve: com.scribe.caligrafia.expansions.styles.PressureCurveType
+        get() = renderer.pressureCurve
+        set(value) {
+            renderer.pressureCurve = value
+            invalidate()
+        }
+
     var currentGlyph: ReferenceGlyph? = null
         set(value) {
             field = value
