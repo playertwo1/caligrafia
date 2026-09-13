@@ -26,6 +26,7 @@ import java.util.UUID
 class StrokeCapturePipeline(
     val palmPolicy: PalmRejectionPolicy = PalmRejectionPolicy(),
     var toolConfig: ToolConfig = ToolConfig(),
+    var onStrokeStarted: ((StrokePoint) -> Unit)? = null,
     var onStrokeCompleted: ((Stroke) -> Unit)? = null,
     var onStrokeCancelled: ((Stroke) -> Unit)? = null,
     var onStrokePointAdded: ((StrokePoint) -> Unit)? = null,
@@ -145,6 +146,7 @@ class StrokeCapturePipeline(
 
         activePoints.add(point)
         totalPointsCaptured++
+        onStrokeStarted?.invoke(point)
         onStrokePointAdded?.invoke(point)
 
         if (activeTool == ToolType.ERASER) {

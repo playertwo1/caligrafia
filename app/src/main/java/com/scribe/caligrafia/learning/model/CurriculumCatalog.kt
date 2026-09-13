@@ -32,7 +32,7 @@ object CurriculumCatalog {
             description = "Descida espessa em ângulo, transição suave e arredondada sobre a linha de base e saída capilar leve até a altura-x.",
             stage = CurriculumStage.STAGE_1_STROKES,
             type = LessonType.STROKE,
-            glyphIds = listOf("underturn"),
+            glyphIds = listOf("basic_underturn"),
             targetStyleId = "copperplate",
             recommendedMinutes = 5
         ),
@@ -42,7 +42,7 @@ object CurriculumCatalog {
             description = "Subida fina a partir da base, arco arredondado no topo da altura-x e descida firme em direção à linha de base.",
             stage = CurriculumStage.STAGE_1_STROKES,
             type = LessonType.STROKE,
-            glyphIds = listOf("overturn"),
+            glyphIds = listOf("basic_overturn"),
             targetStyleId = "copperplate",
             recommendedMinutes = 5
         ),
@@ -52,7 +52,7 @@ object CurriculumCatalog {
             description = "Fusão de overturn e underturn em um único movimento contínuo de onda caligráfica.",
             stage = CurriculumStage.STAGE_1_STROKES,
             type = LessonType.STROKE,
-            glyphIds = listOf("compound_curve"),
+            glyphIds = listOf("basic_compound"),
             targetStyleId = "copperplate",
             recommendedMinutes = 10
         ),
@@ -62,7 +62,7 @@ object CurriculumCatalog {
             description = "O coração da caligrafia cursiva: arco suave à esquerda, descida espessa e fechamento sutil sem cruzamentos ríspidos.",
             stage = CurriculumStage.STAGE_1_STROKES,
             type = LessonType.STROKE,
-            glyphIds = listOf("oval_form"),
+            glyphIds = listOf("basic_oval"),
             targetStyleId = "copperplate",
             recommendedMinutes = 10
         ),
@@ -72,7 +72,7 @@ object CurriculumCatalog {
             description = "Subida capilar inclinada até a linha superior e descida reta espessa até a linha de base.",
             stage = CurriculumStage.STAGE_1_STROKES,
             type = LessonType.STROKE,
-            glyphIds = listOf("ascending_loop"),
+            glyphIds = listOf("basic_ascending_loop"),
             targetStyleId = "copperplate",
             recommendedMinutes = 10
         ),

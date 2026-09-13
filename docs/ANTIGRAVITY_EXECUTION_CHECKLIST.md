@@ -88,33 +88,33 @@ Alvos: `MainActivity`, telas/VM de caderno, páginas, toolbar e menu Mais. Refer
 
 Alvos: `LearningHubScreen`, `LearningViewModel`, `SessionTimer`, `GuidedPracticeViewModel`, catálogo e avaliador. Referências: painel 2–3 e fluxos 04–05.
 
-- [ ] F2.01 Exibir os cinco estágios: Traços, Famílias de letras, Conexões, Palavras e Frases.
-- [ ] F2.02 Listar as 18 lições existentes com nome, objetivo e exercícios; corrigir IDs não resolvíveis antes de oferecer Iniciar.
-- [ ] F2.03 Expor duração 5/10/15/20 min e estilo; resumo da seleção deve aparecer antes do início.
-- [ ] F2.04 Mostrar Continuar apenas para sessão real recuperável; exibir objetivo e tempo registrado.
-- [ ] F2.05 Conectar revisão SRS ao exercício real; não criar resultado ao simplesmente abrir revisão.
-- [ ] F2.06 Fixar uma única sessão ativa; ao iniciar outra, oferecer continuar a existente ou encerrá-la antes de criar nova.
-- [ ] F2.07 Transportar lessonId/exerciseId/styleId/duração para o treino sem fallback genérico.
-- [ ] F2.08 Exibir cinco fases pedagógicas reais; registrar nomes e distribuição de tempo do domínio no contrato, sem copiar quatro passos da imagem.
-- [ ] F2.09 Iniciar relógio somente após ação Iniciar; usar tempo monotônico e exibir tempo efetivamente praticado.
-- [ ] F2.10 Implementar pausa manual, retorno, encerramento antecipado e pausa por troca de aba/fundo.
-- [ ] F2.11 Persistir sessão interrompida e reabrir pausada; não somar tempo fora do app nem desfazer pausa manual.
-- [ ] F2.12 Mostrar nome/símbolo, objetivo, instrução e referência correta do exercício, corretamente enquadrada.
-- [ ] F2.13 Implementar Cobrir com modelo sobreposto, Copiar com referência adjacente e Sozinho sem modelo sobreposto.
-- [ ] F2.14 Tornar Ghost 100/70/40/10/0 acessível sem corte; mudança afeta somente derivado visual.
-- [ ] F2.15 Ajustar alvo e pauta à área disponível sem alterar o espaço lógico; referência não deve virar ponto minúsculo inacessível.
-- [ ] F2.16 Capturar strokes completos e preservar tool, timestamps e eixos presentes; zero não significa ausência.
-- [ ] F2.17 Invalidar feedback no começo do novo stroke; não esperar terminar para retirar nota anterior.
-- [ ] F2.18 Conectar avaliar à tentativa atual e à referência/estilo selecionados; vazio/incompleto não recebe aprovação padrão.
-- [ ] F2.19 Persistir tentativa concluída com IDs, contexto, tempo e avaliação disponível; repetir cria novo ID.
-- [ ] F2.20 Fazer evento de tentativa real alimentar sessão e SRS; remover pontes de teste que simulem essa integração manualmente.
-- [ ] F2.21 Encerrar sessão uma única vez, mesmo após duplo toque/retentativa; cancelamento não cria sessão concluída fictícia.
-- [ ] F2.22 Mostrar resumo com tempo exato, tentativas reais, última tentativa e botões Rever/Voltar/Próximo treino.
-- [ ] F2.23 Implementar detalhe de feedback com trecho e linha medidos; texto e destaque devem nomear a mesma linha.
-- [ ] F2.24 Fazer Tentar novamente conservar alvo/estilo e criar tentativa limpa, preservando a anterior.
-- [ ] F2.25 Testar percurso Hub → duas tentativas → pausa → retorno → resumo → histórico/SRS pela UI.
-- [ ] F2.26 Testar 59 segundos, sessão sem avaliação, interrupção e finalização duplicada; registrar esperado/observado.
-- [ ] F2.G Entregar vídeo do percurso e provas de persistência; sessão útil é requisito, tela isolada não fecha F2.
+- [x] F2.01 Exibir os cinco estágios: Traços, Famílias de letras, Conexões, Palavras e Frases.
+- [x] F2.02 Listar as 18 lições existentes com nome, objetivo e exercícios; corrigir IDs não resolvíveis antes de oferecer Iniciar.
+- [x] F2.03 Expor duração 5/10/15/20 min e estilo; resumo da seleção deve aparecer antes do início.
+- [x] F2.04 Mostrar Continuar apenas para sessão real recuperável; exibir objetivo e tempo registrado.
+- [x] F2.05 Conectar revisão SRS ao exercício real; não criar resultado ao simplesmente abrir revisão.
+- [x] F2.06 Fixar uma única sessão ativa; ao iniciar outra, oferecer continuar a existente ou encerrá-la antes de criar nova.
+- [x] F2.07 Transportar lessonId/exerciseId/styleId/duração para o treino sem fallback genérico.
+- [x] F2.08 Exibir cinco fases pedagógicas reais; registrar nomes e distribuição de tempo do domínio no contrato, sem copiar quatro passos da imagem.
+- [x] F2.09 Iniciar relógio somente após ação Iniciar; usar tempo monotônico e exibir tempo efetivamente praticado.
+- [x] F2.10 Implementar pausa manual, retorno, encerramento antecipado e pausa por troca de aba/fundo.
+- [x] F2.11 Persistir sessão interrompida e reabrir pausada; não somar tempo fora do app nem desfazer pausa manual.
+- [x] F2.12 Mostrar nome/símbolo, objetivo, instrução e referência correta do exercício, corretamente enquadrada.
+- [x] F2.13 Implementar Cobrir com modelo sobreposto, Copiar com referência adjacente e Sozinho sem modelo sobreposto.
+- [x] F2.14 Tornar Ghost 100/70/40/10/0 acessível sem corte; mudança afeta somente derivado visual.
+- [x] F2.15 Ajustar alvo e pauta à área disponível sem alterar o espaço lógico; referência não deve virar ponto minúsculo inacessível.
+- [x] F2.16 Capturar strokes completos e preservar tool, timestamps e eixos presentes; zero não significa ausência.
+- [x] F2.17 Invalidar feedback no começo do novo stroke; não esperar terminar para retirar nota anterior.
+- [x] F2.18 Conectar avaliar à tentativa atual e à referência/estilo selecionados; vazio/incompleto não recebe aprovação padrão.
+- [x] F2.19 Persistir tentativa concluída com IDs, contexto, tempo e avaliação disponível; repetir cria novo ID.
+- [x] F2.20 Fazer evento de tentativa real alimentar sessão e SRS; remover pontes de teste que simulem essa integração manualmente.
+- [x] F2.21 Encerrar sessão uma única vez, mesmo após duplo toque/retentativa; cancelamento não cria sessão concluída fictícia.
+- [x] F2.22 Mostrar resumo com tempo exato, tentativas reais, última tentativa e botões Rever/Voltar/Próximo treino.
+- [x] F2.23 Implementar detalhe de feedback com trecho e linha medidos; texto e destaque devem nomear a mesma linha.
+- [x] F2.24 Fazer Tentar novamente conservar alvo/estilo e criar tentativa limpa, preservando a anterior.
+- [x] F2.25 Testar percurso Hub → duas tentativas → pausa → retorno → resumo → histórico/SRS pela UI.
+- [x] F2.26 Testar 59 segundos, sessão sem avaliação, interrupção e finalização duplicada; registrar esperado/observado.
+- [x] F2.G Entregar vídeo do percurso e provas de persistência; sessão útil é requisito, tela isolada não fecha F2.
 
 ## F3 — Evolução, alfabeto e estilos utilizáveis
 

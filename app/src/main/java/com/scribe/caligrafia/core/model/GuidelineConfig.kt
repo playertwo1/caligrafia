@@ -185,6 +185,25 @@ data class GuidelineConfig(
             currentY = descY + interlineGapPx
         }
 
+        // F2.15: Se o espaço vertical for menor que topMargin + bandHeight, garante pelo menos 1 faixa ajustada
+        if (bands.isEmpty() && pageHeight > 20f) {
+            val totalMultiplier = ratio.ascenderRatio + 1.0f + ratio.descenderRatio
+            val effectiveXHeight = (pageHeight * 0.7f / totalMultiplier).coerceAtLeast(15f)
+            val effectiveAsc = effectiveXHeight * ratio.ascenderRatio
+            val effectiveDesc = effectiveXHeight * ratio.descenderRatio
+            val effBandHeight = effectiveAsc + effectiveXHeight + effectiveDesc
+            val startY = ((pageHeight - effBandHeight) / 2f).coerceAtLeast(5f)
+            bands.add(
+                GuidelineBand(
+                    bandIndex = 0,
+                    ascenderY = startY,
+                    xHeightY = startY + effectiveAsc,
+                    baselineY = startY + effectiveAsc + effectiveXHeight,
+                    descenderY = startY + effBandHeight
+                )
+            )
+        }
+
         return bands
     }
 

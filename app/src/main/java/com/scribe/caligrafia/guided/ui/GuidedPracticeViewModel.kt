@@ -100,12 +100,16 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
         }
     }
 
+    private var wasManuallyPaused: Boolean = false
+
     fun toggleTimer() {
-        _state.update { it.copy(isTimerRunning = !it.isTimerRunning) }
+        val newRunning = !_state.value.isTimerRunning
+        wasManuallyPaused = !newRunning
+        _state.update { it.copy(isTimerRunning = newRunning) }
     }
 
     /**
-     * A06: Pausa o cronômetro ativo e faz flush de segurança no pipeline de escrita
+     * A06 & F2.10: Pausa o cronômetro ativo e faz flush de segurança no pipeline de escrita
      * quando a tela é pausada ou o aplicativo entra em segundo plano.
      */
     fun onPauseLifecycle() {
@@ -114,10 +118,20 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
     }
 
     /**
-     * A06: Retoma o cronômetro ativo quando a tela retorna para primeiro plano.
+     * A06 & F2.11: Retoma o cronômetro ativo apenas se NÃO foi pausado manualmente pelo usuário.
      */
     fun onResumeLifecycle() {
-        _state.update { it.copy(isTimerRunning = true) }
+        if (!wasManuallyPaused) {
+            _state.update { it.copy(isTimerRunning = true) }
+        }
+    }
+
+    /**
+     * F2.07: Transporta targetId e styleId simultaneamente sem recorrer a fallbacks genéricos.
+     */
+    fun selectTargetAndStyle(exerciseId: String, styleId: String) {
+        selectStyleById(styleId)
+        selectGlyphBySymbolOrId(exerciseId)
     }
 
     fun selectStyle(styleId: String) {

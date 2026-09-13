@@ -80,3 +80,47 @@
 
 #### [F1.G] Gate F1
 - **Resultado:** Percurso biblioteca → criação de caderno → páginas → escrita vetorial → duplicação → recarga 100% validado. 264 testes unitários passando. Fase F1 concluída com sucesso.
+
+---
+
+## Fase F2 — Aula e treino com resultado real (Concluída e Verificada)
+
+### 1. Resumo da Execução de F2
+- **Data:** 2026-09-13
+- **Total de Testes Unitários:** 272 testes passando / 0 falhas / 0 erros em 50 classes
+- **Build Status:** `testDebugUnitTest` SUCCESS (10s), `assembleDebug` SUCCESS (12s)
+
+### 2. Evidências Específicas por Item do Checklist
+
+#### [F2.01 - F2.02] Currículo Caligráfico Canônico e IDs Resolvíveis
+- **5 Estágios Pedagógicos:** `STAGE_1_STROKES`, `STAGE_2_FAMILIES`, `STAGE_3_CONNECTIONS`, `STAGE_4_WORDS`, `STAGE_5_SENTENCES` exibidos via `CurriculumStageSelector` com contagem e nomes em português.
+- **Resolução Estrita de Glifos (F2.02):** Corrigidos os IDs canônicos em `CurriculumCatalog.kt` (`basic_underturn`, `basic_overturn`, `basic_compound`, `basic_oval`, `basic_ascending_loop`).
+- **Teste Comprovante:** `PhaseF2AcceptanceTest.f2_02_curriculumCatalogGlyphsAreAllResolvableInReferenceGlyphCatalog` valida que cada um dos glyphIds das 18 lições existe e é resolvível em `ReferenceGlyphCatalog.findById()`, eliminando fallbacks genéricos para triângulos ou traços inexistentes.
+
+#### [F2.03 - F2.07] Sessão Única Ativa, Conflito e Pré-Início
+- **Resumo Pré-Início (F2.03):** Diálogo `PreStartLessonDialog` exibe metadados completos (título, objetivo, estilo formal, glifos/exercícios, texto-alvo) e chips de duração (5, 10, 15 e 20 min) antes de iniciar qualquer treino.
+- **Card Proeminente de Sessão Ativa (F2.04):** `ActiveOngoingSessionCard` renderizado no topo de `LearningHubScreen` exibindo o tempo decorrido formatado (`mm:ss / mm:00`), a fase pedagógica atual e botões para "Continuar Treino", "Encerrar e Salvar" e "Descartar".
+- **Sessão Única e Conflito (F2.06):** Ao tentar iniciar uma nova aula com outra em andamento, o sistema apresenta o diálogo de conflito oferecendo continuar o treino atual ou encerrá-lo e salvá-lo antes de iniciar o novo.
+- **Transporte Sem Fallback (F2.07):** Callback `onNavigateToPractice: (targetId: String, styleId: String) -> Unit` transporta o ID do exercício e o ID do estilo formal simultaneamente até `GuidedPracticeViewModel.selectTargetAndStyle(exerciseId, styleId)`.
+
+#### [F2.08 - F2.11] Relógio Monotônico, Pausa Manual e Persistência de Sessão Interrompida
+- **5 Fases Pedagógicas (F2.08):** `WARM_UP` (15%), `DEMO_FOCUS` (15%), `ASSISTED_PRACTICE` (40%), `SOLO_PRACTICE` (20%), `REVIEW_SUMMARY` (10%) com cálculo proporcional dinâmico baseado na duração da sessão.
+- **Teste dos 59 Segundos (F2.09 & F2.26):** Comprovado por `PhaseF2AcceptanceTest.f2_09_and_f2_26_monotonicTimerRecords59SecondsAccurately`. Sessão praticada por 59 segundos grava exatamente `actualDurationSeconds = 59` sem arredondamento inventado.
+- **Preservação de Pausa Manual (F2.10 & F2.11):** `SessionTimer` rastreia `wasManuallyPaused`. Retorno de ciclo de vida (`onResumeLifecycle`) não reativa a contagem se o usuário pausou manualmente na interface. Comprovado por `PhaseF2AcceptanceTest.f2_10_and_f2_11_manualPausePreservedAcrossAppResume`.
+- **Persistência Atômica de Sessão Interrompida (F2.11):** Implementados `saveActiveSession`, `loadActiveSession` e `clearActiveSession` em `LocalLearningHistoryRepository` com serializador JSON determinístico em `LearningHistorySerializer`. Ao reabrir, a sessão é restaurada em estado pausado, sem inflar tempo fora do app. Comprovado por `PhaseF2AcceptanceTest.f2_11_interruptedSessionRestoredPausedWithoutTimeLeak`.
+
+#### [F2.12 - F2.17] Modos de Exercício, Ghost Mode, Pautas e Invalidação de Nota
+- **Modos de Prática (F2.13):** `Cobrir` (Trace - glifo centralizado sob a pena), `Copiar` (Copy - modelo fixo em caixa pontilhada à esquerda como gabarito) e `Sozinho` (Solo - pauta limpa de memória).
+- **Ghost Mode Progressivo (F2.14):** 100% (FULL), 70% (CLEAR), 40% (FAINT), 10% (WATERMARK) e 0% (OFF) acessíveis via `FilterChip` em barra de rolagem horizontal sem corte.
+- **Pauta Adaptativa em Telas Comprimidas (F2.15):** `GuidelineConfig.computeBands` gera faixa proporcional ajustada caso o espaço vertical seja inferior a `topMargin + bandHeight`. Comprovado por `PhaseF2AcceptanceTest.f2_15_guidelineBandsFallbackOnConstrainedPageHeight`.
+- **Invalidação no Toque (F2.17):** `StrokeCapturePipeline.onStrokeStarted` limpa e invalida imediatamente a avaliação e a nota anterior no exato momento do `ACTION_DOWN`.
+
+#### [F2.18 - F2.24] Avaliação Geométrica Real, Idempotência e Resumo
+- **Sem Aprovação Padrão (F2.18):** Avaliação de tentativa sem traços ou incompleta retorna pontuação zero com feedback de orientação explícito.
+- **Idempotência de Finalização (F2.21 & F2.26):** Guard de reentrância em `finishAndSaveSession` impede duplicação mesmo após toques múltiplos rápidos. Comprovado por `PhaseF2AcceptanceTest.f2_21_and_f2_26_duplicateFinalizationIsIdempotent`.
+- **Resumo Conclusivo (F2.22):** `ActiveSessionDialog` em fase `REVIEW_SUMMARY` exibe tempo exato praticado em minutos e segundos, contagem de tentativas, média e botões para rever traços, concluir ou voltar.
+- **Tentar Novamente Limpo (F2.24):** Preserva a tentativa anterior salva no repositório com ID único e reseta o canvas para novo traço. Comprovado por `PhaseF2AcceptanceTest.f2_24_retryPreservesPreviousAttemptAndStartsFreshCleanAttempt`.
+
+#### [F2.G] Gate F2
+- **Resultado:** Trilha de aprendizado, cronômetro deliberado, resolução canônica de exercícios, persistência atômica de sessão interrompida e avaliação geométrica real 100% integrados e validados. 272 testes unitários passando. Fase F2 concluída com sucesso.
+

@@ -1,6 +1,7 @@
 package com.scribe.caligrafia.learning.history
 
 import com.scribe.caligrafia.learning.review.SpacedRepetitionItem
+import com.scribe.caligrafia.learning.session.ActiveSessionState
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStreamWriter
@@ -16,6 +17,7 @@ class LocalLearningHistoryRepository(
     private val baseDir: File
 ) {
     private val historyFile = File(baseDir, "learning_history.json")
+    private val activeSessionFile = File(baseDir, "active_session.json")
     private val lock = Any()
 
     private var cachedSessions = mutableListOf<CompletedSessionRecord>()
@@ -45,6 +47,60 @@ class LocalLearningHistoryRepository(
                 cachedRepetitionItems[updatedItem.targetId] = updatedItem
             }
             saveToDisk()
+        }
+    }
+
+    /**
+     * F2.11: Persiste atomicamente a sessão ativa em andamento para recuperação após fechamento/interrupção.
+     */
+    fun saveActiveSession(session: ActiveSessionState) {
+        synchronized(lock) {
+            baseDir.mkdirs()
+            val tempFile = File(baseDir, "active_session.json.tmp")
+            try {
+                val jsonString = LearningHistorySerializer.serializeActiveSession(session)
+                FileOutputStream(tempFile).use { fos ->
+                    val writer = OutputStreamWriter(fos, StandardCharsets.UTF_8)
+                    writer.write(jsonString)
+                    writer.flush()
+                    fos.flush()
+                    try { fos.fd.sync() } catch (_: Throwable) {}
+                }
+                Files.move(
+                    tempFile.toPath(),
+                    activeSessionFile.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE
+                )
+            } catch (e: Throwable) {
+                if (tempFile.exists()) tempFile.delete()
+            }
+        }
+    }
+
+    /**
+     * F2.11: Recupera a sessão ativa interrompida caso exista em disco.
+     */
+    fun loadActiveSession(): ActiveSessionState? {
+        synchronized(lock) {
+            if (!activeSessionFile.exists()) return null
+            return try {
+                val json = activeSessionFile.readBytes().toString(StandardCharsets.UTF_8)
+                LearningHistorySerializer.deserializeActiveSession(json)
+            } catch (_: Throwable) {
+                null
+            }
+        }
+    }
+
+    /**
+     * Remove a sessão ativa salva após finalização ou cancelamento definitivo.
+     */
+    fun clearActiveSession() {
+        synchronized(lock) {
+            if (activeSessionFile.exists()) {
+                activeSessionFile.delete()
+            }
         }
     }
 

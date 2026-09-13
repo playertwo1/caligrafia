@@ -24,6 +24,7 @@ class SessionTimer(
 ) {
     private var tickerJob: Job? = null
     private val activeScope: CoroutineScope = scope ?: CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private var wasManuallyPaused: Boolean = false
 
     private val _sessionState = MutableStateFlow<ActiveSessionState?>(null)
     val sessionState: StateFlow<ActiveSessionState?> = _sessionState.asStateFlow()
@@ -33,6 +34,7 @@ class SessionTimer(
      */
     fun startSession(lesson: CurriculumLesson, duration: SessionDuration) {
         tickerJob?.cancel()
+        wasManuallyPaused = false
 
         val initialPhase = SessionPhase.WARM_UP
         val initialPhaseSeconds = calculatePhaseSeconds(initialPhase, duration)
@@ -55,17 +57,39 @@ class SessionTimer(
     }
 
     /**
-     * Pausa a contagem da sessão.
+     * F2.11: Restaura uma sessão interrompida recuperada de persistência.
+     * Sempre reabre em estado pausado sem contagem de tempo em background.
      */
-    fun pause() {
+    fun restoreSession(restored: ActiveSessionState) {
+        tickerJob?.cancel()
+        wasManuallyPaused = restored.isPaused
+        _sessionState.value = restored.copy(isPaused = true)
+    }
+
+    /**
+     * Pausa a contagem da sessão.
+     * @param manual true se o usuário pausou explicitamente na UI, false se for ciclo de vida/background.
+     */
+    fun pause(manual: Boolean = true) {
+        if (manual) {
+            wasManuallyPaused = true
+        }
         tickerJob?.cancel()
         _sessionState.update { it?.copy(isPaused = true) }
     }
 
     /**
      * Retoma a contagem caso pausada.
+     * @param manual true se o usuário clicou explicitamente em retomar, false se for onResume do app.
      */
-    fun resume() {
+    fun resume(manual: Boolean = true) {
+        if (manual) {
+            wasManuallyPaused = false
+        } else if (wasManuallyPaused) {
+            // F2.11: Retorno ao app não desfaz pausa manual feita pelo usuário
+            return
+        }
+
         if (_sessionState.value?.isPaused == true && _sessionState.value?.isFinished == false) {
             _sessionState.update { it?.copy(isPaused = false) }
             startTicker()

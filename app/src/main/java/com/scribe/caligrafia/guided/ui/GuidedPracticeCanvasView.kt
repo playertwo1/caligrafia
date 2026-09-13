@@ -92,6 +92,9 @@ class GuidedPracticeCanvasView(
         isFocusable = true
         isFocusableInTouchMode = true
 
+        pipeline.onStrokeStarted = {
+            onStrokeChanged?.invoke()
+        }
         pipeline.onStrokePointAdded = { invalidate() }
         pipeline.onStrokeCompleted = { stroke ->
             if (stroke.tool != ToolType.ERASER) {

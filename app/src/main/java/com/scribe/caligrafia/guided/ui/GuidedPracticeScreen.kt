@@ -110,8 +110,8 @@ fun GuidedPracticeScreen(
         LearningHubScreen(
             viewModel = learningViewModel,
             onNavigateBack = { showLearningHub = false },
-            onNavigateToPractice = { targetId ->
-                viewModel.selectGlyphBySymbolOrId(targetId)
+            onNavigateToPractice = { targetId, styleId ->
+                viewModel.selectTargetAndStyle(targetId, styleId)
                 showLearningHub = false
             }
         )

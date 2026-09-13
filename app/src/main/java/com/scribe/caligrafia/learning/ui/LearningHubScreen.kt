@@ -75,7 +75,7 @@ import com.scribe.caligrafia.learning.session.SessionPhase
 fun LearningHubScreen(
     viewModel: LearningViewModel,
     onNavigateBack: () -> Unit,
-    onNavigateToPractice: ((targetId: String) -> Unit)? = null
+    onNavigateToPractice: ((targetId: String, styleId: String) -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -88,18 +88,71 @@ fun LearningHubScreen(
         }
     }
 
+    // F2.06: Diálogo de Conflito de Sessão Ativa
+    if (uiState.showConflictDialog && uiState.pendingNewLesson != null && uiState.activeSession != null) {
+        val active = uiState.activeSession!!
+        val pending = uiState.pendingNewLesson!!.first
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissConflictDialog() },
+            title = { Text("Sessão em Andamento", fontWeight = FontWeight.Bold, fontSize = 16.sp) },
+            text = {
+                Text(
+                    text = "Você já possui uma sessão ativa de '${active.lesson.title}' com ${active.totalElapsedSeconds}s praticados.\n\nDeseja continuar o treino atual ou encerrá-lo antes de iniciar '${pending.title}'?",
+                    fontSize = 13.sp,
+                    color = Color(0xFF334155)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.continueExistingSession() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+                ) {
+                    Text("Continuar Atual")
+                }
+            },
+            dismissButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = { viewModel.dismissConflictDialog() }) {
+                        Text("Cancelar")
+                    }
+                    OutlinedButton(onClick = { viewModel.finishCurrentAndStartPending() }) {
+                        Text("Encerrar e Iniciar Nova")
+                    }
+                }
+            }
+        )
+    }
+
+    // F2.03 & F2.07: Diálogo de Resumo Pré-Início com Duração e Estilo
+    if (uiState.previewLesson != null) {
+        val preview = uiState.previewLesson!!
+        PreStartLessonDialog(
+            lesson = preview,
+            selectedDuration = uiState.selectedDuration,
+            onSelectDuration = { viewModel.selectDuration(it) },
+            onConfirm = { duration ->
+                val target = preview.glyphIds.firstOrNull() ?: preview.id
+                val style = preview.targetStyleId
+                viewModel.startSession(preview, duration)
+                onNavigateToPractice?.invoke(target, style)
+            },
+            onDismiss = { viewModel.dismissPreviewDialog() }
+        )
+    }
+
+    // F2.08 & F2.22: Diálogo de Sessão Ativa / Resumo de Conclusão
     if (uiState.isSessionDialogVisible && uiState.activeSession != null) {
         val currentLesson = uiState.activeSession!!.lesson
         ActiveSessionDialog(
             session = uiState.activeSession!!,
-            onPause = { viewModel.pauseSession() },
-            onResume = { viewModel.resumeSession() },
+            onPause = { viewModel.pauseSession(manual = true) },
+            onResume = { viewModel.resumeSession(manual = true) },
             onSkipPhase = { viewModel.skipToNextPhase() },
             onRecordAttempt = { score -> viewModel.recordAttempt(score) },
             onNavigateToCanvas = {
                 val target = currentLesson.glyphIds.firstOrNull() ?: currentLesson.id
                 viewModel.dismissSessionDialog()
-                onNavigateToPractice?.invoke(target)
+                onNavigateToPractice?.invoke(target, currentLesson.targetStyleId)
             },
             onFinishAndSave = { viewModel.finishAndSaveSession() },
             onCancel = { viewModel.cancelSession() }
@@ -149,6 +202,21 @@ fun LearningHubScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // F2.04 & F2.06: Card de Sessão Ativa em Andamento (recuperável)
+            if (uiState.activeSession != null && !uiState.activeSession!!.isFinished) {
+                ActiveOngoingSessionCard(
+                    session = uiState.activeSession!!,
+                    onContinue = {
+                        val active = uiState.activeSession!!
+                        val target = active.lesson.glyphIds.firstOrNull() ?: active.lesson.id
+                        viewModel.showSessionDialog()
+                        onNavigateToPractice?.invoke(target, active.lesson.targetStyleId)
+                    },
+                    onFinish = { viewModel.finishAndSaveSession() },
+                    onCancel = { viewModel.cancelSession() }
+                )
+            }
+
             // 1. Card de Progresso Não-Punitivo (SCR-404)
             ProgressOverviewCard(summary = uiState.progressSummary)
 
@@ -157,7 +225,7 @@ fun LearningHubScreen(
                 recommendation = uiState.dailyRecommendation,
                 selectedDuration = uiState.selectedDuration,
                 onSelectDuration = { viewModel.selectDuration(it) },
-                onStartSession = { lesson, duration -> viewModel.startSession(lesson, duration) }
+                onStartSession = { lesson, duration -> viewModel.requestStartLesson(lesson, duration) }
             )
 
             // 3. Trilha Curricular Completa (18 Lições em 5 Estágios - SCR-401)
@@ -171,7 +239,7 @@ fun LearningHubScreen(
                 stageLessons.forEach { lesson ->
                     CurriculumLessonCard(
                         lesson = lesson,
-                        onStartLesson = { viewModel.startSession(lesson, uiState.selectedDuration) }
+                        onStartLesson = { viewModel.requestStartLesson(lesson, uiState.selectedDuration) }
                     )
                 }
             }
@@ -667,11 +735,255 @@ private fun ActiveSessionDialog(
                 onClick = onFinishAndSave,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF059669))
             ) {
-                Text("Finalizar e Salvar")
+                Text(if (session.isFinished || session.currentPhase == SessionPhase.REVIEW_SUMMARY) "Concluir e Salvar" else "Finalizar e Salvar")
             }
         },
         dismissButton = {
             TextButton(onClick = onCancel) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+/**
+ * F2.04 & F2.06: Card proeminente de sessão ativa em andamento com tempo real e objetivo.
+ */
+@Composable
+private fun ActiveOngoingSessionCard(
+    session: ActiveSessionState,
+    onContinue: () -> Unit,
+    onFinish: () -> Unit,
+    onCancel: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4)),
+        border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFF86EFAC)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Timer,
+                        contentDescription = null,
+                        tint = Color(0xFF16A34A),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Sessão Ativa em Andamento",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = Color(0xFF166534)
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .background(Color(0xFFDCFCE7), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    val sec = session.totalElapsedSeconds
+                    Text(
+                        text = String.format("%02d:%02d / %02d:00", sec / 60, sec % 60, session.duration.minutes),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF15803D)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = session.lesson.title,
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+                color = Color(0xFF0F172A)
+            )
+            Text(
+                text = "Objetivo: ${session.lesson.description}",
+                fontSize = 12.sp,
+                color = Color(0xFF475569)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Fase ${session.currentPhase.phaseIndex}/5: ${session.currentPhase.title}",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF1E293B)
+                )
+                Text(
+                    text = "Tentativas: ${session.attemptsCount} ${session.averageScore?.let { "• Média: ${it.toInt()}%" } ?: ""}",
+                    fontSize = 12.sp,
+                    color = Color(0xFF64748B)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = onContinue,
+                    modifier = Modifier.weight(1.2f),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Continuar Treino", fontSize = 12.sp)
+                }
+                OutlinedButton(
+                    onClick = onFinish,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Encerrar e Salvar", fontSize = 11.sp)
+                }
+                TextButton(
+                    onClick = onCancel,
+                    modifier = Modifier.weight(0.7f)
+                ) {
+                    Text("Descartar", fontSize = 11.sp, color = Color(0xFFDC2626))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * F2.03 & F2.07: Diálogo de confirmação e resumo pré-início da lição.
+ */
+@Composable
+private fun PreStartLessonDialog(
+    lesson: CurriculumLesson,
+    selectedDuration: SessionDuration,
+    onSelectDuration: (SessionDuration) -> Unit,
+    onConfirm: (SessionDuration) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column {
+                Text(
+                    text = "Iniciar Treino Deliberado",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = Color(0xFF0F172A)
+                )
+                Text(
+                    text = lesson.title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF2563EB)
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = lesson.description,
+                    fontSize = 12.sp,
+                    color = Color(0xFF475569)
+                )
+
+                // Estilo e Glifos
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9))
+                ) {
+                    Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Estilo formal:", fontSize = 11.sp, color = Color(0xFF64748B))
+                            Text(
+                                lesson.targetStyleId.replace("_", " ").uppercase(),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1E293B)
+                            )
+                        }
+                        if (lesson.glyphIds.isNotEmpty()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Exercícios:", fontSize = 11.sp, color = Color(0xFF64748B))
+                                Text(
+                                    lesson.glyphIds.joinToString(", "),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF2563EB)
+                                )
+                            }
+                        }
+                        if (lesson.targetText != null) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Texto alvo:", fontSize = 11.sp, color = Color(0xFF64748B))
+                                Text("“${lesson.targetText}”", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F766E))
+                            }
+                        }
+                    }
+                }
+
+                // Duração
+                Text("Escolha a duração:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1E293B))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    SessionDuration.entries.forEach { duration ->
+                        FilterChip(
+                            selected = duration == selectedDuration,
+                            onClick = { onSelectDuration(duration) },
+                            label = { Text("${duration.minutes}m", fontSize = 11.sp) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                // Estrutura em 5 fases pedagógicas
+                Text(
+                    text = "Estrutura: 1. Aquecimento (15%) • 2. Foco (15%) • 3. Cobrir (40%) • 4. Sozinho (20%) • 5. Resumo (10%)",
+                    fontSize = 10.sp,
+                    color = Color(0xFF64748B),
+                    lineHeight = 14.sp
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(selectedDuration) },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+            ) {
+                Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Começar Treino")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
                 Text("Cancelar")
             }
         }

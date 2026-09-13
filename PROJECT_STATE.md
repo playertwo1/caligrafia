@@ -6,17 +6,18 @@ Por solicitação do usuário, o planejamento foi convertido em [ordens detalhad
 
 Os status históricos de fechamento abaixo não anulam as duas falhas reproduzidas no [parecer V5 de revalidação](docs/ANTIGRAVITY_AUDIT_REVIEW_V5_RECHECK.md). O checklist exige verificar a base atual antes de corrigir ou marcar qualquer requisito. Validação desta entrega: IDs únicos, cobertura F0–F7, links e diff; testes Android não se aplicam à alteração documental.
 
-> **Status de Execução Supervisionada — Fases F0 e F1 Concluídas (2026-09-13):**
+> **Status de Execução Supervisionada — Fases F0, F1 e F2 Concluídas (2026-09-13):**
 > - **Fase F0 (Integridade de Dados e Contratos):** Concluída com 100% de aprovação. BASELINE, DATA_CONTRACT e ROUTE_ACTION_MATRIX documentados; parser JSON estrito (rejeição de sintaxe quebrada/valores omitidos) e invalidação de cache de traços integrados.
 > - **Fase F1 (Navegação, Biblioteca e Caderno):** Concluída com 100% de aprovação. Busca insensível a caixa/acentos na biblioteca, validação de criação (1–40 caracteres com erro inline), renomeação e exclusão com diálogo de confirmação, duplicação e exclusão de páginas com isolamento total de traços vetoriais, e Menu Mais completo com 9 destinos mapeados e badges PARCIAL documentados.
-> - **Suíte Completa:** **264 testes unitários / 0 falhas / 0 erros**; `assembleDebug` construído com sucesso em 26s.
+> - **Fase F2 (Aula e Treino com Resultado Real):** Concluída com 100% de aprovação. 18 lições em 5 estágios com IDs estritamente canônicos e resolvíveis; resumo pré-início com seleção de 5/10/15/20 min e estilo; transporte de IDs sem fallback genérico; card proeminente de sessão ativa recuperável; diálogo de conflito ao tentar iniciar outra sessão; pausa manual preservada no retorno do app; persistência atômica da sessão interrompida; pautas ajustadas em telas comprimidas; invalidação de avaliação ao tocar a caneta; finalização idempotente contra cliques duplos; tentativa limpa no retry preservando anterior; suíte dedicada `PhaseF2AcceptanceTest` cobrindo todos os cenários adversariais.
+> - **Suíte Completa:** **272 testes unitários / 0 falhas / 0 erros**; `assembleDebug` construído com sucesso em 12s.
 
 **Projeto:** Scribe / Caligrafia
-**Versão documental:** v0.8.2
-**Versão do aplicativo:** v0.8.2 (versionCode 12)
-**Estado:** F0_F1_CONCLUIDOS — 264 testes unitários verdes (100% pass), assembleDebug bem-sucedido, F0 e F1 concluídas e testadas de ponta a ponta.
-**Milestone atual:** Fase F2 — Aulas, objetivos, treino e feedback (Roadmap Funcional).
-**Código de produto:** F0 e F1 100% integradas, testadas e auditadas.
+**Versão documental:** v0.8.3
+**Versão do aplicativo:** v0.8.3 (versionCode 13)
+**Estado:** F0_F1_F2_CONCLUIDOS — 272 testes unitários verdes (100% pass), assembleDebug bem-sucedido, F0, F1 e F2 concluídas e testadas de ponta a ponta.
+**Milestone atual:** Fase F3 — Evolução, alfabeto e estilos utilizáveis (Roadmap Funcional).
+**Código de produto:** F0, F1 e F2 100% integradas, testadas e auditadas.
 
 ## Status Recente de Estabilização & Redesenho Visual (2026-09-13)
 1. **Onda 3 — Geometria, Pautas, Métricas Canônicas e Fidelidade Visual (Concluída e Verificada):**

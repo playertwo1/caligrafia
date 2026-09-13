@@ -1,6 +1,10 @@
 package com.scribe.caligrafia.learning.history
 
+import com.scribe.caligrafia.learning.model.CurriculumCatalog
 import com.scribe.caligrafia.learning.review.SpacedRepetitionItem
+import com.scribe.caligrafia.learning.session.ActiveSessionState
+import com.scribe.caligrafia.learning.session.SessionDuration
+import com.scribe.caligrafia.learning.session.SessionPhase
 import java.util.UUID
 
 /**
@@ -97,6 +101,50 @@ object LearningHistorySerializer {
         }
 
         return Pair(sessions, repetitions)
+    }
+
+    fun serializeActiveSession(session: ActiveSessionState): String {
+        return "{\n" +
+            "  \"lessonId\": \"${escape(session.lesson.id)}\",\n" +
+            "  \"duration\": \"${session.duration.name}\",\n" +
+            "  \"currentPhase\": \"${session.currentPhase.name}\",\n" +
+            "  \"phaseElapsedSeconds\": ${session.phaseElapsedSeconds},\n" +
+            "  \"phaseTotalSeconds\": ${session.phaseTotalSeconds},\n" +
+            "  \"totalElapsedSeconds\": ${session.totalElapsedSeconds},\n" +
+            "  \"isPaused\": true,\n" +
+            "  \"isFinished\": ${session.isFinished},\n" +
+            "  \"attemptsCount\": ${session.attemptsCount},\n" +
+            "  \"averageScore\": ${session.averageScore ?: "null"}\n" +
+            "}"
+    }
+
+    fun deserializeActiveSession(jsonText: String): ActiveSessionState? {
+        val lessonId = extractString(jsonText, "lessonId") ?: return null
+        val lesson = CurriculumCatalog.getLessonById(lessonId) ?: return null
+        val durationName = extractString(jsonText, "duration") ?: SessionDuration.MIN_10.name
+        val duration = try { SessionDuration.valueOf(durationName) } catch (_: Throwable) { SessionDuration.MIN_10 }
+        val phaseName = extractString(jsonText, "currentPhase") ?: SessionPhase.WARM_UP.name
+        val phase = try { SessionPhase.valueOf(phaseName) } catch (_: Throwable) { SessionPhase.WARM_UP }
+        val phaseElapsed = extractInt(jsonText, "phaseElapsedSeconds") ?: 0
+        val phaseTotal = extractInt(jsonText, "phaseTotalSeconds") ?: 90
+        val totalElapsed = extractInt(jsonText, "totalElapsedSeconds") ?: 0
+        val isFinished = jsonText.contains("\"isFinished\"\\s*:\\s*true".toRegex())
+        val attemptsCount = extractInt(jsonText, "attemptsCount") ?: 0
+        val avgScoreRegex = Regex("\"averageScore\"\\s*:\\s*([0-9]+(?:\\.[0-9]+)?)")
+        val avgScore = avgScoreRegex.find(jsonText)?.groupValues?.get(1)?.toFloatOrNull()
+
+        return ActiveSessionState(
+            lesson = lesson,
+            duration = duration,
+            currentPhase = phase,
+            phaseElapsedSeconds = phaseElapsed,
+            phaseTotalSeconds = phaseTotal,
+            totalElapsedSeconds = totalElapsed,
+            isPaused = true, // F2.11: Sempre reabre pausada ao restaurar
+            isFinished = isFinished,
+            attemptsCount = attemptsCount,
+            averageScore = avgScore
+        )
     }
 
     private fun extractJsonObjects(section: String): List<String> {

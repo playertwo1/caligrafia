@@ -259,6 +259,11 @@ class MainActivity : ComponentActivity() {
         } catch (e: Throwable) {
             android.util.Log.e("Scribe", "Erro no onResume do Notebook", e)
         }
+        try {
+            learningViewModel.onResumeLifecycle()
+        } catch (e: Throwable) {
+            android.util.Log.e("Scribe", "Erro no onResume do LearningViewModel", e)
+        }
     }
 
     override fun onPause() {
@@ -277,6 +282,11 @@ class MainActivity : ComponentActivity() {
             guidedPracticeViewModel.onPauseLifecycle()
         } catch (e: Throwable) {
             android.util.Log.e("Scribe", "Erro no onPause do GuidedPractice", e)
+        }
+        try {
+            learningViewModel.onPauseLifecycle()
+        } catch (e: Throwable) {
+            android.util.Log.e("Scribe", "Erro no onPause do LearningViewModel", e)
         }
     }
 }
