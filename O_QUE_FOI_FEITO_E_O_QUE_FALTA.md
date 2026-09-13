@@ -257,11 +257,13 @@ Todos os marcos previstos no [ROADMAP.md](file:///c:/Users/fael/Documents/Codex/
 
 ## 4. Instruções para Auditoria pelo Codex
 
-1. O relatório focado em tudo o que foi implementado desde a última auditoria (Milestones M4, M5 e M6 — v0.3.0 até v0.6.0) está disponível em:
-   👉 **[`AUDIT_REPORT_M4_M6.md`](file:///c:/Users/fael/Documents/Codex/scribe/AUDIT_REPORT_M4_M6.md)**
-2. O histórico consolidado das fundações anteriores (M0 a M3) e correções de apontamentos anteriores continua em [`AUDIT_REPORT.md`](file:///c:/Users/fael/Documents/Codex/scribe/AUDIT_REPORT.md).
+1. O relatório focado em tudo o que foi implementado desde a última auditoria (Milestones M7 e M8 — v0.6.0 até v0.8.0) e que conclui o Roadmap oficial está disponível em:
+   👉 **[`AUDIT_REPORT_M7_M8.md`](file:///c:/Users/fael/Documents/Codex/scribe/AUDIT_REPORT_M7_M8.md)**
+2. Os relatórios de etapas anteriores continuam preservados para rastreabilidade:
+   - M4 a M6: [`AUDIT_REPORT_M4_M6.md`](file:///c:/Users/fael/Documents/Codex/scribe/AUDIT_REPORT_M4_M6.md)
+   - M0 a M3: [`AUDIT_REPORT.md`](file:///c:/Users/fael/Documents/Codex/scribe/AUDIT_REPORT.md)
 3. O script de verificação estática e compilação do Watchdog pode ser executado via terminal com:
    ```powershell
    .\scripts\watchdog.ps1
    ```
-4. O APK assinado pronto para instalação direta no Samsung Galaxy S25 Ultra foi copiado para o Google Drive na pasta `Apks/`, `Scribe/` e `codex/scribe/`.
+4. O APK assinado da versão v0.8.0 pronto para instalação no Samsung Galaxy S25 Ultra está no Google Drive nas pastas `Apks/`, `Scribe/` e `codex/scribe/`.
