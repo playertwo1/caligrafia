@@ -29,6 +29,17 @@ class LocalPracticeAttemptRepository(
 
     private val cachedMetadata = mutableListOf<AttemptMeta>()
     private val strokeCache = mutableMapOf<String, List<Stroke>>()
+    private var lastKnownModified: Long = 0L
+    private var lastKnownLength: Long = -1L
+
+    private fun checkAndReloadIfModifiedExternally() {
+        if (!manifestFile.exists()) return
+        val mod = manifestFile.lastModified()
+        val len = manifestFile.length()
+        if (mod != lastKnownModified || len != lastKnownLength) {
+            loadManifest()
+        }
+    }
 
     private data class AttemptMeta(
         val attemptId: String,
@@ -38,7 +49,9 @@ class LocalPracticeAttemptRepository(
         val scorePercent: Int,
         val averageSlantDegrees: Float,
         val durationMs: Long,
-        val isBaseline: Boolean
+        val isBaseline: Boolean,
+        val targetSlantDegrees: Float? = null,
+        val styleId: String? = null
     )
 
     init {
@@ -50,6 +63,7 @@ class LocalPracticeAttemptRepository(
 
     override fun saveAttempt(attempt: PracticeAttemptRecord) {
         synchronized(lock) {
+            checkAndReloadIfModifiedExternally()
             val scribeFile = File(attemptsDir, "${attempt.attemptId}.scribe")
             fileStrategy.save(scribeFile, attempt.strokes, attempt.attemptId)
 
@@ -63,9 +77,12 @@ class LocalPracticeAttemptRepository(
                 scorePercent = attempt.scorePercent,
                 averageSlantDegrees = attempt.averageSlantDegrees,
                 durationMs = attempt.durationMs,
-                isBaseline = attempt.isBaseline
+                isBaseline = attempt.isBaseline,
+                targetSlantDegrees = attempt.targetSlantDegrees,
+                styleId = attempt.styleId
             )
 
+            cachedMetadata.removeAll { it.attemptId == meta.attemptId }
             cachedMetadata.add(0, meta)
             saveManifest()
         }
@@ -73,6 +90,7 @@ class LocalPracticeAttemptRepository(
 
     override fun getAttemptsForTarget(targetId: String): List<PracticeAttemptRecord> {
         synchronized(lock) {
+            checkAndReloadIfModifiedExternally()
             return cachedMetadata
                 .filter { it.targetId == targetId }
                 .map { loadFullAttempt(it) }
@@ -81,12 +99,14 @@ class LocalPracticeAttemptRepository(
 
     override fun getAllAttempts(): List<PracticeAttemptRecord> {
         synchronized(lock) {
+            checkAndReloadIfModifiedExternally()
             return cachedMetadata.map { loadFullAttempt(it) }
         }
     }
 
     override fun getBeforeAndAfter(targetId: String): Pair<PracticeAttemptRecord, PracticeAttemptRecord>? {
         synchronized(lock) {
+            checkAndReloadIfModifiedExternally()
             val forTarget = cachedMetadata.filter { it.targetId == targetId }
             if (forTarget.size < 2) return null
 
@@ -135,19 +155,30 @@ class LocalPracticeAttemptRepository(
             scorePercent = meta.scorePercent,
             averageSlantDegrees = meta.averageSlantDegrees,
             durationMs = meta.durationMs,
-            isBaseline = meta.isBaseline
+            isBaseline = meta.isBaseline,
+            targetSlantDegrees = meta.targetSlantDegrees,
+            styleId = meta.styleId
         )
     }
 
     private fun loadManifest() {
-        if (!manifestFile.exists()) return
+        if (!manifestFile.exists()) {
+            cachedMetadata.clear()
+            lastKnownModified = 0L
+            lastKnownLength = -1L
+            return
+        }
 
+        lastKnownModified = manifestFile.lastModified()
+        lastKnownLength = manifestFile.length()
         cachedMetadata.clear()
         try {
             val lines = manifestFile.readLines(StandardCharsets.UTF_8)
             for (line in lines) {
                 val parts = line.split("|")
                 if (parts.size >= 8) {
+                    val targetSlant = parts.getOrNull(8)?.toFloatOrNull()
+                    val styleId = parts.getOrNull(9)?.takeIf { it.isNotBlank() }
                     cachedMetadata.add(
                         AttemptMeta(
                             attemptId = parts[0],
@@ -157,7 +188,9 @@ class LocalPracticeAttemptRepository(
                             scorePercent = parts[4].toIntOrNull() ?: 0,
                             averageSlantDegrees = parts[5].toFloatOrNull() ?: 52f,
                             durationMs = parts[6].toLongOrNull() ?: 0L,
-                            isBaseline = parts[7].toBoolean()
+                            isBaseline = parts[7].toBoolean(),
+                            targetSlantDegrees = targetSlant,
+                            styleId = styleId
                         )
                     )
                 }
@@ -171,13 +204,15 @@ class LocalPracticeAttemptRepository(
             FileOutputStream(temp).use { fos ->
                 val writer = OutputStreamWriter(fos, StandardCharsets.UTF_8)
                 for (meta in cachedMetadata) {
-                    writer.write("${meta.attemptId}|${meta.targetId}|${meta.targetTitle}|${meta.timestampMs}|${meta.scorePercent}|${meta.averageSlantDegrees}|${meta.durationMs}|${meta.isBaseline}\n")
+                    writer.write("${meta.attemptId}|${meta.targetId}|${meta.targetTitle}|${meta.timestampMs}|${meta.scorePercent}|${meta.averageSlantDegrees}|${meta.durationMs}|${meta.isBaseline}|${meta.targetSlantDegrees ?: ""}|${meta.styleId ?: ""}\n")
                 }
                 writer.flush()
                 fos.flush()
                 try { fos.fd.sync() } catch (_: Throwable) {}
             }
             Files.move(temp.toPath(), manifestFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+            lastKnownModified = manifestFile.lastModified()
+            lastKnownLength = manifestFile.length()
         } catch (e: Throwable) {
             if (temp.exists()) temp.delete()
             throw e

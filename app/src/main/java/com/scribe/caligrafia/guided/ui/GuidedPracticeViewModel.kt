@@ -71,7 +71,7 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
     )
     private val alphabetRepository: PersonalAlphabetRepository = alphabetRepo
         ?: LocalPersonalAlphabetRepository(
-            application.filesDir ?: java.io.File(System.getProperty("java.io.tmpdir", "."), "scribe_guided_test")
+            java.io.File(application.filesDir ?: java.io.File(System.getProperty("java.io.tmpdir", "."), "scribe_guided_test"), "personal_alphabet")
         )
     val attemptRepository: PracticeAttemptRepository = attemptRepo
         ?: LocalPracticeAttemptRepository(
@@ -365,8 +365,8 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
         }
         val glyph = _state.value.selectedGlyph
         val eval = _state.value.evaluation
-        val score = eval?.scorePercent?.toFloat() ?: 70f
-        val slant = eval?.slant?.measuredAngleDegrees ?: 52f
+        val score = eval?.scorePercent?.toFloat() ?: 0f
+        val slant = eval?.slant?.measuredAngleDegrees ?: _state.value.currentStyle.defaultSlantAngle
 
         val alphabetGlyphId = when {
             glyph.id.startsWith("glyph_") -> glyph.id
@@ -388,8 +388,8 @@ class GuidedPracticeViewModel @JvmOverloads constructor(
                 _state.update { it.copy(feedbackMessage = "Letra '${glyph.symbol}' salva no seu Alfabeto!") }
                 onComplete(true)
             } catch (e: Exception) {
-                _state.update { it.copy(feedbackMessage = "Letra salva no Alfabeto Pessoal.") }
-                onComplete(true)
+                _state.update { it.copy(feedbackMessage = "Falha ao salvar no Alfabeto: ${e.message}") }
+                onComplete(false)
             }
         }
     }

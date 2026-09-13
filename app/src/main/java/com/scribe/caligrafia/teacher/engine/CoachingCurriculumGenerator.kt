@@ -19,8 +19,23 @@ class CoachingCurriculumGenerator {
     fun generatePrescription(diagnostic: BiomechanicalDiagnostic): PrescribedPracticeSession {
         val weakness = diagnostic.primaryWeakness
 
-        // Se o usuário atingiu maestria global ou não tem fraquezas pontuais graves
-        if (diagnostic.maturityLevel == MaturityLevel.MASTER_OF_STROKE || weakness == null) {
+        // Se o diagnóstico for vazio ou inicial, prescreve sessão introdutória honesta (S08)
+        if (diagnostic.totalStrokesAnalyzed == 0 || diagnostic.totalAttemptsAnalyzed == 0 ||
+            (diagnostic.maturityLevel == MaturityLevel.BEGINNER && weakness == null)) {
+            return PrescribedPracticeSession(
+                title = "Treino Inicial de Diagnóstico",
+                rationale = "Complete sua primeira sessão prática para que o Professor IA identifique suas necessidades biomecânicas personalizadas.",
+                targetDimension = BiomechanicalDimension.SLANT_STABILITY,
+                recommendedMinutes = 5,
+                warmupExerciseId = "basic_slant",
+                focusExerciseId = "basic_slant",
+                recommendedGhostLevel = 0.80f,
+                targetGoalDescription = "Traçar os traços fundamentais com firmeza e ritmo controlado."
+            )
+        }
+
+        // Se o usuário atingiu maestria global
+        if (diagnostic.maturityLevel == MaturityLevel.MASTER_OF_STROKE) {
             return PrescribedPracticeSession(
                 title = "Treino de Refinamento e Mestria",
                 rationale = "Seu traço apresenta maturidade caligráfica superior. Este treino desafia sua memória muscular com assistência visual mínima.",
@@ -30,6 +45,20 @@ class CoachingCurriculumGenerator {
                 focusExerciseId = "to",
                 recommendedGhostLevel = 0.10f,
                 targetGoalDescription = "Executar conexões clássicas em modo quase autônomo com precisão acima de 88%."
+            )
+        }
+
+        // Se não houver fraqueza identificada
+        if (weakness == null) {
+            return PrescribedPracticeSession(
+                title = "Treino de Manutenção e Fluidez",
+                rationale = "Seus traços estão estáveis e equilibrados. Pratique para manter a consistência neuromuscular.",
+                targetDimension = BiomechanicalDimension.RHYTHM_AND_CADENCE,
+                recommendedMinutes = 10,
+                warmupExerciseId = "ascending_loop",
+                focusExerciseId = "to",
+                recommendedGhostLevel = 0.40f,
+                targetGoalDescription = "Manter o ritmo e a fluidez em sequências completas."
             )
         }
 

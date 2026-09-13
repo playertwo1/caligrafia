@@ -48,6 +48,24 @@ object SignatureConsistencyEngine {
             }
         }
 
+        var netDx = 0f
+        var netDy = 0f
+        for (stroke in strokes) {
+            val pts = stroke.points
+            if (pts.size >= 2) {
+                netDx += pts.last().x - pts.first().x
+                netDy += pts.last().y - pts.first().y
+            }
+        }
+        val dominantAngle = if (netDx != 0f || netDy != 0f) {
+            val rad = kotlin.math.atan2(netDy.toDouble(), netDx.toDouble())
+            var deg = Math.toDegrees(rad).toFloat()
+            if (deg < 0) deg += 360f
+            deg
+        } else {
+            0f
+        }
+
         val w = if (maxX >= minX) (maxX - minX).coerceAtLeast(1f) else 1f
         val h = if (maxY >= minY) (maxY - minY).coerceAtLeast(1f) else 1f
         val aspectRatio = w / h
@@ -60,7 +78,8 @@ object SignatureConsistencyEngine {
             averageSpeedPxPerMs = speed,
             totalLengthPx = totalLength,
             aspectRatio = aspectRatio,
-            penUpCount = penUpCount
+            penUpCount = penUpCount,
+            dominantAngleDegrees = dominantAngle
         )
     }
 
@@ -111,21 +130,32 @@ object SignatureConsistencyEngine {
         val speedRatio = if (baseline.averageSpeedPxPerMs > 0) attempt.averageSpeedPxPerMs / baseline.averageSpeedPxPerMs else 1f
         val speedScore = ((sMin / sMax) * 100f).coerceIn(0f, 100f)
 
+        // 5. Alinhamento angular da trajetória líquida (S16)
+        val angleDiff = kotlin.math.abs(baseline.dominantAngleDegrees - attempt.dominantAngleDegrees)
+        val normalizedAngleDiff = if (angleDiff > 180f) 360f - angleDiff else angleDiff
+        val angleScore = (100f - normalizedAngleDiff * (100f / 90f)).coerceIn(0f, 100f)
+
         // Score ponderado final
         val repeatabilityScore = (
-            strokeScore * 0.30f +
-            durationScore * 0.25f +
-            aspectScore * 0.25f +
-            speedScore * 0.20f
+            strokeScore * 0.25f +
+            durationScore * 0.20f +
+            aspectScore * 0.20f +
+            speedScore * 0.15f +
+            angleScore * 0.20f
         ).coerceIn(0f, 100f)
 
-        val isConsistent = repeatabilityScore >= 75f
+        val isConsistent = repeatabilityScore >= 75f && normalizedAngleDiff <= 35f
 
         val title: String
         val details: String
         val tip: String
 
         when {
+            normalizedAngleDiff > 35f -> {
+                title = "Direção e Orientação Inconsistentes"
+                details = "A orientação geométrica dos traços diverge da referência (desvio angular de ${normalizedAngleDiff.toInt()}°)."
+                tip = "Atente para a inclinação e direção natural do traçado da assinatura."
+            }
             repeatabilityScore >= 90f -> {
                 title = "Excelente Repetibilidade Motora!"
                 details = "Sua assinatura apresenta ritmo, proporção e dinâmica muscular praticamente idênticos à referência gravada."

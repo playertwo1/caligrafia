@@ -79,23 +79,29 @@ class TeacherViewModel @JvmOverloads constructor(
     fun reanalyzeAllData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isAnalyzing = true) }
-            val attempts = attemptRepository.getAllAttempts()
-            val newDiagnostic = diagnosticEngine.diagnoseAttempts(attempts)
-            val newPrescription = curriculumGenerator.generatePrescription(newDiagnostic)
-            val newInsights = feedbackEngine.generateInsights(newDiagnostic)
+            try {
+                val attempts = attemptRepository.getAllAttempts()
+                val (newDiagnostic, newPrescription, newInsights) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                    val diag = diagnosticEngine.diagnoseAttempts(attempts)
+                    val presc = curriculumGenerator.generatePrescription(diag)
+                    val ins = feedbackEngine.generateInsights(diag)
+                    Triple(diag, presc, ins)
+                }
 
-            teacherRepository.saveDiagnostic(newDiagnostic)
-            teacherRepository.savePrescription(newPrescription)
-            teacherRepository.saveInsights(newInsights)
+                teacherRepository.saveDiagnostic(newDiagnostic)
+                teacherRepository.savePrescription(newPrescription)
+                teacherRepository.saveInsights(newInsights)
 
-            _uiState.update {
-                it.copy(
-                    isAnalyzing = false,
-                    diagnostic = newDiagnostic,
-                    prescription = newPrescription,
-                    insights = newInsights,
-                    selectedDimension = newDiagnostic.primaryWeakness ?: BiomechanicalDimension.SLANT_STABILITY
-                )
+                _uiState.update {
+                    it.copy(
+                        diagnostic = newDiagnostic,
+                        prescription = newPrescription,
+                        insights = newInsights,
+                        selectedDimension = newDiagnostic.primaryWeakness ?: BiomechanicalDimension.SLANT_STABILITY
+                    )
+                }
+            } finally {
+                _uiState.update { it.copy(isAnalyzing = false) }
             }
         }
     }

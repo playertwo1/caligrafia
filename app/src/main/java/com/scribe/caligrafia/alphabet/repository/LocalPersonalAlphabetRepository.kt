@@ -313,31 +313,6 @@ class LocalPersonalAlphabetRepository(
 
     private fun createInitialSeedAlphabet(): PersonalAlphabet {
         val canonical = generateCanonicalGlyphs()
-
-        // Adiciona sementes prévias para fornecer experiência rica imediata
-        val seeds = mapOf(
-            "glyph_lower_a" to createSampleVariant("glyph_lower_a", 1, 92f, 52f, generateLetterAStrokes()),
-            "glyph_lower_l" to createSampleVariant("glyph_lower_l", 1, 94f, 52f, generateLetterLStrokes()),
-            "glyph_lower_i" to createSampleVariant("glyph_lower_i", 1, 89f, 52f, generateLetterIStrokes()),
-            "glyph_conn_it" to createSampleVariant("glyph_conn_it", 1, 91f, 52f, generateConnectorITStrokes())
-        )
-
-        for ((glyphId, variant) in seeds) {
-            val glyph = canonical[glyphId]
-            if (glyph != null) {
-                canonical[glyphId] = glyph.copy(
-                    selectedVariantId = variant.id,
-                    variants = listOf(variant),
-                    bestScore = variant.score
-                )
-                // Grava os traços da semente
-                try {
-                    strokePersistence.save(variant.id, variant.strokes)
-                    strokeCache[variant.id] = variant.strokes
-                } catch (_: Throwable) {}
-            }
-        }
-
         return PersonalAlphabet(glyphs = canonical)
     }
 

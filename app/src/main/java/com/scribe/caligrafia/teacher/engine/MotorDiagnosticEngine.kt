@@ -97,16 +97,26 @@ class MotorDiagnosticEngine(
         for (stroke in strokes) {
             val pts = stroke.points
             if (pts.size < 2) continue
-            for (i in 0 until pts.size - 1) {
+
+            var i = 0
+            while (i < pts.size - 1) {
                 val p1 = pts[i]
-                val p2 = pts[i + 1]
+                var nextIdx = i + 1
+                while (nextIdx < pts.size - 1) {
+                    val dx = pts[nextIdx].x - p1.x
+                    val dy = pts[nextIdx].y - p1.y
+                    if (sqrt(dx * dx + dy * dy) >= 8.0f) break
+                    nextIdx++
+                }
+
+                val p2 = pts[nextIdx]
                 val dx = p2.x - p1.x
                 val dy = p2.y - p1.y
                 val dist = sqrt(dx * dx + dy * dy)
 
                 // R11 / S09: Segmentos descendentes expressivos com convenção caligráfica canônica.
                 // dy > 0 (descendente); o ângulo caligráfico em relação à linha de base é atan2(dy, -dx)
-                if (dy > 4.0f && dist > 5.0f) {
+                if (dy > 3.0f && dist > 4.0f) {
                     val angleRad = atan2(dy.toDouble(), (-dx).toDouble())
                     var angleDeg = Math.toDegrees(angleRad).toFloat()
                     if (angleDeg < 0) angleDeg += 180f
@@ -116,6 +126,7 @@ class MotorDiagnosticEngine(
                         weightedAngles.add(Pair(angleDeg, dist))
                     }
                 }
+                i = nextIdx
             }
         }
 

@@ -122,12 +122,24 @@ class ScribeBackupManager(private val baseDir: File) {
             }
         }
 
-        // 4. Compacta arquivos soltos na raiz (ex: learning_history.json)
+        // 4. Compacta arquivos soltos na raiz (ex: learning_history.json, personal_styles.json)
         val rootLearningHistory = File(baseDir, "learning_history.json")
         if (rootLearningHistory.exists() && rootLearningHistory.isFile) {
             val entry = ZipEntry("learning_history.json")
             zipOut.putNextEntry(entry)
             val bytesWritten = rootLearningHistory.inputStream().use { input ->
+                input.copyTo(zipOut)
+            }
+            zipOut.closeEntry()
+            totalFiles++
+            totalBytes += bytesWritten
+        }
+
+        val rootPersonalStyles = File(baseDir, "personal_styles.json")
+        if (rootPersonalStyles.exists() && rootPersonalStyles.isFile) {
+            val entry = ZipEntry("personal_styles.json")
+            zipOut.putNextEntry(entry)
+            val bytesWritten = rootPersonalStyles.inputStream().use { input ->
                 input.copyTo(zipOut)
             }
             zipOut.closeEntry()
@@ -208,7 +220,10 @@ class ScribeBackupManager(private val baseDir: File) {
             rollbackDir.mkdirs()
 
             // Criar cópia de segurança do estado ativo para rollback em caso de falha
-            val activeFolders = listOf("notebooks", "personal_alphabet", "attempts", "teacher", "custom_fonts", "learning_history.json")
+            val activeFolders = listOf(
+                "notebooks", "personal_alphabet", "attempts", "teacher", "custom_fonts",
+                "learning_history.json", "personal_styles.json", "alphabet", "practice_attempts", "fonts"
+            )
             for (item in activeFolders) {
                 val src = File(baseDir, item)
                 if (src.exists()) {
@@ -260,13 +275,18 @@ class ScribeBackupManager(private val baseDir: File) {
                     copyDirSafely(stFonts, File(baseDir, "custom_fonts"))
                 }
 
-                // 3. Histórico de aprendizado
+                // 3. Histórico de aprendizado e estilos pessoais
                 val stLearningRoot = File(tempRestoreDir, "learning_history.json")
                 val stLearningSub = File(tempRestoreDir, "learning/learning_history.json")
                 if (stLearningRoot.exists()) {
                     Files.copy(stLearningRoot.toPath(), File(baseDir, "learning_history.json").toPath(), StandardCopyOption.REPLACE_EXISTING)
                 } else if (stLearningSub.exists()) {
                     Files.copy(stLearningSub.toPath(), File(baseDir, "learning_history.json").toPath(), StandardCopyOption.REPLACE_EXISTING)
+                }
+
+                val stPersonalStyles = File(tempRestoreDir, "personal_styles.json")
+                if (stPersonalStyles.exists() && stPersonalStyles.isFile) {
+                    Files.copy(stPersonalStyles.toPath(), File(baseDir, "personal_styles.json").toPath(), StandardCopyOption.REPLACE_EXISTING)
                 }
 
                 // Contagens reais pós-restauração
@@ -297,11 +317,16 @@ class ScribeBackupManager(private val baseDir: File) {
                     val backupItem = File(rollbackDir, item)
                     val activeTarget = File(baseDir, item)
                     if (backupItem.exists()) {
+                        activeTarget.deleteRecursively()
                         if (backupItem.isDirectory) {
-                            activeTarget.deleteRecursively()
                             backupItem.copyRecursively(activeTarget, overwrite = true)
                         } else {
                             backupItem.copyTo(activeTarget, overwrite = true)
+                        }
+                    } else {
+                        // Se não existia no rollback, foi criado durante esta restauração e deve ser removido!
+                        if (activeTarget.exists()) {
+                            activeTarget.deleteRecursively()
                         }
                     }
                 }

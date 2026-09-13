@@ -202,15 +202,24 @@ object GeometricFeedbackEvaluator {
             val pts = stroke.points
             if (pts.size < 2) continue
 
-            for (i in 0 until pts.size - 1) {
+            var i = 0
+            while (i < pts.size - 1) {
                 val p1 = pts[i]
-                val p2 = pts[i + 1]
+                var nextIdx = i + 1
+                while (nextIdx < pts.size - 1) {
+                    val dx = pts[nextIdx].x - p1.x
+                    val dy = pts[nextIdx].y - p1.y
+                    if (sqrt(dx * dx + dy * dy) >= 8.0f) break
+                    nextIdx++
+                }
+
+                val p2 = pts[nextIdx]
                 val dx = p2.x - p1.x
                 val dy = p2.y - p1.y
                 val dist = sqrt(dx * dx + dy * dy)
 
                 // Apenas segmentos descendentes com comprimento mínimo considerável
-                if (dy > 4f && dist > 5f) {
+                if (dy > 3f && dist > 4f) {
                     val angleRad = atan2(dy.toDouble(), (-dx).toDouble())
                     var angleDeg = Math.toDegrees(angleRad).toFloat()
                     if (angleDeg < 0) angleDeg += 180f
@@ -219,6 +228,7 @@ object GeometricFeedbackEvaluator {
                         totalWeight += dist
                     }
                 }
+                i = nextIdx
             }
         }
 

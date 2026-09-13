@@ -25,9 +25,40 @@ object SignatureExporter {
         val w = width.coerceAtLeast(100)
         val h = height.coerceAtLeast(100)
 
+        // S15: Ajusta coordenadas para enquadrar traços com coordenadas negativas ou fora do quadro
+        var minX = Float.MAX_VALUE
+        var minY = Float.MAX_VALUE
+        var maxX = -Float.MAX_VALUE
+        var maxY = -Float.MAX_VALUE
+        var hasPoints = false
+
+        for (stroke in strokes) {
+            for (p in stroke.points) {
+                hasPoints = true
+                if (p.x < minX) minX = p.x
+                if (p.y < minY) minY = p.y
+                if (p.x > maxX) maxX = p.x
+                if (p.y > maxY) maxY = p.y
+            }
+        }
+
+        val padding = 20f
+        val offsetX = if (hasPoints && minX < 0f) -minX + padding else 0f
+        val offsetY = if (hasPoints && minY < 0f) -minY + padding else 0f
+
+        val effectiveMaxX = if (hasPoints) (maxX + offsetX + padding).coerceAtLeast(w.toFloat()) else w.toFloat()
+        val effectiveMaxY = if (hasPoints) (maxY + offsetY + padding).coerceAtLeast(h.toFloat()) else h.toFloat()
+
         val sb = StringBuilder()
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n")
-        sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 $w $h\" width=\"$w\" height=\"$h\">\n")
+        sb.append(
+            String.format(
+                Locale.US,
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 %.0f %.0f\" width=\"$w\" height=\"$h\">\n",
+                effectiveMaxX,
+                effectiveMaxY
+            )
+        )
         sb.append("  <g id=\"signature-strokes\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\n")
 
         for (stroke in strokes) {
@@ -42,17 +73,19 @@ object SignatureExporter {
                     String.format(
                         Locale.US,
                         "    <circle cx=\"%.2f\" cy=\"%.2f\" r=\"%.2f\" fill=\"%s\" />\n",
-                        p.x, p.y, baseWidth / 2f, strokeColorHex
+                        p.x + offsetX, p.y + offsetY, baseWidth / 2f, strokeColorHex
                     )
                 )
             } else {
                 sb.append("    <path d=\"")
                 for (i in pts.indices) {
                     val p = pts[i]
+                    val px = p.x + offsetX
+                    val py = p.y + offsetY
                     if (i == 0) {
-                        sb.append(String.format(Locale.US, "M %.2f %.2f", p.x, p.y))
+                        sb.append(String.format(Locale.US, "M %.2f %.2f", px, py))
                     } else {
-                        sb.append(String.format(Locale.US, " L %.2f %.2f", p.x, p.y))
+                        sb.append(String.format(Locale.US, " L %.2f %.2f", px, py))
                     }
                 }
                 sb.append(

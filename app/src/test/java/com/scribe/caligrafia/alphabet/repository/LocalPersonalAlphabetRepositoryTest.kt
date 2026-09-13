@@ -24,7 +24,7 @@ class LocalPersonalAlphabetRepositoryTest {
     val tempFolder = TemporaryFolder()
 
     @Test
-    fun initialization_loadsCanonicalGlyphsAndSeeds() = runBlocking {
+    fun initialization_loadsCanonicalGlyphsWithoutSyntheticVariants() = runBlocking {
         val baseDir = tempFolder.newFolder("alphabet_repo_1")
         val repo = LocalPersonalAlphabetRepository(baseDir, Dispatchers.Unconfined)
 
@@ -32,15 +32,11 @@ class LocalPersonalAlphabetRepositoryTest {
         // Deve conter 68 glifos canônicos
         assertEquals(68, alphabet.totalGlyphsCount)
 
-        // Glifos semeados devem estar completos
+        // Glifos canônicos não devem ter variantes sintéticas (R04)
         val glyphA = alphabet.glyphs["glyph_lower_a"]
         assertNotNull(glyphA)
-        assertTrue(glyphA!!.isCompleted)
-        assertNotNull(glyphA.activeVariant)
-
-        // Deve carregar os traços da semente
-        val strokes = repo.getVariantStrokes(glyphA.activeVariant!!.id)
-        assertTrue(strokes.isNotEmpty())
+        assertEquals(0, glyphA!!.variants.size)
+        assertFalse(glyphA.isCompleted)
     }
 
     @Test

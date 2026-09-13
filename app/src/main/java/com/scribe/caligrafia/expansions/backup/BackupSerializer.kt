@@ -25,18 +25,25 @@ object BackupSerializer {
     }
 
     fun deserializeManifest(json: String): BackupManifest? {
+        val trimmed = json.trim()
+        if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) {
+            return null
+        }
         return try {
-            val formatVersion = extractString(json, "formatVersion") ?: "1.0"
-            val appVersion = extractString(json, "appVersion") ?: "0.8.0"
-            val appVersionCode = extractInt(json, "appVersionCode") ?: 10
-            val createdAtMs = extractLong(json, "createdAtMs") ?: System.currentTimeMillis()
-            val deviceInfo = extractString(json, "deviceInfo") ?: "Android"
-            val notebookCount = extractInt(json, "notebookCount") ?: 0
-            val pageCount = extractInt(json, "pageCount") ?: 0
-            val personalGlyphCount = extractInt(json, "personalGlyphCount") ?: 0
-            val lessonHistoryCount = extractInt(json, "lessonHistoryCount") ?: 0
-            val practiceAttemptCount = extractInt(json, "practiceAttemptCount") ?: 0
-            val hasTeacherDiagnostic = extractBoolean(json, "hasTeacherDiagnostic") ?: false
+            val formatVersion = extractString(trimmed, "formatVersion") ?: return null
+            if (formatVersion != "1.0") {
+                return null // Versão não suportada
+            }
+            val appVersion = extractString(trimmed, "appVersion") ?: "0.8.0"
+            val appVersionCode = extractInt(trimmed, "appVersionCode") ?: 10
+            val createdAtMs = extractLong(trimmed, "createdAtMs") ?: System.currentTimeMillis()
+            val deviceInfo = extractString(trimmed, "deviceInfo") ?: "Android"
+            val notebookCount = extractInt(trimmed, "notebookCount") ?: 0
+            val pageCount = extractInt(trimmed, "pageCount") ?: 0
+            val personalGlyphCount = extractInt(trimmed, "personalGlyphCount") ?: 0
+            val lessonHistoryCount = extractInt(trimmed, "lessonHistoryCount") ?: 0
+            val practiceAttemptCount = extractInt(trimmed, "practiceAttemptCount") ?: 0
+            val hasTeacherDiagnostic = extractBoolean(trimmed, "hasTeacherDiagnostic") ?: false
 
             BackupManifest(
                 formatVersion = formatVersion,
@@ -65,8 +72,55 @@ object BackupSerializer {
     }
 
     private fun extractString(json: String, key: String): String? {
-        val pattern = "\"$key\"\\s*:\\s*\"([^\"]*)\"".toRegex()
-        return pattern.find(json)?.groupValues?.get(1)
+        val keyIdx = json.indexOf("\"$key\"")
+        if (keyIdx < 0) return null
+        val colonIdx = json.indexOf(':', keyIdx + key.length + 2)
+        if (colonIdx < 0) return null
+        val startQuote = json.indexOf('"', colonIdx + 1)
+        if (startQuote < 0) return null
+
+        val sb = StringBuilder()
+        var i = startQuote + 1
+        var escaped = false
+        while (i < json.length) {
+            val c = json[i]
+            if (escaped) {
+                when (c) {
+                    '"' -> sb.append('"')
+                    '\\' -> sb.append('\\')
+                    '/' -> sb.append('/')
+                    'b' -> sb.append('\b')
+                    'f' -> sb.append('\u000C')
+                    'n' -> sb.append('\n')
+                    'r' -> sb.append('\r')
+                    't' -> sb.append('\t')
+                    'u' -> {
+                        if (i + 4 < json.length) {
+                            val hex = json.substring(i + 1, i + 5)
+                            val code = hex.toIntOrNull(16)
+                            if (code != null) {
+                                sb.append(code.toChar())
+                                i += 4
+                            } else {
+                                sb.append('u')
+                            }
+                        } else {
+                            sb.append('u')
+                        }
+                    }
+                    else -> sb.append(c)
+                }
+                escaped = false
+            } else if (c == '\\') {
+                escaped = true
+            } else if (c == '"') {
+                return sb.toString()
+            } else {
+                sb.append(c)
+            }
+            i++
+        }
+        return null
     }
 
     private fun extractInt(json: String, key: String): Int? {

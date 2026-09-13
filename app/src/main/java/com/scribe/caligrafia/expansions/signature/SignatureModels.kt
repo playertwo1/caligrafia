@@ -30,7 +30,8 @@ data class SignatureMetrics(
     val averageSpeedPxPerMs: Float,
     val totalLengthPx: Float,
     val aspectRatio: Float,
-    val penUpCount: Int
+    val penUpCount: Int,
+    val dominantAngleDegrees: Float = 0f
 )
 
 /**

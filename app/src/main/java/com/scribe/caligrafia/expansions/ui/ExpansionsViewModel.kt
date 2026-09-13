@@ -21,6 +21,7 @@ import com.scribe.caligrafia.expansions.styles.PressureCalibration
 import com.scribe.caligrafia.expansions.styles.PressureCurveType
 import com.scribe.caligrafia.expansions.watch.IWatchCompanionBridge
 import com.scribe.caligrafia.expansions.watch.WatchCompanionAdapter
+import com.scribe.caligrafia.ink.persistence.strategies.DedicatedFileStrategy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -73,6 +74,12 @@ class ExpansionsViewModel @JvmOverloads constructor(
     ),
     private val watchBridge: IWatchCompanionBridge = WatchCompanionAdapter(application)
 ) : AndroidViewModel(application) {
+
+    private val signaturesDir = File(
+        application.filesDir ?: File(System.getProperty("java.io.tmpdir", "."), "scribe_test_files"),
+        "signatures"
+    )
+    private val signaturePersistence = DedicatedFileStrategy(signaturesDir)
 
     private val _uiState = MutableStateFlow(ExpansionsUiState())
     val uiState: StateFlow<ExpansionsUiState> = _uiState.asStateFlow()
@@ -139,6 +146,14 @@ class ExpansionsViewModel @JvmOverloads constructor(
             maxX = maxX,
             maxY = maxY
         )
+
+        try {
+            if (!signaturesDir.exists()) signaturesDir.mkdirs()
+            val scribeFile = File(signaturesDir, "baseline.scribe")
+            signaturePersistence.save(scribeFile, attempt.strokes, attempt.id)
+            val metaFile = File(signaturesDir, "baseline_meta.txt")
+            metaFile.writeText("${attempt.id}|${attempt.durationMs}|${attempt.minX}|${attempt.minY}|${attempt.maxX}|${attempt.maxY}")
+        } catch (_: Throwable) {}
 
         _uiState.update {
             it.copy(
@@ -214,7 +229,28 @@ class ExpansionsViewModel @JvmOverloads constructor(
     }
 
     private fun loadBaselineSignature() {
-        // Inicialização defensiva da referência
+        try {
+            val scribeFile = File(signaturesDir, "baseline.scribe")
+            val metaFile = File(signaturesDir, "baseline_meta.txt")
+            if (scribeFile.exists() && metaFile.exists()) {
+                val strokes = signaturePersistence.load(scribeFile)
+                if (strokes.isNotEmpty()) {
+                    val parts = metaFile.readText().split("|")
+                    if (parts.size >= 6) {
+                        val attempt = SignatureAttempt(
+                            id = parts[0],
+                            strokes = strokes,
+                            durationMs = parts[1].toLongOrNull() ?: 1000L,
+                            minX = parts[2].toFloatOrNull() ?: 0f,
+                            minY = parts[3].toFloatOrNull() ?: 0f,
+                            maxX = parts[4].toFloatOrNull() ?: 100f,
+                            maxY = parts[5].toFloatOrNull() ?: 100f
+                        )
+                        _uiState.update { it.copy(baselineAttempt = attempt) }
+                    }
+                }
+            }
+        } catch (_: Throwable) {}
     }
 
     // --- Cópia de Textos ---

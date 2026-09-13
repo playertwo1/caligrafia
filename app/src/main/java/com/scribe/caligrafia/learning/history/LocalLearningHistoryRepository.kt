@@ -21,6 +21,7 @@ class LocalLearningHistoryRepository(
     private var cachedSessions = mutableListOf<CompletedSessionRecord>()
     private var cachedRepetitionItems = mutableMapOf<String, SpacedRepetitionItem>()
     private var lastKnownModified: Long = 0L
+    private var lastKnownLength: Long = -1L
 
     init {
         synchronized(lock) {
@@ -81,13 +82,16 @@ class LocalLearningHistoryRepository(
                 uniqueLessonsPracticed = uniqueLessons,
                 daysActiveLast30Days = daysActive,
                 spacedRepetitionItems = cachedRepetitionItems.toMap(),
-                recentSessions = cachedSessions.take(20)
+                recentSessions = cachedSessions.toList()
             )
         }
     }
 
     private fun checkAndReloadIfModifiedExternally() {
-        if (historyFile.exists() && historyFile.lastModified() > lastKnownModified) {
+        if (!historyFile.exists()) return
+        val currentMod = historyFile.lastModified()
+        val currentLen = historyFile.length()
+        if (currentMod != lastKnownModified || currentLen != lastKnownLength) {
             loadFromDisk()
         }
     }
@@ -97,10 +101,13 @@ class LocalLearningHistoryRepository(
 
         try {
             lastKnownModified = historyFile.lastModified()
+            lastKnownLength = historyFile.length()
             val jsonText = historyFile.readText(StandardCharsets.UTF_8)
             val (sessions, repetitions) = LearningHistorySerializer.deserialize(jsonText)
+            val mergedSessions = (cachedSessions + sessions).distinctBy { it.sessionId }
+                .sortedByDescending { it.timestampMs }
             cachedSessions.clear()
-            cachedSessions.addAll(sessions)
+            cachedSessions.addAll(mergedSessions)
             cachedRepetitionItems.clear()
             repetitions.forEach { item ->
                 cachedRepetitionItems[item.targetId] = item
@@ -136,6 +143,7 @@ class LocalLearningHistoryRepository(
                 StandardCopyOption.ATOMIC_MOVE
             )
             lastKnownModified = historyFile.lastModified()
+            lastKnownLength = historyFile.length()
         } catch (e: Throwable) {
             if (tempFile.exists()) tempFile.delete()
             throw e
