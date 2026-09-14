@@ -1,5 +1,11 @@
 package com.scribe.caligrafia.expansions.backup
 
+import com.scribe.caligrafia.core.model.Stroke
+import com.scribe.caligrafia.core.model.StrokePoint
+import com.scribe.caligrafia.core.model.ToolType
+import com.scribe.caligrafia.expansions.signature.SignatureAttempt
+import com.scribe.caligrafia.expansions.signature.SignatureBaselineStore
+import com.scribe.caligrafia.ink.persistence.strategies.DedicatedFileStrategy
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -12,6 +18,10 @@ import org.junit.rules.TemporaryFolder
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.security.MessageDigest
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
 
 class ScribeBackupManagerTest {
 
@@ -30,139 +40,36 @@ class ScribeBackupManagerTest {
     }
 
     @Test
-    fun backupSerializer_serializesAndDeserializesCorrectly() {
+    fun backupSerializer_serializesAndDeserializesExpandedInventory() {
         val manifest = BackupManifest(
             formatVersion = "1.0",
-            appVersion = "0.8.0",
-            appVersionCode = 10,
+            appVersion = "0.8.5",
+            appVersionCode = 15,
             createdAtMs = 1700000000000L,
-            deviceInfo = "Samsung Galaxy S25 Ultra",
+            deviceInfo = "Android",
             notebookCount = 3,
             pageCount = 12,
             personalGlyphCount = 26,
             lessonHistoryCount = 5,
+            spacedRepetitionCount = 4,
             practiceAttemptCount = 18,
-            hasTeacherDiagnostic = true
+            passageCopyCount = 2,
+            personalStyleCount = 3,
+            importedFontCount = 1,
+            signatureReferenceCount = 1,
+            hasTeacherDiagnostic = true,
+            hasPreferencesSnapshot = true
         )
 
         val json = BackupSerializer.serializeManifest(manifest)
-        val deserialized = BackupSerializer.deserializeManifest(json)
+        val restored = BackupSerializer.deserializeManifest(json)
 
-        assertNotNull(deserialized)
-        assertEquals(manifest.formatVersion, deserialized?.formatVersion)
-        assertEquals(manifest.appVersion, deserialized?.appVersion)
-        assertEquals(manifest.appVersionCode, deserialized?.appVersionCode)
-        assertEquals(manifest.notebookCount, deserialized?.notebookCount)
-        assertEquals(manifest.pageCount, deserialized?.pageCount)
-        assertEquals(manifest.personalGlyphCount, deserialized?.personalGlyphCount)
-        assertEquals(manifest.practiceAttemptCount, deserialized?.practiceAttemptCount)
-        assertEquals(manifest.hasTeacherDiagnostic, deserialized?.hasTeacherDiagnostic)
+        assertEquals(manifest, restored)
     }
 
     @Test
-    fun exportAndImport_restoresAllFilesAndPreservesStructure() {
-        // 1. Cria estrutura de dados simulada na pasta de origem
-        val notebookDir = File(sourceBaseDir, "notebooks/caderno_1").apply { mkdirs() }
-        File(notebookDir, "page_1.scribe").writeText("DADOS_VETORIAIS_PAGINA_1")
-        File(notebookDir, "page_2.scribe").writeText("DADOS_VETORIAIS_PAGINA_2")
-
-        val alphabetDir = File(sourceBaseDir, "alphabet").apply { mkdirs() }
-        File(alphabetDir, "glyph_a.scribe").writeText("DADOS_GLIFO_A")
-
-        val learningDir = File(sourceBaseDir, "learning").apply { mkdirs() }
-        File(learningDir, "learning_history.json").writeText("{\"sessions\": 3}")
-
-        val teacherDir = File(sourceBaseDir, "teacher").apply { mkdirs() }
-        File(teacherDir, "diagnostic_latest.json").writeText("{\"maturity\": \"MASTER\"}")
-
-        // 2. Exporta backup para stream em memória
-        val baos = ByteArrayOutputStream()
-        val summary = backupManager.exportBackup(baos)
-
-        assertTrue(summary.fileCount >= 5) // manifest + 2 pages + 1 glyph + 1 history + 1 teacher
-        assertTrue(summary.totalBytes > 0)
-        assertEquals(1, summary.manifest.notebookCount)
-        assertEquals(2, summary.manifest.pageCount)
-        assertEquals(1, summary.manifest.personalGlyphCount)
-        assertEquals(1, summary.manifest.lessonHistoryCount)
-        assertTrue(summary.manifest.hasTeacherDiagnostic)
-
-        // 3. Importa backup no diretório de destino
-        val targetBackupManager = ScribeBackupManager(targetBaseDir)
-        val bais = ByteArrayInputStream(baos.toByteArray())
-        val importResult = targetBackupManager.importBackup(bais)
-
-        assertTrue(importResult.isSuccess)
-        assertEquals(1, importResult.restoredNotebooks)
-        assertEquals(1, importResult.restoredGlyphs)
-        assertEquals(1, importResult.restoredLessons)
-        assertTrue(importResult.restoredTeacherData)
-
-        // 4. Verifica integridade física dos arquivos restaurados
-        val restoredPage1 = File(targetBaseDir, "notebooks/caderno_1/page_1.scribe")
-        assertTrue(restoredPage1.exists())
-        assertEquals("DADOS_VETORIAIS_PAGINA_1", restoredPage1.readText())
-
-        val restoredGlyph = File(targetBaseDir, "alphabet/glyph_a.scribe")
-        assertTrue(restoredGlyph.exists())
-        assertEquals("DADOS_GLIFO_A", restoredGlyph.readText())
-    }
-
-    @Test
-    fun importCorruptedZip_returnsFailureResult() {
-        val corruptedBytes = "ARQUIVO_NAO_EH_UM_ZIP_VALIDO".toByteArray()
-        val targetBackupManager = ScribeBackupManager(targetBaseDir)
-        val importResult = targetBackupManager.importBackup(ByteArrayInputStream(corruptedBytes))
-
-        assertFalse(importResult.isSuccess)
-        assertNotNull(importResult.errorMessage)
-    }
-
-    @Test
-    fun exportBackup_producesZipWithValidCentralDirectory_openableByZipFile() {
-        // S01: Verifica que o arquivo ZIP final possui o diretório central válido (END header)
-        val notebookDir = File(sourceBaseDir, "notebooks/caderno_1/pages").apply { mkdirs() }
-        File(notebookDir, "page_1.scribe").writeText("PAGE_DATA_1")
-
-        val backupFile = tempFolder.newFile("backup_test.scribepack")
-        backupFile.outputStream().use { fos ->
-            backupManager.exportBackup(fos)
-        }
-
-        // Deve abrir com java.util.zip.ZipFile sem lançar "zip END header not found"
-        val zipFile = java.util.zip.ZipFile(backupFile)
-        val entries = zipFile.entries().toList()
-        assertTrue(entries.isNotEmpty())
-        assertTrue(entries.any { it.name == "manifest.json" })
-        zipFile.close()
-    }
-
-    @Test
-    fun exportAndImport_withRealRepositoryPaths_packsAndRestoresAllCanonicalEntities() {
-        // S02: Testa com os caminhos canônicos reais dos repositórios
-        // 1. Cadernos com páginas aninhadas
-        val pagesDir = File(sourceBaseDir, "notebooks/caderno_real/pages").apply { mkdirs() }
-        File(pagesDir, "page_real.scribe").writeText("CADERNO_REAL_PAGE")
-
-        // 2. Alfabeto pessoal canônico
-        val strokesDir = File(sourceBaseDir, "personal_alphabet/strokes").apply { mkdirs() }
-        File(strokesDir, "glyph_b.scribe").writeText("GLIFO_CANONICO_B")
-        File(sourceBaseDir, "personal_alphabet/personal_alphabet_manifest.json").writeText("{\"version\":1}")
-
-        // 3. Tentativas de prática canônicas
-        val attemptsDir = File(sourceBaseDir, "attempts").apply { mkdirs() }
-        File(attemptsDir, "attempt_1.scribe").writeText("ATTEMPT_STROKES_1")
-
-        // 4. Histórico de aprendizado na raiz
-        File(sourceBaseDir, "learning_history.json").writeText("{\"totalSessions\": 5}")
-
-        // 5. Diagnóstico do professor
-        val teacherDir = File(sourceBaseDir, "teacher").apply { mkdirs() }
-        File(teacherDir, "diagnostic.json").writeText("{\"posture\": \"GOOD\"}")
-
-        // 6. Fontes customizadas
-        val fontsDir = File(sourceBaseDir, "custom_fonts").apply { mkdirs() }
-        File(fontsDir, "minha_fonte.ttf").writeText("FONT_BYTES")
+    fun exportInspectAndImport_mixedCanonicalSet_roundTripsAllManagedEntities() {
+        createMixedCanonicalDataset(sourceBaseDir)
 
         val baos = ByteArrayOutputStream()
         val summary = backupManager.exportBackup(baos)
@@ -170,118 +77,317 @@ class ScribeBackupManagerTest {
         assertEquals(1, summary.manifest.notebookCount)
         assertEquals(1, summary.manifest.pageCount)
         assertEquals(1, summary.manifest.personalGlyphCount)
-        assertEquals(1, summary.manifest.practiceAttemptCount)
         assertEquals(1, summary.manifest.lessonHistoryCount)
+        assertEquals(1, summary.manifest.spacedRepetitionCount)
+        assertEquals(1, summary.manifest.practiceAttemptCount)
+        assertEquals(1, summary.manifest.passageCopyCount)
+        assertEquals(1, summary.manifest.personalStyleCount)
+        assertEquals(1, summary.manifest.importedFontCount)
+        assertEquals(1, summary.manifest.signatureReferenceCount)
         assertTrue(summary.manifest.hasTeacherDiagnostic)
+        assertTrue(summary.manifest.hasPreferencesSnapshot)
 
-        // Restaura no destino
-        val targetBackupManager = ScribeBackupManager(targetBaseDir)
-        val importResult = targetBackupManager.importBackup(ByteArrayInputStream(baos.toByteArray()))
+        val inspection = ScribeBackupManager(targetBaseDir).inspectBackup(ByteArrayInputStream(baos.toByteArray()))
+        assertTrue(inspection.isValid)
+        assertEquals(summary.manifest, inspection.manifest)
+        assertTrue(inspection.entryCount > 1)
+        assertTrue(inspection.totalUncompressedBytes > 0)
 
-        assertTrue(importResult.isSuccess)
-        assertEquals(1, importResult.restoredNotebooks)
-        assertEquals(1, importResult.restoredGlyphs)
-        assertEquals(1, importResult.restoredAttempts)
-        assertEquals(1, importResult.restoredLessons)
-        assertTrue(importResult.restoredTeacherData)
+        // Acervo existente que NÃO existe no pacote. Restore F5 deve substituí-lo, não mesclar.
+        val obsolete = File(targetBaseDir, "notebooks/obsolete/pages/obsolete.scribe")
+        writeScribe(obsolete, sampleStroke("obsolete"))
+        assertTrue(obsolete.exists())
 
-        // Verifica existência nos caminhos canônicos
-        assertTrue(File(targetBaseDir, "notebooks/caderno_real/pages/page_real.scribe").exists())
-        assertTrue(File(targetBaseDir, "personal_alphabet/strokes/glyph_b.scribe").exists())
-        assertTrue(File(targetBaseDir, "attempts/attempt_1.scribe").exists())
-        assertTrue(File(targetBaseDir, "learning_history.json").exists())
-        assertTrue(File(targetBaseDir, "teacher/diagnostic.json").exists())
-        assertTrue(File(targetBaseDir, "custom_fonts/minha_fonte.ttf").exists())
+        val result = ScribeBackupManager(targetBaseDir)
+            .importBackup(ByteArrayInputStream(baos.toByteArray()))
+
+        assertTrue(result.errorMessage, result.isSuccess)
+        assertEquals(1, result.restoredNotebooks)
+        assertEquals(1, result.restoredGlyphs)
+        assertEquals(1, result.restoredLessons)
+        assertEquals(1, result.restoredAttempts)
+        assertEquals(1, result.restoredPassageCopies)
+        assertEquals(1, result.restoredStyles)
+        assertEquals(1, result.restoredFonts)
+        assertEquals(1, result.restoredSignatureReferences)
+        assertTrue(result.restoredTeacherData)
+
+        assertFalse("item removido não pode sobreviver por merge", obsolete.exists())
+        assertTrue(File(targetBaseDir, "notebooks/caderno_1/pages/page_1.scribe").isFile)
+        assertTrue(File(targetBaseDir, "personal_alphabet/strokes/var_a_1.scribe").isFile)
+        assertTrue(File(targetBaseDir, "attempts/attempt_1.scribe").isFile)
+        assertTrue(File(targetBaseDir, "passage_copies/text_copies/copy_1_p0.scribe").isFile)
+        assertTrue(File(targetBaseDir, "signatures/baseline_current.txt").isFile)
+        assertTrue(File(targetBaseDir, "preferences_snapshot.txt").isFile)
     }
 
     @Test
-    fun importBackup_withZipSlipMaliciousPath_isSafelyRejected() {
-        // S04: Testa que caminhos com '../' são rejeitados e não escapam da pasta
-        val baos = ByteArrayOutputStream()
-        val zos = java.util.zip.ZipOutputStream(baos)
+    fun exportBackup_producesZipWithCentralDirectoryAndReopens() {
+        val page = File(sourceBaseDir, "notebooks/caderno_1/pages/page_1.scribe")
+        writeScribe(page, sampleStroke("page"))
 
-        // Adiciona manifesto
-        val manifest = BackupManifest()
-        val manifestBytes = BackupSerializer.serializeManifest(manifest).toByteArray()
-        zos.putNextEntry(java.util.zip.ZipEntry("manifest.json"))
-        zos.write(manifestBytes)
-        zos.closeEntry()
+        val backupFile = tempFolder.newFile("backup_test.scribepack")
+        backupFile.outputStream().use { backupManager.exportBackup(it) }
 
-        // Adiciona entrada maliciosa com path traversal
-        val maliciousEntry = java.util.zip.ZipEntry("../malicious.txt")
-        zos.putNextEntry(maliciousEntry)
-        zos.write("MALICIOUS_DATA".toByteArray())
-        zos.closeEntry()
+        ZipFile(backupFile).use { zip ->
+            val entries = zip.entries().toList()
+            assertTrue(entries.isNotEmpty())
+            assertTrue(entries.any { it.name == "manifest.json" })
+            assertTrue(entries.any { it.name.endsWith("page_1.scribe") })
+        }
+    }
 
-        zos.finish()
-        zos.flush()
+    @Test
+    fun importInvalidPackage_rejectsBeforeMutation_andPreservesExistingBytes() {
+        val original = File(targetBaseDir, "notebooks/original/pages/p1.scribe")
+        writeScribe(original, sampleStroke("original"))
+        val before = original.readBytes()
 
-        val targetBackupManager = ScribeBackupManager(targetBaseDir)
-        val result = targetBackupManager.importBackup(ByteArrayInputStream(baos.toByteArray()))
+        val result = ScribeBackupManager(targetBaseDir)
+            .importBackup(ByteArrayInputStream("NOT_A_ZIP".toByteArray()))
 
         assertFalse(result.isSuccess)
-        assertTrue(result.errorMessage?.contains("Caminho de entrada inválido") == true ||
-                   result.errorMessage?.contains("SecurityException") == true ||
-                   result.errorMessage?.contains("Falha") == true)
+        assertTrue(original.isFile)
+        assertTrue(before.contentEquals(original.readBytes()))
     }
 
     @Test
-    fun importBackup_atomicRollbackOnFailure_preservesOriginalData() {
-        // S03: Configura dados originais ativos no destino
-        val existingNotebookDir = File(targetBaseDir, "notebooks/caderno_original/pages").apply { mkdirs() }
-        val originalPage = File(existingNotebookDir, "p1.scribe").apply { writeText("ORIGINAL_PAGE_CONTENT") }
-        val originalLearning = File(targetBaseDir, "learning_history.json").apply { writeText("ORIGINAL_HISTORY") }
+    fun inspectPackage_withInvalidScribeMagic_isRejected() {
+        val manifest = BackupManifest(notebookCount = 1, pageCount = 1)
+        val bytes = zipBytes(
+            "manifest.json" to BackupSerializer.serializeManifest(manifest).toByteArray(),
+            "notebooks/n1/pages/p1.scribe" to "FAKE_SCRIBE".toByteArray()
+        )
 
-        // Cria arquivo com manifesto mas faz o targetBaseDir/notebooks ficar somente leitura ou injeta erro simulado
-        val targetBackupManager = ScribeBackupManager(targetBaseDir)
-        
-        // Se passarmos um ZIP truncado ou se falhar durante a extração, os dados originais permanecem
-        val invalidZipStream = ByteArrayInputStream("DADOS_TRUNCADOS".toByteArray())
-        val result = targetBackupManager.importBackup(invalidZipStream)
+        val inspection = ScribeBackupManager(targetBaseDir)
+            .inspectBackup(ByteArrayInputStream(bytes))
+
+        assertFalse(inspection.isValid)
+        assertTrue(inspection.errorMessage?.contains("Magic bytes") == true || inspection.errorMessage?.contains("truncado") == true)
+    }
+
+    @Test
+    fun importBackup_withZipSlipPath_isRejectedBeforeMutation() {
+        val original = File(targetBaseDir, "notebooks/original/pages/p1.scribe")
+        writeScribe(original, sampleStroke("original"))
+        val before = original.readBytes()
+
+        val bytes = zipBytes(
+            "manifest.json" to BackupSerializer.serializeManifest(BackupManifest()).toByteArray(),
+            "../malicious.txt" to "MALICIOUS".toByteArray()
+        )
+
+        val result = ScribeBackupManager(targetBaseDir)
+            .importBackup(ByteArrayInputStream(bytes))
 
         assertFalse(result.isSuccess)
-        // Dados originais devem permanecer íntegros
-        assertTrue(originalPage.exists())
-        assertEquals("ORIGINAL_PAGE_CONTENT", originalPage.readText())
-        assertTrue(originalLearning.exists())
-        assertEquals("ORIGINAL_HISTORY", originalLearning.readText())
+        assertTrue(before.contentEquals(original.readBytes()))
+        assertFalse(File(targetBaseDir.parentFile, "malicious.txt").exists())
     }
 
     @Test
-    fun backupSerializer_rejectsMissingValue_f08() {
+    fun interruptedRestore_markerAndRollback_areRecoveredOnNextManagerStart() {
+        val original = File(targetBaseDir, "notebooks/original/pages/p1.scribe")
+        writeScribe(original, sampleStroke("original"))
+
+        val rollback = File(targetBaseDir, ".restore_rollback")
+        val rollbackFile = File(rollback, "notebooks/original/pages/p1.scribe")
+        rollbackFile.parentFile.mkdirs()
+        original.copyTo(rollbackFile, overwrite = true)
+        val expectedDigest = managedDigest(rollback)
+
+        // Simula processo morto depois de alterar o conjunto ativo e antes do commit.
+        File(targetBaseDir, "notebooks").deleteRecursively()
+        val partial = File(targetBaseDir, "notebooks/partial/pages/partial.scribe")
+        writeScribe(partial, sampleStroke("partial"))
+        File(targetBaseDir, ".restore_in_progress").writeText("v1|$expectedDigest")
+
+        ScribeBackupManager(targetBaseDir) // init executa recuperação persistente
+
+        assertTrue(File(targetBaseDir, "notebooks/original/pages/p1.scribe").isFile)
+        assertFalse(partial.exists())
+        assertFalse(File(targetBaseDir, ".restore_in_progress").exists())
+        assertFalse(rollback.exists())
+        assertEquals(expectedDigest, managedDigest(targetBaseDir))
+    }
+
+    @Test
+    fun backupSerializer_rejectsMalformedGrammarAndIncompatibleVersions() {
         assertNull(BackupSerializer.deserializeManifest("{\"formatVersion\":\"1.0\",\"x\":}"))
         assertNull(BackupSerializer.parseJsonObject("{\"a\":}"))
-    }
-
-    @Test
-    fun backupSerializer_rejectsTrailingComma_f08() {
-        assertNull(BackupSerializer.deserializeManifest("{\"formatVersion\":\"1.0\",}"))
         assertNull(BackupSerializer.parseJsonObject("{\"a\":1,}"))
-        assertNull(BackupSerializer.parseJsonObject("{\"arr\":[1, 2,]}"))
-    }
-
-    @Test
-    fun backupSerializer_rejectsInvalidNumbers_f08() {
-        assertNull(BackupSerializer.parseJsonObject("{\"n\": 12.}"))
-        assertNull(BackupSerializer.parseJsonObject("{\"n\": 12e}"))
-        assertNull(BackupSerializer.parseJsonObject("{\"n\": 12e+}"))
-    }
-
-    @Test
-    fun backupSerializer_rejectsUnescapedControlChars_f08() {
-        assertNull(BackupSerializer.parseJsonObject("{\"s\": \"bad\u0000char\"}"))
-        assertNull(BackupSerializer.parseJsonObject("{\"s\": \"bad\u0007bell\"}"))
-    }
-
-    @Test
-    fun backupSerializer_rejectsContentAfterTopLevelObject_f08() {
-        assertNull(BackupSerializer.deserializeManifest("{\"formatVersion\":\"1.0\"} trailing content"))
-        assertNull(BackupSerializer.parseJsonObject("{\"a\": 1} trailing"))
-    }
-
-    @Test
-    fun backupSerializer_rejectsIncompatibleFormatVersion_f08() {
+        assertNull(BackupSerializer.parseJsonObject("{\"arr\":[1,2,]}"))
+        assertNull(BackupSerializer.parseJsonObject("{\"n\":12.}"))
+        assertNull(BackupSerializer.parseJsonObject("{\"n\":12e}"))
+        assertNull(BackupSerializer.parseJsonObject("{\"s\":\"bad\u0000char\"}"))
+        assertNull(BackupSerializer.parseJsonObject("{\"a\":1} trailing"))
         assertNull(BackupSerializer.deserializeManifest("{\"formatVersion\":\"99.0\"}"))
-        assertNull(BackupSerializer.deserializeManifest("{\"formatVersion\":\"2.0\"}"))
+    }
+
+    @Test
+    fun old10Manifest_missingNewFields_remainsReadableWithSafeDefaults() {
+        val old = """
+            {
+              "formatVersion":"1.0",
+              "appVersion":"0.8.0",
+              "appVersionCode":10,
+              "createdAtMs":1,
+              "deviceInfo":"Android",
+              "notebookCount":0,
+              "pageCount":0,
+              "personalGlyphCount":0,
+              "lessonHistoryCount":0,
+              "practiceAttemptCount":0,
+              "hasTeacherDiagnostic":false
+            }
+        """.trimIndent()
+
+        val parsed = BackupSerializer.deserializeManifest(old)
+        assertNotNull(parsed)
+        assertEquals(0, parsed?.spacedRepetitionCount)
+        assertEquals(0, parsed?.passageCopyCount)
+        assertEquals(0, parsed?.signatureReferenceCount)
+        assertFalse(parsed?.hasPreferencesSnapshot ?: true)
+    }
+
+    private fun createMixedCanonicalDataset(root: File) {
+        writeScribe(
+            File(root, "notebooks/caderno_1/pages/page_1.scribe"),
+            sampleStroke("page_1")
+        )
+
+        File(root, "personal_alphabet").mkdirs()
+        File(root, "personal_alphabet/personal_alphabet_manifest.json").writeText(
+            """{"id":"alphabet","glyphs":[{"id":"a","variants":[{"id":"var_a_1"}]}]}"""
+        )
+        writeScribe(
+            File(root, "personal_alphabet/strokes/var_a_1.scribe"),
+            sampleStroke("glyph_a")
+        )
+
+        writeScribe(
+            File(root, "attempts/attempt_1.scribe"),
+            sampleStroke("attempt_1")
+        )
+
+        File(root, "learning_history.json").writeText(
+            """
+            {
+              "sessions":[{
+                "sessionId":"s1","lessonId":"lesson_1","lessonTitle":"Lição 1",
+                "timestampMs":1000,"durationMinutes":5,"actualDurationSeconds":300,
+                "attemptsCount":1,"averageScorePercent":80
+              }],
+              "spacedRepetition":[{
+                "targetId":"a","repetitionCount":1,"lastScorePercent":80,
+                "lastPracticedTimestampMs":1000,"intervalDays":1,"nextReviewTimestampMs":2000
+              }]
+            }
+            """.trimIndent()
+        )
+
+        File(root, "teacher").mkdirs()
+        File(root, "teacher/diagnostic.json").writeText("{\"status\":\"ok\"}")
+
+        File(root, "custom_fonts").mkdirs()
+        File(root, "custom_fonts/minha_fonte.ttf").writeBytes(byteArrayOf(0, 1, 2, 3))
+
+        File(root, "passage_copies/text_copies").mkdirs()
+        File(root, "passage_copies/text_copies/manifest.json").writeText(
+            """{"records":[{"id":"copy_1","pageCount":1}]}"""
+        )
+        writeScribe(
+            File(root, "passage_copies/text_copies/copy_1_p0.scribe"),
+            sampleStroke("copy_1")
+        )
+
+        File(root, "personal_styles.json").writeText(
+            """{"styles":[{"id":"style_1","name":"Meu estilo"}]}"""
+        )
+
+        File(root, "preferences_snapshot.txt").writeText(
+            """
+            pressure_curve=LINEAR
+            is_left_handed=false
+            is_high_contrast=false
+            show_guide_numbers=true
+            daily_goal_minutes=15
+            """.trimIndent()
+        )
+
+        val signatureStore = SignatureBaselineStore(File(root, "signatures"))
+        val stroke = sampleStroke("signature")
+        signatureStore.save(
+            SignatureAttempt(
+                id = "baseline_1",
+                timestampMs = 1000L,
+                strokes = listOf(stroke),
+                durationMs = 100L,
+                minX = -10f,
+                minY = 5f,
+                maxX = 90f,
+                maxY = 45f
+            )
+        )
+    }
+
+    private fun writeScribe(file: File, stroke: Stroke) {
+        file.parentFile?.mkdirs()
+        DedicatedFileStrategy(file.parentFile ?: file.parentFile!!)
+            .save(file, listOf(stroke), file.nameWithoutExtension)
+    }
+
+    private fun sampleStroke(id: String): Stroke {
+        return Stroke(
+            id = id,
+            tool = ToolType.STYLUS,
+            points = listOf(
+                StrokePoint(-10f, 5f, 1000L, pressure = 0f, tiltRad = 0f, orientationRad = 0f),
+                StrokePoint(20f, 25f, 1050L, pressure = 0.5f, tiltRad = 0.1f, orientationRad = 0.2f),
+                StrokePoint(90f, 45f, 1100L, pressure = 1f, tiltRad = 0f, orientationRad = 0f)
+            ),
+            startedAtMs = 1000L,
+            endedAtMs = 1100L,
+            isCancelled = false,
+            color = 0xFF102030.toInt(),
+            baseWidthPx = 4f
+        )
+    }
+
+    private fun zipBytes(vararg entries: Pair<String, ByteArray>): ByteArray {
+        val baos = ByteArrayOutputStream()
+        ZipOutputStream(baos).use { zip ->
+            entries.forEach { (name, bytes) ->
+                zip.putNextEntry(ZipEntry(name))
+                zip.write(bytes)
+                zip.closeEntry()
+            }
+        }
+        return baos.toByteArray()
+    }
+
+    private fun managedDigest(root: File): String {
+        val managedNames = listOf(
+            "notebooks", "personal_alphabet", "attempts", "teacher", "custom_fonts", "signatures", "passage_copies",
+            "alphabet", "learning", "practice_attempts", "fonts",
+            "learning_history.json", "active_session.json", "personal_styles.json", "preferences_snapshot.txt"
+        )
+        val digest = MessageDigest.getInstance("SHA-256")
+        val files = mutableListOf<Pair<String, File>>()
+        for (name in managedNames) {
+            val item = File(root, name)
+            if (!item.exists()) continue
+            if (item.isFile) files += name to item
+            else item.walkTopDown().filter { it.isFile }.forEach { file ->
+                files += file.relativeTo(root).path.replace('\\', '/') to file
+            }
+        }
+        files.sortedBy { it.first }.forEach { (path, file) ->
+            digest.update(path.toByteArray(Charsets.UTF_8))
+            digest.update(0)
+            digest.update(file.readBytes())
+            digest.update(0)
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
     }
 }
