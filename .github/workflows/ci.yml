@@ -1,0 +1,84 @@
+name: Scribe CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - standard-adoption-v1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scribe-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Unit + Lint + Debug Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Make Gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Reject tracked secret/key material
+        shell: bash
+        run: |
+          set -euo pipefail
+          forbidden="$(git ls-files | grep -Ei '(^|/)(\.env($|\.)|keystore/|.*\.(jks|keystore|p12|pem)$|.*keystore-base64.*)' || true)"
+          if [ -n "$forbidden" ]; then
+            echo "Tracked sensitive material is forbidden:" >&2
+            echo "$forbidden" >&2
+            exit 1
+          fi
+
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest --no-daemon --stacktrace
+
+      - name: Run Android lint
+        run: ./gradlew :app:lintDebug --no-daemon --stacktrace
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Write evidence summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "sha=${GITHUB_SHA}"
+            echo "ref=${GITHUB_REF}"
+            echo "run_id=${GITHUB_RUN_ID}"
+            echo "runner_os=${RUNNER_OS}"
+            echo "java_version=17"
+          } > ci-evidence-summary.txt
+
+      - name: Upload CI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scribe-ci-${{ github.sha }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            ci-evidence-summary.txt
+            app/build/test-results/testDebugUnitTest/**
+            app/build/reports/tests/testDebugUnitTest/**
+            app/build/reports/lint-results-debug.*
+            app/build/outputs/apk/debug/*.apk
