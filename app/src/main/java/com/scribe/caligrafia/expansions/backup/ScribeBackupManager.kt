@@ -258,12 +258,13 @@ class ScribeBackupManager(private val baseDir: File) {
                     continue
                 }
 
-                val captureBytes = entryName == "manifest.json" ||
+                val isScribe = entryName.endsWith(".scribe", ignoreCase = true)
+                val captureWholePayload = entryName == "manifest.json" ||
                     entryName.endsWith(".json", ignoreCase = true) ||
-                    entryName.endsWith(".scribe", ignoreCase = true) ||
                     entryName.endsWith("preferences_snapshot.txt")
 
-                val memory = if (captureBytes) ByteArrayOutputStream() else null
+                val memory = if (captureWholePayload) ByteArrayOutputStream() else null
+                val scribePrefix = if (isScribe) ByteArrayOutputStream(SCRIBE_MAGIC.size) else null
                 val destination = extractTo?.let { safeDestination(it, entryName) }
                 destination?.parentFile?.mkdirs()
                 val destinationOut = destination?.let { FileOutputStream(it) }
@@ -279,9 +280,15 @@ class ScribeBackupManager(private val baseDir: File) {
                         require(entryBytes <= MAX_ENTRY_BYTES) { "Entrada excede o limite permitido: $entryName" }
                         require(totalBytes <= MAX_TOTAL_BYTES) { "Pacote excede o tamanho total permitido" }
                         destinationOut?.write(buffer, 0, read)
+
                         if (memory != null) {
                             require(memory.size() + read <= MAX_CAPTURE_BYTES) { "Payload de validação grande demais: $entryName" }
                             memory.write(buffer, 0, read)
+                        }
+
+                        if (scribePrefix != null && scribePrefix.size() < SCRIBE_MAGIC.size) {
+                            val remaining = SCRIBE_MAGIC.size - scribePrefix.size()
+                            scribePrefix.write(buffer, 0, minOf(read, remaining))
                         }
                     }
                     destinationOut?.flush()
@@ -297,11 +304,10 @@ class ScribeBackupManager(private val baseDir: File) {
                         manifest = BackupSerializer.deserializeManifest(text)
                             ?: error("Manifesto ausente, corrompido ou versão incompatível")
                     }
-                    entryName.endsWith(".scribe", ignoreCase = true) -> {
-                        require(bytes != null && bytes.size >= SCRIBE_MAGIC.size) { "Arquivo .scribe truncado: $entryName" }
-                        require(bytes.copyOfRange(0, SCRIBE_MAGIC.size).contentEquals(SCRIBE_MAGIC)) {
-                            "Magic bytes inválidos em $entryName"
-                        }
+                    isScribe -> {
+                        val prefix = scribePrefix?.toByteArray() ?: ByteArray(0)
+                        require(prefix.size == SCRIBE_MAGIC.size) { "Arquivo .scribe truncado: $entryName" }
+                        require(prefix.contentEquals(SCRIBE_MAGIC)) { "Magic bytes inválidos em $entryName" }
                     }
                     entryName.endsWith(".json", ignoreCase = true) -> {
                         val text = bytes?.toString(Charsets.UTF_8) ?: error("JSON ilegível: $entryName")
@@ -467,17 +473,23 @@ class ScribeBackupManager(private val baseDir: File) {
     }
 
     private fun inventory(root: File): Inventory {
-        val notebookManifest = File(root, "notebooks/manifest.json")
-        val notebookCount = countArray(notebookManifest, "notebooks")
+        val notebooksRoot = File(root, "notebooks")
+        val notebookCount = countArray(File(notebooksRoot, "manifest.json"), "notebooks")
             .takeIf { it >= 0 }
-            ?: (File(root, "notebooks").listFiles()?.count { it.isDirectory } ?: 0)
-        val pageCount = File(root, "notebooks").takeIf { it.isDirectory }
+            ?: (notebooksRoot.listFiles()?.count { it.isDirectory } ?: 0)
+        val pageCount = notebooksRoot.takeIf { it.isDirectory }
             ?.walkTopDown()?.count { it.isFile && it.extension.equals("scribe", true) } ?: 0
 
         val alphabetRoot = File(root, "personal_alphabet").takeIf { it.exists() } ?: File(root, "alphabet")
-        val glyphCount = countArray(File(alphabetRoot, "manifest.json"), "glyphs")
-            .takeIf { it >= 0 }
-            ?: 0
+        val alphabetManifest = listOf(
+            File(alphabetRoot, "personal_alphabet_manifest.json"),
+            File(alphabetRoot, "manifest.json")
+        ).firstOrNull { it.isFile }
+        val glyphCount = if (alphabetManifest != null) {
+            countArray(alphabetManifest, "glyphs").coerceAtLeast(0)
+        } else {
+            0
+        }
 
         val learningFile = File(root, "learning_history.json").takeIf { it.isFile }
             ?: File(root, "learning/learning_history.json")
@@ -492,8 +504,13 @@ class ScribeBackupManager(private val baseDir: File) {
         }
 
         val attemptsRoot = File(root, "attempts").takeIf { it.exists() } ?: File(root, "practice_attempts")
-        val attemptCount = countArray(File(attemptsRoot, "manifest.json"), "attempts")
-            .takeIf { it >= 0 }
+        val attemptManifest = listOf(
+            File(attemptsRoot, "manifest.json"),
+            File(attemptsRoot, "attempts_manifest.json")
+        ).firstOrNull { it.isFile }
+        val attemptCount = if (attemptManifest != null) {
+            countArray(attemptManifest, "attempts").takeIf { it >= 0 }
+        } else null
             ?: attemptsRoot.takeIf { it.isDirectory }
                 ?.walkTopDown()?.count { it.isFile && it.extension.equals("scribe", true) } ?: 0
 
@@ -502,9 +519,10 @@ class ScribeBackupManager(private val baseDir: File) {
 
         val stylesFile = File(root, "personal_styles.json")
         val personalStyleCount = if (stylesFile.isFile) {
-            val parsed = BackupSerializer.parseJsonObject(stylesFile.readText(Charsets.UTF_8))
+            val text = stylesFile.readText(Charsets.UTF_8)
+            val parsed = BackupSerializer.parseJsonObject(text)
             val styles = parsed?.get("styles") as? List<*>
-            styles?.size ?: Regex("\\\"id\\\"\\s*:").findAll(stylesFile.readText(Charsets.UTF_8)).count()
+            styles?.size ?: Regex("\\\"id\\\"\\s*:").findAll(text).count()
         } else 0
 
         val fontsRoot = File(root, "custom_fonts").takeIf { it.exists() } ?: File(root, "fonts")
@@ -551,6 +569,7 @@ class ScribeBackupManager(private val baseDir: File) {
     private fun validateRestoredInventory(manifest: BackupManifest, actual: Inventory) {
         require(actual.notebookCount == manifest.notebookCount) { "Contagem de cadernos divergiu do manifesto" }
         require(actual.pageCount == manifest.pageCount) { "Contagem de páginas divergiu do manifesto" }
+        require(actual.personalGlyphCount == manifest.personalGlyphCount) { "Contagem de glifos divergiu do manifesto" }
         require(actual.practiceAttemptCount == manifest.practiceAttemptCount) { "Contagem de tentativas divergiu do manifesto" }
         require(actual.lessonHistoryCount == manifest.lessonHistoryCount) { "Contagem de sessões divergiu do manifesto" }
         require(actual.spacedRepetitionCount == manifest.spacedRepetitionCount) { "Contagem SRS divergiu do manifesto" }
@@ -558,6 +577,8 @@ class ScribeBackupManager(private val baseDir: File) {
         require(actual.personalStyleCount == manifest.personalStyleCount) { "Contagem de estilos divergiu do manifesto" }
         require(actual.importedFontCount == manifest.importedFontCount) { "Contagem de fontes divergiu do manifesto" }
         require(actual.signatureReferenceCount == manifest.signatureReferenceCount) { "Contagem de referências divergiu do manifesto" }
+        require(actual.hasTeacherDiagnostic == manifest.hasTeacherDiagnostic) { "Estado do diagnóstico do Professor divergiu do manifesto" }
+        require(actual.hasPreferencesSnapshot == manifest.hasPreferencesSnapshot) { "Estado das preferências divergiu do manifesto" }
     }
 
     private fun writeRestoreMarker(previousDigest: String) {
@@ -611,6 +632,6 @@ class ScribeBackupManager(private val baseDir: File) {
         private const val MAX_ENTRIES = 100_000
         private const val MAX_ENTRY_BYTES = 64L * 1024L * 1024L
         private const val MAX_TOTAL_BYTES = 512L * 1024L * 1024L
-        private const val MAX_CAPTURE_BYTES = 8 * 1024 * 1024
+        private const val MAX_CAPTURE_BYTES = 16 * 1024 * 1024
     }
 }
