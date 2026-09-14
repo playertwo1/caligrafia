@@ -15,10 +15,13 @@ function Invoke-Step {
 
     Write-Host "`n=== $Name ===" -ForegroundColor Cyan
     try {
-        & $Command *>&1 | Tee-Object -FilePath $LogPath
-        $exitCodeVariable = Get-Variable LASTEXITCODE -ErrorAction SilentlyContinue
-        $exitCode = if ($null -ne $exitCodeVariable) { [int]$exitCodeVariable.Value } else { 0 }
+        $previousErrorActionPreference = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
+        & $Command *>&1 | Tee-Object -FilePath $LogPath | Out-Host
+        $exitCode = [int]$LASTEXITCODE
+        $ErrorActionPreference = $previousErrorActionPreference
     } catch {
+        $ErrorActionPreference = $previousErrorActionPreference
         $_ | Out-String | Tee-Object -FilePath $LogPath -Append | Write-Host
         $exitCode = 1
     }
@@ -34,6 +37,11 @@ function Invoke-Step {
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
 Set-Location $repoRoot
+
+if (-not $env:ANDROID_HOME) {
+    $defaultAndroidSdk = Join-Path $env:LOCALAPPDATA "Android\Sdk"
+    if (Test-Path $defaultAndroidSdk) { $env:ANDROID_HOME = $defaultAndroidSdk }
+}
 
 if (-not (Test-Path ".git")) {
     throw "Execute este script dentro de um checkout Git do repositorio."

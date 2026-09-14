@@ -1,7 +1,11 @@
 param([string]$AndroidSdk = $env:ANDROID_HOME)
-$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'Continue'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 if ($AndroidSdk) { $env:ANDROID_HOME = $AndroidSdk }
+elseif (-not $env:ANDROID_HOME) {
+    $defaultAndroidSdk = Join-Path $env:LOCALAPPDATA 'Android\Sdk'
+    if (Test-Path $defaultAndroidSdk) { $env:ANDROID_HOME = $defaultAndroidSdk }
+}
 
 Push-Location $repoRoot
 try {
