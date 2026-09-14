@@ -365,6 +365,7 @@ private fun LiveProbeSection(
     val selectedRendererType by viewModel.selectedRendererType.collectAsState()
     val selectedInputMode by viewModel.selectedInputMode.collectAsState()
     val isReplayMode by viewModel.isReplayMode.collectAsState()
+    val isRecording by viewModel.isRecording.collectAsState()
     val replayFrame by viewModel.replayFrame.collectAsState()
     val autoSaveFeedback by viewModel.autoSaveFeedback.collectAsState()
     val persistenceFeedback by viewModel.persistenceFeedback.collectAsState()
@@ -644,6 +645,10 @@ private fun LiveProbeSection(
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    FilledTonalButton(
+                        onClick = { if (isRecording) viewModel.stopRecording() else viewModel.startRecording() },
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                    ) { Text(if (isRecording) "Parar" else "Gravar", fontSize = 10.sp) }
                     OutlinedButton(
                         onClick = {
                             viewModel.undo()

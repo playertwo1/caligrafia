@@ -68,6 +68,8 @@ import androidx.compose.material.icons.filled.Timer
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.zIndex
 import com.scribe.caligrafia.expansions.passage.ActiveTextCopySession
+import com.scribe.caligrafia.preferences.ScribePreferencesRuntime
+import com.scribe.caligrafia.preferences.ToolbarSide
 import kotlinx.coroutines.launch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -131,6 +133,7 @@ fun NotebookPracticeScreen(
     onNavigateToGuidedPractice: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val preferences by ScribePreferencesRuntime.state.collectAsState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -350,7 +353,8 @@ fun NotebookPracticeScreen(
                             pipeline = viewModel.pipeline,
                             strokeRepository = viewModel.strokeRepository,
                             renderer = viewModel.renderer,
-                            onStrokeChanged = { viewModel.onStrokesModified() }
+                            onStrokeChanged = { viewModel.onStrokesModified() },
+                            onActiveWriting = viewModel::onActiveWriting
                         ).apply {
                             guidelineConfig = uiState.currentPage?.guidelineConfig
                             canvasViewRef = this
@@ -480,8 +484,8 @@ fun NotebookPracticeScreen(
                 shadowElevation = 6.dp,
                 border = BorderStroke(1.dp, ScribeSurfaceBorder),
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 12.dp)
+                    .align(if (preferences.effectiveToolbarSide == ToolbarSide.LEFT) Alignment.BottomStart else Alignment.BottomEnd)
+                    .padding(horizontal = 12.dp, vertical = 12.dp)
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),

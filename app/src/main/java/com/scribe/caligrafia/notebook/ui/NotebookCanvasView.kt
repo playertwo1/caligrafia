@@ -29,7 +29,8 @@ class NotebookCanvasView(
     val pipeline: StrokeCapturePipeline,
     val strokeRepository: InMemoryStrokeRepository,
     val renderer: SmoothedReferenceRenderer = SmoothedReferenceRenderer(),
-    var onStrokeChanged: (() -> Unit)? = null
+    var onStrokeChanged: (() -> Unit)? = null,
+    var onActiveWriting: ((Long) -> Unit)? = null
 ) : View(context) {
 
     private val guidelineRenderer = GuidelineRenderer()
@@ -49,6 +50,7 @@ class NotebookCanvasView(
     private var currentX = -1f
     private var currentY = -1f
     private var isHovering = false
+    private var lastWritingEventTimeMs: Long? = null
 
     private val eraserCursorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -129,6 +131,19 @@ class NotebookCanvasView(
         }
 
         val consumed = pipeline.onMotionEvent(event)
+        if (consumed) {
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> lastWritingEventTimeMs = event.eventTime
+                MotionEvent.ACTION_MOVE -> {
+                    val previous = lastWritingEventTimeMs
+                    if (previous != null) onActiveWriting?.invoke((event.eventTime - previous).coerceIn(0L, 1_000L))
+                    lastWritingEventTimeMs = event.eventTime
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> lastWritingEventTimeMs = null
+            }
+        } else if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
+            lastWritingEventTimeMs = null
+        }
         invalidate()
         return consumed || super.onTouchEvent(event)
     }

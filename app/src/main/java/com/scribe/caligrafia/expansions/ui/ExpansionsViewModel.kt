@@ -7,6 +7,7 @@ import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.scribe.caligrafia.core.model.Stroke
+import com.scribe.caligrafia.core.model.InputMode
 import com.scribe.caligrafia.expansions.backup.BackupImportResult
 import com.scribe.caligrafia.expansions.backup.BackupInspectionResult
 import com.scribe.caligrafia.expansions.backup.BackupSummary
@@ -30,6 +31,10 @@ import com.scribe.caligrafia.expansions.transfer.F5DocumentTransferActivity
 import com.scribe.caligrafia.expansions.watch.IWatchCompanionBridge
 import com.scribe.caligrafia.expansions.watch.WatchCompanionAdapter
 import com.scribe.caligrafia.preferences.ScribePreferencesStore
+import com.scribe.caligrafia.preferences.ScribePreferences
+import com.scribe.caligrafia.preferences.ToolbarSide
+import com.scribe.caligrafia.preferences.TextScaleOption
+import com.scribe.caligrafia.preferences.GuideContrastOption
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -87,6 +92,7 @@ data class ExpansionsUiState(
     val isHighContrast: Boolean = false,
     val showGuideNumbers: Boolean = true,
     val dailyPracticeGoalMinutes: Int = 15,
+    val preferences: ScribePreferences = ScribePreferences(),
     val snackbarMessage: String? = null
 )
 
@@ -106,6 +112,7 @@ class ExpansionsViewModel @JvmOverloads constructor(
         "signatures"
     )
     private val signatureBaselineStore = SignatureBaselineStore(signaturesDir)
+    private val preferencesStore = ScribePreferencesStore(application)
     private var pendingBaselineReplacementToken: String? = null
     private var pendingBaselineReplacementAtMs: Long = 0L
 
@@ -123,35 +130,19 @@ class ExpansionsViewModel @JvmOverloads constructor(
     }
 
     fun setLeftHanded(enabled: Boolean) {
-        _uiState.update { it.copy(isLeftHanded = enabled) }
-        try {
-            getApplication<Application>().getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
-                .edit().putBoolean("is_left_handed", enabled).apply()
-        } catch (_: Throwable) {}
+        updatePreferences { it.copy(isLeftHanded = enabled) }
     }
 
     fun setHighContrast(enabled: Boolean) {
-        _uiState.update { it.copy(isHighContrast = enabled) }
-        try {
-            getApplication<Application>().getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
-                .edit().putBoolean("is_high_contrast", enabled).apply()
-        } catch (_: Throwable) {}
+        updatePreferences { it.copy(guideContrast = if (enabled) GuideContrastOption.HIGH else GuideContrastOption.NORMAL) }
     }
 
     fun setShowGuideNumbers(enabled: Boolean) {
-        _uiState.update { it.copy(showGuideNumbers = enabled) }
-        try {
-            getApplication<Application>().getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
-                .edit().putBoolean("show_guide_numbers", enabled).apply()
-        } catch (_: Throwable) {}
+        updatePreferences { it.copy(showGuideNumbers = enabled) }
     }
 
     fun setDailyPracticeGoalMinutes(minutes: Int) {
-        _uiState.update { it.copy(dailyPracticeGoalMinutes = minutes) }
-        try {
-            getApplication<Application>().getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
-                .edit().putInt("daily_goal_minutes", minutes).apply()
-        } catch (_: Throwable) {}
+        updatePreferences { it.copy(dailyPracticeGoalMinutes = minutes) }
     }
 
     // --- Assinaturas ---
@@ -656,31 +647,42 @@ class ExpansionsViewModel @JvmOverloads constructor(
     }
 
     private fun reloadPreferencesState() {
-        val app = getApplication<Application>()
-        val prefs = app.getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
-        val curve = try {
-            prefs.getString("pressure_curve", PressureCurveType.LINEAR.name)?.let(PressureCurveType::valueOf)
-        } catch (_: Throwable) { PressureCurveType.LINEAR } ?: PressureCurveType.LINEAR
+        val prefs = preferencesStore.load()
         _uiState.update {
             it.copy(
                 isWatchConnected = watchBridge.isWatchConnected(),
                 postureAlertMinutes = watchBridge.postureAlertThresholdMinutes,
                 isPostureReminderEnabled = watchBridge.isPostureReminderEnabled,
-                pressureCurve = curve,
-                isLeftHanded = prefs.getBoolean("is_left_handed", false),
-                isHighContrast = prefs.getBoolean("is_high_contrast", false),
-                showGuideNumbers = prefs.getBoolean("show_guide_numbers", true),
-                dailyPracticeGoalMinutes = prefs.getInt("daily_goal_minutes", 15)
+                pressureCurve = prefs.pressureCurve,
+                isLeftHanded = prefs.isLeftHanded,
+                isHighContrast = prefs.guideContrast == GuideContrastOption.HIGH,
+                showGuideNumbers = prefs.showGuideNumbers,
+                dailyPracticeGoalMinutes = prefs.dailyPracticeGoalMinutes,
+                preferences = prefs
             )
         }
     }
 
     fun setPressureCurve(curve: PressureCurveType) {
-        try {
-            getApplication<Application>().getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
-                .edit().putString("pressure_curve", curve.name).apply()
-        } catch (_: Throwable) {}
-        _uiState.update { it.copy(pressureCurve = curve, snackbarMessage = "Curva de pressão configurada: ${curve.displayName}") }
+        val approved = if (curve == PressureCurveType.SIGMOID_CALLIGRAPHIC) PressureCurveType.LINEAR else curve
+        updatePreferences { it.copy(pressureCurve = approved) }
+        _uiState.update { it.copy(snackbarMessage = "Curva de pressão configurada: ${approved.displayName}") }
+    }
+
+    fun setToolbarSide(side: ToolbarSide?) = updatePreferences { it.copy(toolbarSideOverride = side) }
+    fun setInputMode(mode: InputMode) = updatePreferences { it.copy(inputMode = mode) }
+    fun setTextScale(scale: TextScaleOption) = updatePreferences { it.copy(textScale = scale) }
+    fun setReduceAnimations(enabled: Boolean) = updatePreferences { it.copy(reduceAnimations = enabled) }
+    fun setBreakReminder(enabled: Boolean) = updatePreferences { it.copy(breakReminderEnabled = enabled) }
+    fun setBreakInterval(minutes: Int) = updatePreferences { it.copy(breakIntervalMinutes = minutes) }
+    fun setVibration(enabled: Boolean) = updatePreferences { it.copy(vibrationEnabled = enabled) }
+
+    private fun updatePreferences(transform: (ScribePreferences) -> ScribePreferences) {
+        runCatching { preferencesStore.update(transform) }.onSuccess { prefs ->
+            _uiState.update { it.copy(preferences = prefs, pressureCurve = prefs.pressureCurve,
+                isLeftHanded = prefs.isLeftHanded, isHighContrast = prefs.guideContrast == GuideContrastOption.HIGH,
+                showGuideNumbers = prefs.showGuideNumbers, dailyPracticeGoalMinutes = prefs.dailyPracticeGoalMinutes) }
+        }.onFailure { _uiState.update { it.copy(snackbarMessage = "Não foi possível salvar a preferência.") } }
     }
 
     fun setPostureAlertMinutes(minutes: Int) {

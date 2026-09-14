@@ -88,6 +88,9 @@ import com.scribe.caligrafia.expansions.passage.PassageItem
 import com.scribe.caligrafia.expansions.signature.SignatureCanvasView
 import com.scribe.caligrafia.expansions.styles.PressureCurveType
 import com.scribe.caligrafia.expansions.passage.PassageCopyRecord
+import com.scribe.caligrafia.core.model.InputMode
+import com.scribe.caligrafia.preferences.ToolbarSide
+import com.scribe.caligrafia.preferences.TextScaleOption
 import com.scribe.caligrafia.teacher.model.PrescribedPracticeSession
 import java.io.File
 
@@ -1381,6 +1384,58 @@ private fun PreferencesContent(viewModel: ExpansionsViewModel) {
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        item {
+            val p = uiState.preferences
+            Card(colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Escrita", fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif, fontSize = 17.sp)
+                    Text("Mão dominante", fontWeight = FontWeight.SemiBold)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(!p.isLeftHanded, { viewModel.setLeftHanded(false) }, label = { Text("Direita") })
+                        FilterChip(p.isLeftHanded, { viewModel.setLeftHanded(true) }, label = { Text("Esquerda") })
+                    }
+                    Text("Posição da barra", fontWeight = FontWeight.SemiBold)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        item { FilterChip(p.toolbarSideOverride == null, { viewModel.setToolbarSide(null) }, label = { Text("Automática (${p.effectiveToolbarSide.displayName})") }) }
+                        items(ToolbarSide.values().toList()) { side -> FilterChip(p.toolbarSideOverride == side, { viewModel.setToolbarSide(side) }, label = { Text(side.displayName) }) }
+                    }
+                    Text("Entrada", fontWeight = FontWeight.SemiBold)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(p.inputMode == InputMode.STYLUS_ONLY, { viewModel.setInputMode(InputMode.STYLUS_ONLY) }, label = { Text("Somente S Pen") })
+                        FilterChip(p.inputMode == InputMode.STYLUS_AND_FINGER, { viewModel.setInputMode(InputMode.STYLUS_AND_FINGER) }, label = { Text("S Pen + toque") })
+                    }
+                    Text("Curva de pressão", fontWeight = FontWeight.SemiBold)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(listOf(PressureCurveType.LINEAR, PressureCurveType.SOFT, PressureCurveType.FIRM)) { curve -> FilterChip(p.pressureCurve == curve, { viewModel.setPressureCurve(curve) }, label = { Text(curve.displayName) }) }
+                    }
+                }
+            }
+        }
+        item {
+            val p = uiState.preferences
+            Card(colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Leitura e acessibilidade", fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif, fontSize = 17.sp)
+                    Text("Escala de texto", fontWeight = FontWeight.SemiBold)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { items(TextScaleOption.values().toList()) { scale -> FilterChip(p.textScale == scale, { viewModel.setTextScale(scale) }, label = { Text(scale.displayName) }) } }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) { Text("Contraste das pautas"); Switch(uiState.isHighContrast, viewModel::setHighContrast) }
+                    Box(Modifier.fillMaxWidth().height(52.dp).background(Color(0xFFFDFCF8)).border(1.dp, Color.Black.copy(alpha = p.guideContrast.alpha)))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) { Text("Reduzir animações"); Switch(p.reduceAnimations, viewModel::setReduceAnimations) }
+                }
+            }
+        }
+        item {
+            val p = uiState.preferences
+            Card(colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Pausas e vibração", fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif, fontSize = 17.sp)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) { Text("Lembrete de pausa"); Switch(p.breakReminderEnabled, viewModel::setBreakReminder) }
+                    Text("Intervalo: ${p.breakIntervalMinutes} minutos")
+                    Slider(p.breakIntervalMinutes.toFloat(), { viewModel.setBreakInterval(it.toInt()) }, valueRange = 5f..60f, steps = 10)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) { Text("Vibração"); Switch(p.vibrationEnabled, viewModel::setVibration) }
+                }
+            }
+        }
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.White),

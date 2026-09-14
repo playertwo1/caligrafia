@@ -22,6 +22,7 @@ import com.scribe.caligrafia.expansions.passage.PassageCopyRepository
 import com.scribe.caligrafia.expansions.passage.PassageItem
 import com.scribe.caligrafia.expansions.passage.PassagePacingEngine
 import com.scribe.caligrafia.expansions.transfer.F5DocumentTransferActivity
+import com.scribe.caligrafia.expansions.watch.WatchCompanionAdapter
 import com.scribe.caligrafia.ink.capture.InMemoryStrokeRepository
 import com.scribe.caligrafia.ink.capture.StrokeCapturePipeline
 import com.scribe.caligrafia.ink.palm.PalmRejectionPolicy
@@ -33,6 +34,8 @@ import com.scribe.caligrafia.notebook.repository.NotebookRepository
 import com.scribe.caligrafia.style.engine.StyleEngine
 import com.scribe.caligrafia.style.model.BuiltInStyles
 import com.scribe.caligrafia.style.model.ScribeStyle
+import com.scribe.caligrafia.preferences.ActiveBreakReminder
+import com.scribe.caligrafia.preferences.ScribePreferencesStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -82,6 +85,11 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
         toolConfig = ToolConfig()
     )
     val renderer = SmoothedReferenceRenderer()
+    private val preferencesStore = ScribePreferencesStore(application)
+    private val watchBridge = WatchCompanionAdapter(application)
+    private val breakReminder = preferencesStore.load().let {
+        ActiveBreakReminder(it.breakReminderEnabled, it.breakIntervalMinutes)
+    }
 
     private val pagePersistenceMutex = Mutex()
 
@@ -279,6 +287,16 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
             )
         }
         autoSaveCurrentPage()
+    }
+
+    fun onActiveWriting(deltaMs: Long) {
+        val preferences = preferencesStore.load()
+        breakReminder.enabled = preferences.breakReminderEnabled
+        breakReminder.intervalMinutes = preferences.breakIntervalMinutes
+        if (breakReminder.onActiveWriting(deltaMs)) {
+            watchBridge.sendPostureAlertHaptic()
+            _uiState.update { it.copy(notificationMessage = "Hora de uma pausa para postura e descanso da mão.") }
+        }
     }
 
     private fun autoSaveCurrentPage() {
@@ -510,6 +528,7 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
     }
 
     fun onPauseLifecycle() {
+        breakReminder.onBackground()
         pipeline.flushActiveStroke(commitIfValid = true)
         val page = _uiState.value.currentPage ?: return
         val currentStrokes = strokeRepository.allStrokes
@@ -521,6 +540,7 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
     }
 
     fun onResumeLifecycle() {
+        breakReminder.onForeground()
         val savedCurve = try {
             val prefs = getApplication<Application>().getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
             prefs.getString("pressure_curve", null)?.let { com.scribe.caligrafia.expansions.styles.PressureCurveType.valueOf(it) }

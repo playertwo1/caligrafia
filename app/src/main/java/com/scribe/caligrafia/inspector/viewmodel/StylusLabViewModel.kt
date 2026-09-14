@@ -100,6 +100,8 @@ class StylusLabViewModel @JvmOverloads constructor(
 
     private val _isReplayMode = MutableStateFlow(false)
     val isReplayMode: StateFlow<Boolean> = _isReplayMode.asStateFlow()
+    private val _isRecording = MutableStateFlow(true)
+    val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
 
     val replayFrame: StateFlow<ReplayFrame> = replayEngine.frameFlow
 
@@ -137,7 +139,7 @@ class StylusLabViewModel @JvmOverloads constructor(
 
     val pipeline = StrokeCapturePipeline(
         onStrokeCompleted = { stroke ->
-            if (stroke.tool != ToolType.ERASER) {
+            if (_isRecording.value && stroke.tool != ToolType.ERASER) {
                 repository.addStroke(stroke)
                 updateMetrics()
                 _lastStrokeDuration.value = stroke.durationMs
@@ -242,6 +244,19 @@ class StylusLabViewModel @JvmOverloads constructor(
         _lastRejectionReason.value = null
         _autoSaveFeedback.value = null
         _persistenceFeedback.value = null
+    }
+
+    fun startRecording() {
+        if (_isReplayMode.value) stopReplay()
+        _isRecording.value = true
+        _persistenceFeedback.value = "Gravação iniciada."
+    }
+
+    fun stopRecording() {
+        pipeline.flushActiveStroke(commitIfValid = true)
+        _isRecording.value = false
+        updateMetrics()
+        _persistenceFeedback.value = "Gravação parada."
     }
 
     fun saveManual() {
