@@ -170,7 +170,13 @@ object DeviceCapabilityInspector {
         )
     }
 
-
+    /**
+     * Extrai uma amostra sem inferir ausência de sensor a partir do valor lido.
+     *
+     * Pressão/tilt/orientação podem legitimamente valer 0.0. A disponibilidade é decidida pela
+     * presença do MotionRange no InputDevice; se não houver device/range, o campo fica null e a UI
+     * deve apresentar "a verificar/indisponível", nunca sintetizar suporte pelo valor.
+     */
     fun extractSample(event: MotionEvent, pointerIndex: Int = 0): LiveProbeSample {
         val safeIndex = if (pointerIndex in 0 until event.pointerCount) pointerIndex else 0
         val tool = ToolType.fromMotionEvent(event.getToolType(safeIndex))
@@ -187,17 +193,26 @@ object DeviceCapabilityInspector {
             else -> "ACTION_${event.actionMasked}"
         }
 
-        val rawPressure = event.getPressure(safeIndex)
-        val pressure = if (rawPressure > 0f) rawPressure else null
+        val device = try { event.device } catch (_: Throwable) { null }
+        fun hasAxis(axis: Int): Boolean {
+            if (device == null) return false
+            return try {
+                device.getMotionRange(axis, event.source) != null || device.getMotionRange(axis) != null
+            } catch (_: Throwable) {
+                false
+            }
+        }
 
-        val tiltValue = event.getAxisValue(MotionEvent.AXIS_TILT, safeIndex)
-        val tiltRad = if (tiltValue != 0f) tiltValue else null
-
-        val orientValue = event.getOrientation(safeIndex)
-        val orientRad = if (orientValue != 0f) orientValue else null
-
-        val distValue = event.getAxisValue(MotionEvent.AXIS_DISTANCE, safeIndex)
-        val dist = if (distValue != 0f) distValue else null
+        val pressure = if (hasAxis(MotionEvent.AXIS_PRESSURE)) event.getPressure(safeIndex) else null
+        val tiltRad = if (hasAxis(MotionEvent.AXIS_TILT)) {
+            event.getAxisValue(MotionEvent.AXIS_TILT, safeIndex)
+        } else null
+        val orientationRad = if (hasAxis(MotionEvent.AXIS_ORIENTATION)) {
+            event.getOrientation(safeIndex)
+        } else null
+        val distance = if (hasAxis(MotionEvent.AXIS_DISTANCE)) {
+            event.getAxisValue(MotionEvent.AXIS_DISTANCE, safeIndex)
+        } else null
 
         return LiveProbeSample(
             action = actionName,
@@ -207,8 +222,8 @@ object DeviceCapabilityInspector {
             y = event.getY(safeIndex),
             pressure = pressure,
             tiltRad = tiltRad,
-            orientationRad = orientRad,
-            distance = dist,
+            orientationRad = orientationRad,
+            distance = distance,
             historicalCount = event.historySize,
             buttonState = event.buttonState,
             timestampMs = event.eventTime
@@ -223,7 +238,7 @@ object DeviceCapabilityInspector {
         if ((sourceBits and InputDevice.SOURCE_TOUCHPAD) == InputDevice.SOURCE_TOUCHPAD) sources.add("TOUCHPAD")
         if ((sourceBits and InputDevice.SOURCE_MOUSE) == InputDevice.SOURCE_MOUSE) sources.add("MOUSE")
         if ((sourceBits and InputDevice.SOURCE_KEYBOARD) == InputDevice.SOURCE_KEYBOARD) sources.add("KEYBOARD")
-        if (sources.isEmpty()) sources.add("UNKNOWN_SOURCE ($sourceBits)")
+        if (sources.isEmpty()) sources.add("UNKNOWN_SOURCE ($sourceBits")
         return sources
     }
 }
