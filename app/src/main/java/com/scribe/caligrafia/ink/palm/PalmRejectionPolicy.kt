@@ -12,14 +12,24 @@ sealed interface PalmDecision {
 /**
  * Máquina de estados para Palm Rejection e isolamento de ferramentas.
  *
- * Quando [followRuntimeInputMode] é true, a política segue a preferência persistida carregada no
- * processo. Testes/fluxos que injetam uma política própria mantêm o comportamento local por padrão.
+ * Pipelines de produto podem iniciar seguindo [InputModeRuntime]. Uma atribuição explícita em
+ * [inputMode] desliga esse vínculo para a instância, preservando ferramentas diagnósticas e testes
+ * que precisam de uma política local determinística.
  */
 class PalmRejectionPolicy(
-    var inputMode: InputMode = InputMode.STYLUS_ONLY,
-    var hoverCooldownMs: Long = 500L,
-    private val followRuntimeInputMode: Boolean = false
+    inputMode: InputMode = InputMode.STYLUS_ONLY,
+    hoverCooldownMs: Long = 500L,
+    followRuntimeInputMode: Boolean = false
 ) {
+    private var followsRuntimeInputMode: Boolean = followRuntimeInputMode
+
+    var inputMode: InputMode = inputMode
+        set(value) {
+            field = value
+            followsRuntimeInputMode = false
+        }
+
+    var hoverCooldownMs: Long = hoverCooldownMs
 
     var isStylusHovering: Boolean = false
         private set
@@ -39,8 +49,12 @@ class PalmRejectionPolicy(
     var lastRejectionReason: String? = null
         private set
 
+    fun useRuntimeInputMode() {
+        followsRuntimeInputMode = true
+    }
+
     fun evaluateTouch(toolType: ToolType, eventTimeMs: Long): PalmDecision {
-        val effectiveInputMode = if (followRuntimeInputMode) InputModeRuntime.current else inputMode
+        val effectiveInputMode = if (followsRuntimeInputMode) InputModeRuntime.current else inputMode
 
         if (toolType == ToolType.STYLUS || toolType == ToolType.ERASER) {
             return PalmDecision.Allow
