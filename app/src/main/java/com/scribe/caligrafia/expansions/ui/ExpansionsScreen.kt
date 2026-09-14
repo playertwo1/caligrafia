@@ -1,5 +1,12 @@
 package com.scribe.caligrafia.expansions.ui
 
+import android.Manifest
+import android.os.Build
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -1079,6 +1086,15 @@ private fun BackupContent(viewModel: ExpansionsViewModel) {
 @Composable
 private fun SpenAndWatchContent(viewModel: ExpansionsViewModel) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val bluetoothPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        viewModel.refreshWatchConnection()
+    }
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            bluetoothPermission.launch(Manifest.permission.BLUETOOTH_CONNECT)
+        } else viewModel.refreshWatchConnection()
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -1119,7 +1135,7 @@ private fun SpenAndWatchContent(viewModel: ExpansionsViewModel) {
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    PressureCurveType.values().forEach { curve ->
+                    listOf(PressureCurveType.LINEAR, PressureCurveType.SOFT, PressureCurveType.FIRM).forEach { curve ->
                         val isSelected = uiState.pressureCurve == curve
                         Card(
                             onClick = { viewModel.setPressureCurve(curve) },
@@ -1187,6 +1203,14 @@ private fun SpenAndWatchContent(viewModel: ExpansionsViewModel) {
                     }
 
                     Spacer(modifier = Modifier.height(14.dp))
+
+                    Text(
+                        text = if (uiState.isWatchConnected) "Galaxy Watch conectado" else "Galaxy Watch sem conexão comprovada; fallback no telefone",
+                        fontSize = 12.sp,
+                        color = if (uiState.isWatchConnected) Color(0xFF047857) else Color(0xFF64748B)
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),

@@ -703,6 +703,10 @@ class ExpansionsViewModel @JvmOverloads constructor(
         }
     }
 
+    fun refreshWatchConnection() {
+        _uiState.update { it.copy(isWatchConnected = watchBridge.isWatchConnected()) }
+    }
+
     fun dismissSnackbar() {
         _uiState.update { it.copy(snackbarMessage = null) }
     }

@@ -1,6 +1,8 @@
 package com.scribe.caligrafia.notebook.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -398,8 +400,8 @@ fun NotebookPracticeScreen(
             // 2. Painel de Controle Ativo (quando um botão da barra flutuante for expandido)
             AnimatedVisibility(
                 visible = activePanel != ActiveToolPanel.NONE,
-                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                enter = if (preferences.reduceAnimations) EnterTransition.None else slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                exit = if (preferences.reduceAnimations) ExitTransition.None else slideOutVertically(targetOffsetY = { it }) + fadeOut(),
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 76.dp, start = 16.dp, end = 16.dp)
