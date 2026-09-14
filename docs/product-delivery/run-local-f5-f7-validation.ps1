@@ -36,7 +36,7 @@ $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
 Set-Location $repoRoot
 
 if (-not (Test-Path ".git")) {
-    throw "Execute este script dentro de um checkout Git do repositório."
+    throw "Execute este script dentro de um checkout Git do repositorio."
 }
 
 $branch = (git branch --show-current).Trim()
@@ -45,18 +45,18 @@ $shortSha = $sha.Substring(0, [Math]::Min(12, $sha.Length))
 $statusBefore = @(git status --porcelain)
 
 if ($branch -ne "phase-f6-f7-finalization") {
-    Write-Warning "Branch atual: $branch. A branch esperada para esta validação é phase-f6-f7-finalization."
+    Write-Warning "Branch atual: $branch. A branch esperada para esta validacao e phase-f6-f7-finalization."
 }
 
 if ($statusBefore.Count -gt 0) {
-    Write-Warning "Working tree não está limpo ANTES dos testes. Não use este run como evidência final até entender as alterações locais."
+    Write-Warning "Working tree nao esta limpo ANTES dos testes. Nao use este run como evidencia final ate entender as alteracoes locais."
     $statusBefore | ForEach-Object { Write-Warning $_ }
 }
 
 $artifactRoot = Join-Path $repoRoot "validation-artifacts/$shortSha"
 New-Item -ItemType Directory -Force -Path $artifactRoot | Out-Null
 
-$javaSummary = try { (& java -version 2>&1 | Select-Object -First 1) } catch { "java indisponível" }
+$javaSummary = try { (& java -version 2>&1 | Select-Object -First 1) } catch { "java indisponivel" }
 $wrapperSummary = if (Test-Path "./gradlew.bat") { "gradlew.bat" } elseif (Test-Path "./gradlew") { "./gradlew" } else { "missing" }
 
 @(
@@ -67,7 +67,7 @@ $wrapperSummary = if (Test-Path "./gradlew.bat") { "gradlew.bat" } elseif (Test-
     "gradle_wrapper=$wrapperSummary"
 ) | Set-Content -Encoding UTF8 (Join-Path $artifactRoot "run-metadata.txt")
 
-$gradle = if (Test-Path "./gradlew.bat") { ".\gradlew.bat" } elseif (Test-Path "./gradlew") { "./gradlew" } else { throw "Gradle wrapper não encontrado." }
+$gradle = if (Test-Path "./gradlew.bat") { ".\gradlew.bat" } elseif (Test-Path "./gradlew") { "./gradlew" } else { throw "Gradle wrapper nao encontrado." }
 
 $results = [ordered]@{}
 $results["testDebugUnitTest"] = Invoke-Step -Name "Unit tests" -Command { & $gradle testDebugUnitTest --no-daemon --stacktrace } -LogPath (Join-Path $artifactRoot "testDebugUnitTest.log")
@@ -85,7 +85,7 @@ if (-not $SkipAudit -and (Test-Path $auditScript)) {
 } elseif ($SkipAudit) {
     $results["audit"] = $null
 } else {
-    Write-Warning "Runner de auditoria não encontrado em $auditScript"
+    Write-Warning "Runner de auditoria nao encontrado em $auditScript"
     $results["audit"] = $false
 }
 
@@ -107,7 +107,7 @@ $debugApk = Join-Path $repoRoot "app/build/outputs/apk/debug/app-debug.apk"
 if (Test-Path $debugApk) {
     $hash = Get-FileHash -Algorithm SHA256 $debugApk
     @(
-        "DEBUG APK — NÃO É RELEASE CERTIFICADA",
+        "DEBUG APK - NAO E RELEASE CERTIFICADA",
         "path=$($hash.Path)",
         "sha256=$($hash.Hash)"
     ) | Set-Content -Encoding UTF8 (Join-Path $artifactRoot "debug-apk-sha256.txt")
@@ -129,9 +129,9 @@ Write-Host "Artefatos: $artifactRoot"
 
 $failed = @($results.Values | Where-Object { $_ -eq $false })
 if ($failed.Count -gt 0) {
-    Write-Host "Validação local encontrou falhas. NÃO feche F5.G/F6.G/F7.G." -ForegroundColor Red
+Write-Host "Validacao local encontrou falhas. NAO feche F5.G/F6.G/F7.G." -ForegroundColor Red
     exit 1
 }
 
-Write-Host "Validação automatizada local passou. Isso ainda NÃO substitui S25 Ultra/Watch, E2E, acessibilidade, upgrade ou release assinada." -ForegroundColor Green
+Write-Host "Validacao automatizada local passou. Isso ainda NAO substitui S25 Ultra/Watch, E2E, acessibilidade, upgrade ou release assinada." -ForegroundColor Green
 exit 0
