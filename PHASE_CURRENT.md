@@ -38,9 +38,9 @@ Elevar governança, contexto, segurança, CI e higiene documental do Scribe sem 
 10. diff final recebe auditoria independente.
 
 ## Gates
-- `ADOPTION_IMPLEMENTATION`: em andamento.
-- `ADOPTION_VALIDATION`: NOT_RUN até CI/diff checks.
-- `ADOPTION_AUDIT`: NOT_RUN até auditor independente.
+- `ADOPTION_IMPLEMENTATION`: `IMPLEMENTED_AWAITING_VALIDATION`.
+- `ADOPTION_VALIDATION`: `NOT_RUN` até conclusão real da CI para o SHA auditável.
+- `ADOPTION_AUDIT`: `NOT_RUN` até auditor independente.
 - `MERGE_TO_MAIN`: bloqueado até auditoria e decisão da Product Authority.
 
 ## Evidência necessária
@@ -50,5 +50,8 @@ Elevar governança, contexto, segurança, CI e higiene documental do Scribe sem 
 - resultado da CI disponível para o SHA auditado;
 - declaração explícita de validações não executadas.
 
+## Estado da evidência
+`STANDARD_ADOPTION_EVIDENCE.md` materializa o inventário atual. `STANDARD_ADOPTION_AUDIT_PACKET.md` define a revisão independente. A política de retenção/limpeza está em `docs/EVIDENCE_POLICY.md`.
+
 ## Regra de avanço
-Implementação do Builder não equivale a PASS. `NOT_RUN != PASS`.
+Implementação do Builder não equivale a PASS. `NOT_RUN != PASS`. A adoção não fecha nenhum gate funcional F5/F6/F7.

@@ -5,7 +5,7 @@
 **Baseline funcional preservada:** `phase-f6-f7-finalization` @ `cdb0fd47704edb5c0903626fb53d36cca05616b1`  
 **Perfil Ideias Standard:** `DEEP`  
 **Packs:** `android`, `multi-agent`, `sensitive-data`  
-**Status da adoção:** `IN_PROGRESS`  
+**Status da adoção:** `IMPLEMENTED_AWAITING_VALIDATION`  
 **Gate da adoção:** `NOT_RUN`
 
 ## Estado do produto
@@ -18,38 +18,43 @@
 Fonte detalhada do estado funcional pré-adoção: `docs/product-delivery/CURRENT_STATE_F5_F7.md`.
 
 ## Tarefa atual
-Adotar o Ideias Standard, reduzir drift/contexto, corrigir segurança documental, limpar artefatos gerados sem autoridade própria e separar CI de release — **sem alterar comportamento Kotlin do produto**.
+Validar e auditar a adoção do Ideias Standard sem alterar comportamento Kotlin do produto.
 
 ## Última tarefa concluída
-- branch de adoção criada a partir da baseline funcional;
-- design e plano da adoção registrados;
-- arquivo com credenciais em texto puro removido da árvore ativa;
+- contratos de governança/contexto materializados;
+- arquivo de credenciais removido e incidente registrado;
 - `.gitignore` endurecido;
-- workflow de release alterado para exigir material de assinatura e verificar APK.
+- release tornado fail-closed para assinatura incompleta, com verificação/hash;
+- política de evidência criada;
+- 34 outputs brutos/reproduzíveis V2–V5 removidos do tree ativo;
+- CI normal criada e separada do release;
+- evidência/pacote de auditoria preparados.
 
-## Última validação conhecida
-Na baseline funcional, testes dirigidos e compilação Kotlin foram reportados como aprovados; a suíte consolidada, E2E, upgrade e bancada física permanecem necessárias para os gates F5/F6/F7. Esta adoção ainda não executou Gradle em checkout limpo.
+## Última validação observada
+Comparação contra a baseline não mostra alterações Kotlin nesta adoção. O workflow `Scribe CI` foi criado e disparado; o run `34840429488` para `da53fd8ed1f8c015258534aaff4718fbf25173ce` ainda estava `pending` na última observação registrada. Portanto, nenhuma nova validação Gradle é declarada PASS aqui.
 
 ## Findings abertos
-1. **SECURITY/HIGH:** valores de credenciais de assinatura foram versionados historicamente; rotação humana é obrigatória. Ver `SECURITY_INCIDENT.md`.
-2. **STATE/MEDIUM:** documentação histórica contém status contraditórios/obsoletos sobre M0/F0/F5; adoção está consolidando fontes de verdade.
-3. **VERSION/MEDIUM:** metadados documentais e `app/build.gradle.kts` não estão alinhados sobre versão/versionCode; não corrigir silenciosamente nesta adoção.
-4. **DEVICE:** validações S25 Ultra/S Pen/Watch continuam pendentes onde o requisito depende de hardware real.
+1. **SECURITY/HIGH:** valores de credenciais de assinatura foram versionados historicamente; rotação humana continua obrigatória. Ver `SECURITY_INCIDENT.md`.
+2. **VERSION/MEDIUM:** metadados documentais e `app/build.gradle.kts` não estão alinhados sobre versão/versionCode; não corrigir silenciosamente nesta adoção.
+3. **DEVICE:** validações S25 Ultra/S Pen/Watch continuam pendentes onde o requisito depende de hardware real.
+4. **HISTORY/LOW:** diretórios `baseline*` XML históricos foram preservados conservadoramente; ficam fora do contexto padrão e podem ser consolidados em change futura.
 
 ## Bloqueios
+- `ADOPTION_VALIDATION` depende de resultado real da CI para o SHA auditável;
 - rotação dos secrets de assinatura depende da Product Authority/GitHub Secrets;
 - gates físicos dependem dos aparelhos reais;
-- ausência de execução Gradle nesta sessão impede declarar validação funcional nova.
+- `ADOPTION_AUDIT` depende de auditor independente.
 
 ## Próxima ação
-1. concluir contratos de governança/contexto e catálogo de ownership;
-2. eliminar contradições de documentação ativa;
-3. limpar evidência bruta reproduzível da árvore ativa sem apagar fontes canônicas;
-4. adicionar CI de validação contínua;
-5. produzir `STANDARD_ADOPTION_EVIDENCE.md` e pacote de auditoria;
-6. somente após revisão independente considerar a adoção pronta para merge.
+1. observar a conclusão real da CI;
+2. se houver falha, corrigir e reexecutar;
+3. se a CI estiver verde, executar `STANDARD_ADOPTION_AUDIT_PACKET.md` com auditor independente;
+4. somente após auditoria PASS e decisão explícita da Product Authority considerar merge.
 
 ## Evidências/pointers
+- adoção: `STANDARD_ADOPTION_EVIDENCE.md`;
+- pacote de auditoria: `STANDARD_ADOPTION_AUDIT_PACKET.md`;
+- política de evidência: `docs/EVIDENCE_POLICY.md`;
 - estado funcional: `docs/product-delivery/CURRENT_STATE_F5_F7.md`;
 - evidência funcional: `docs/product-delivery/EVIDENCE.md`;
 - incidente: `SECURITY_INCIDENT.md`;

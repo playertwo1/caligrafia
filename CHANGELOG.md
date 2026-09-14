@@ -18,10 +18,22 @@
 - `README.md` e `ROADMAP.md` deixaram de duplicar status dinâmico;
 - `AUDIT.md` e `WATCHDOG.md` tornados contextos especializados por revisão/risco.
 
+### Evidência e higiene
+- criada `docs/EVIDENCE_POLICY.md` para separar evidência canônica de output reproduzível;
+- removidos 34 logs/XMLs/stats brutos das auditorias V2–V5, preservando matrizes, summaries, hashes e testes/scripts;
+- outputs históricos removidos continuam recuperáveis no histórico Git;
+- baselines XML históricos foram preservados conservadoramente, fora do contexto padrão.
+
+### CI e release
+- criado `.github/workflows/ci.yml` para testes unitários, lint, debug build, guard de material sensível e upload de evidence artifacts;
+- CI normal não exige secrets de release;
+- workflow de release permanece separado e fail-closed para assinatura incompleta.
+
 ### Estado
 - nenhuma alteração funcional Kotlin faz parte desta adoção;
+- `STANDARD_ADOPTION_EVIDENCE.md` e `STANDARD_ADOPTION_AUDIT_PACKET.md` preparados;
 - F5.G/F6.G/F7.G permanecem abertos;
-- gate da adoção permanece `NOT_RUN` até validação e auditoria independente.
+- gate da adoção permanece `NOT_RUN` até CI concluída e auditoria independente.
 
 ## Em desenvolvimento — F5/F6/F7
 
