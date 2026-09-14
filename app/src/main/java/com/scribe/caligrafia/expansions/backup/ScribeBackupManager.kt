@@ -82,7 +82,6 @@ class ScribeBackupManager(private val baseDir: File) {
             }
         }
 
-        // Legados entram apenas quando o equivalente canônico não existe, evitando duplicar entidades.
         val legacyToCanonical = mapOf(
             "alphabet" to "personal_alphabet",
             "practice_attempts" to "attempts",
@@ -164,7 +163,6 @@ class ScribeBackupManager(private val baseDir: File) {
             check(rollbackDigest == previousDigest) { "Cópia de recuperação não corresponde ao acervo anterior" }
             writeRestoreMarker(previousDigest)
 
-            // Substituição confirmada do conjunto: primeiro remove tudo que é gerenciado.
             deleteManagedSet(baseDir)
             copyStagedSetToActive(stagingDir)
 
@@ -203,10 +201,6 @@ class ScribeBackupManager(private val baseDir: File) {
         }
     }
 
-    /**
-     * Recupera automaticamente uma restauração interrompida entre remoção e commit. O marker contém
-     * o digest do conjunto anterior; só removemos o marker quando o conjunto recuperado confere.
-     */
     fun recoverInterruptedRestoreIfNeeded(): Boolean = synchronized(restoreLock) {
         if (!restoreMarker.exists()) return@synchronized false
         val expectedDigest = restoreMarker.readText(Charsets.UTF_8).trim().substringAfter('|', "")
@@ -354,6 +348,7 @@ class ScribeBackupManager(private val baseDir: File) {
         return lower.endsWith(".json") ||
             lower.endsWith(".scribe") ||
             lower.endsWith(".txt") ||
+            lower.endsWith(".meta") ||
             lower.endsWith(".ttf") ||
             lower.endsWith(".otf") ||
             !name.substringAfterLast('/').contains('.')
@@ -375,7 +370,6 @@ class ScribeBackupManager(private val baseDir: File) {
             if (src.isDirectory) copyDirectory(src, File(baseDir, dirName))
         }
 
-        // Migração de pacotes antigos para os caminhos canônicos atuais.
         val legacyMappings = mapOf(
             "alphabet" to "personal_alphabet",
             "practice_attempts" to "attempts",
