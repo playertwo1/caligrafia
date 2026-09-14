@@ -2,6 +2,7 @@ package com.scribe.caligrafia.preferences
 
 import android.content.Context
 import com.scribe.caligrafia.core.model.InputMode
+import com.scribe.caligrafia.core.model.InputModeRuntime
 import com.scribe.caligrafia.expansions.styles.PressureCurveType
 
 enum class ToolbarSide(val displayName: String) {
@@ -22,7 +23,6 @@ enum class GuideContrastOption(val alpha: Float, val displayName: String) {
 
 data class ScribePreferences(
     val isLeftHanded: Boolean = false,
-    /** null = recomendação automática oposta à mão dominante. */
     val toolbarSideOverride: ToolbarSide? = null,
     val inputMode: InputMode = InputMode.STYLUS_ONLY,
     val textScale: TextScaleOption = TextScaleOption.SYSTEM,
@@ -41,9 +41,7 @@ data class ScribePreferences(
 
 /**
  * Fonte única para preferências locais da F6.
- *
- * Mantém as chaves históricas já usadas pelo app para não quebrar instalações existentes e adiciona
- * somente as opções explicitamente previstas no checklist F6. Nenhuma opção altera raw strokes.
+ * Mantém as chaves históricas para preservar upgrades e nunca altera raw strokes.
  */
 class ScribePreferencesStore(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -53,8 +51,6 @@ class ScribePreferencesStore(context: Context) {
             prefs.getString(KEY_PRESSURE_CURVE, null),
             PressureCurveType.LINEAR
         ).let { curve ->
-            // F6 publica somente as três curvas contratadas. Instalações antigas com SIGMOID voltam
-            // de forma segura para LINEAR sem tocar em dados brutos.
             when (curve) {
                 PressureCurveType.LINEAR,
                 PressureCurveType.SOFT,
@@ -63,7 +59,7 @@ class ScribePreferencesStore(context: Context) {
             }
         }
 
-        return ScribePreferences(
+        val loaded = ScribePreferences(
             isLeftHanded = prefs.getBoolean(KEY_LEFT_HANDED, false),
             toolbarSideOverride = prefs.getString(KEY_TOOLBAR_SIDE, null)?.let {
                 runCatching { ToolbarSide.valueOf(it) }.getOrNull()
@@ -85,10 +81,12 @@ class ScribePreferencesStore(context: Context) {
             showGuideNumbers = prefs.getBoolean(KEY_SHOW_GUIDE_NUMBERS, true),
             dailyPracticeGoalMinutes = prefs.getInt(KEY_DAILY_GOAL_MINUTES, 15).coerceIn(5, 60)
         )
+        InputModeRuntime.current = loaded.inputMode
+        return loaded
     }
 
     fun save(value: ScribePreferences): Boolean {
-        return prefs.edit()
+        val committed = prefs.edit()
             .putBoolean(KEY_LEFT_HANDED, value.isLeftHanded)
             .apply {
                 if (value.toolbarSideOverride == null) remove(KEY_TOOLBAR_SIDE)
@@ -106,6 +104,8 @@ class ScribePreferencesStore(context: Context) {
             .putBoolean(KEY_SHOW_GUIDE_NUMBERS, value.showGuideNumbers)
             .putInt(KEY_DAILY_GOAL_MINUTES, value.dailyPracticeGoalMinutes.coerceIn(5, 60))
             .commit()
+        if (committed) InputModeRuntime.current = value.inputMode
+        return committed
     }
 
     fun update(transform: (ScribePreferences) -> ScribePreferences): ScribePreferences {
