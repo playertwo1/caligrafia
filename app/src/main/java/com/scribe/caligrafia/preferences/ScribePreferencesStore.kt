@@ -4,6 +4,10 @@ import android.content.Context
 import com.scribe.caligrafia.core.model.InputMode
 import com.scribe.caligrafia.core.model.InputModeRuntime
 import com.scribe.caligrafia.expansions.styles.PressureCurveType
+import java.io.File
+import java.io.FileOutputStream
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 enum class ToolbarSide(val displayName: String) {
     LEFT("Esquerda"),
@@ -128,11 +132,71 @@ class ScribePreferencesStore(context: Context) {
         return ScribePreferencesRuntime.current
     }
 
+    fun writeBackupSnapshot(target: File): Boolean {
+        val value = load()
+        val text = listOf(
+            "$KEY_PRESSURE_CURVE=${value.pressureCurve.name}",
+            "$KEY_LEFT_HANDED=${value.isLeftHanded}",
+            "$KEY_TOOLBAR_SIDE=${value.toolbarSideOverride?.name.orEmpty()}",
+            "$KEY_INPUT_MODE=${value.inputMode.name}",
+            "$KEY_TEXT_SCALE=${value.textScale.name}",
+            "$KEY_GUIDE_CONTRAST=${value.guideContrast.name}",
+            "$KEY_LEGACY_HIGH_CONTRAST=${value.guideContrast == GuideContrastOption.HIGH}",
+            "$KEY_REDUCE_ANIMATIONS=${value.reduceAnimations}",
+            "$KEY_BREAK_ENABLED=${value.breakReminderEnabled}",
+            "$KEY_BREAK_INTERVAL_MINUTES=${value.breakIntervalMinutes}",
+            "$KEY_VIBRATION_ENABLED=${value.vibrationEnabled}",
+            "$KEY_SHOW_GUIDE_NUMBERS=${value.showGuideNumbers}",
+            "$KEY_DAILY_GOAL_MINUTES=${value.dailyPracticeGoalMinutes}"
+        ).joinToString("\n")
+        val temp = File.createTempFile("preferences_snapshot_", ".tmp", target.parentFile)
+        return try {
+            FileOutputStream(temp).use { output ->
+                output.write(text.toByteArray(Charsets.UTF_8)); output.flush(); output.fd.sync()
+            }
+            try {
+                Files.move(temp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+            } catch (_: Throwable) {
+                Files.move(temp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            }
+            true
+        } finally {
+            if (temp.exists()) temp.delete()
+        }
+    }
+
+    fun restoreBackupSnapshot(source: File): Boolean {
+        if (!source.isFile) return false
+        val values = parseBackupSnapshot(source.readText(Charsets.UTF_8)) ?: return false
+        val defaults = ScribePreferences()
+        fun bool(key: String, fallback: Boolean) = values[key]?.toBooleanStrictOrNull() ?: fallback
+        fun int(key: String, fallback: Int) = values[key]?.toIntOrNull() ?: fallback
+        fun <T : Enum<T>> enum(key: String, fallback: T, parse: (String) -> T) =
+            values[key]?.takeIf(String::isNotBlank)?.let { runCatching { parse(it) }.getOrNull() } ?: fallback
+        val restored = defaults.copy(
+            pressureCurve = enum(KEY_PRESSURE_CURVE, defaults.pressureCurve, PressureCurveType::valueOf),
+            isLeftHanded = bool(KEY_LEFT_HANDED, defaults.isLeftHanded),
+            toolbarSideOverride = values[KEY_TOOLBAR_SIDE]?.takeIf(String::isNotBlank)?.let { runCatching { ToolbarSide.valueOf(it) }.getOrNull() },
+            inputMode = enum(KEY_INPUT_MODE, defaults.inputMode, InputMode::valueOf),
+            textScale = enum(KEY_TEXT_SCALE, defaults.textScale, TextScaleOption::valueOf),
+            guideContrast = values[KEY_GUIDE_CONTRAST]?.let { runCatching { GuideContrastOption.valueOf(it) }.getOrNull() }
+                ?: if (bool(KEY_LEGACY_HIGH_CONTRAST, false)) GuideContrastOption.HIGH else defaults.guideContrast,
+            reduceAnimations = bool(KEY_REDUCE_ANIMATIONS, defaults.reduceAnimations),
+            breakReminderEnabled = bool(KEY_BREAK_ENABLED, defaults.breakReminderEnabled),
+            breakIntervalMinutes = int(KEY_BREAK_INTERVAL_MINUTES, defaults.breakIntervalMinutes),
+            vibrationEnabled = bool(KEY_VIBRATION_ENABLED, defaults.vibrationEnabled),
+            showGuideNumbers = bool(KEY_SHOW_GUIDE_NUMBERS, defaults.showGuideNumbers),
+            dailyPracticeGoalMinutes = int(KEY_DAILY_GOAL_MINUTES, defaults.dailyPracticeGoalMinutes)
+        )
+        return save(restored)
+    }
+
     private inline fun <reified T : Enum<T>> enumOrDefault(raw: String?, fallback: T): T {
         return raw?.let { runCatching { enumValueOf<T>(it) }.getOrNull() } ?: fallback
     }
 
     companion object {
+        const val BACKUP_FILE_NAME = "preferences_snapshot.txt"
         const val PREFS_NAME = "scribe_settings"
         const val KEY_LEFT_HANDED = "is_left_handed"
         const val KEY_TOOLBAR_SIDE = "toolbar_side_override"
@@ -147,5 +211,21 @@ class ScribePreferencesStore(context: Context) {
         const val KEY_VIBRATION_ENABLED = "vibration_enabled"
         const val KEY_SHOW_GUIDE_NUMBERS = "show_guide_numbers"
         const val KEY_DAILY_GOAL_MINUTES = "daily_goal_minutes"
+
+        val BACKUP_KEYS = setOf(KEY_PRESSURE_CURVE, KEY_LEFT_HANDED, KEY_TOOLBAR_SIDE,
+            KEY_INPUT_MODE, KEY_TEXT_SCALE, KEY_GUIDE_CONTRAST, KEY_LEGACY_HIGH_CONTRAST,
+            KEY_REDUCE_ANIMATIONS, KEY_BREAK_ENABLED, KEY_BREAK_INTERVAL_MINUTES,
+            KEY_VIBRATION_ENABLED, KEY_SHOW_GUIDE_NUMBERS, KEY_DAILY_GOAL_MINUTES)
+
+        fun parseBackupSnapshot(text: String): Map<String, String>? {
+            val pairs = linkedMapOf<String, String>()
+            for (line in text.lineSequence().filter(String::isNotBlank)) {
+                val index = line.indexOf('=')
+                if (index <= 0) return null
+                val key = line.substring(0, index)
+                if (key !in BACKUP_KEYS || pairs.put(key, line.substring(index + 1)) != null) return null
+            }
+            return pairs.takeIf { it.isNotEmpty() }
+        }
     }
 }

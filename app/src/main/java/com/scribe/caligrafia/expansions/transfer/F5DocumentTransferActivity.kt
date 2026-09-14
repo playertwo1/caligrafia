@@ -20,6 +20,7 @@ import com.scribe.caligrafia.MainActivity
 import com.scribe.caligrafia.expansions.backup.BackupInspectionResult
 import com.scribe.caligrafia.expansions.backup.ScribeBackupManager
 import com.scribe.caligrafia.expansions.styles.PressureCurveType
+import com.scribe.caligrafia.preferences.ScribePreferencesStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -399,42 +400,11 @@ class F5DocumentTransferActivity : ComponentActivity() {
     }
 
     private fun snapshotPreferences() {
-        val prefs = getSharedPreferences("scribe_settings", Context.MODE_PRIVATE)
-        val target = File(filesDir, "preferences_snapshot.txt")
-        val temp = File.createTempFile("preferences_snapshot_", ".tmp", filesDir)
-        val lines = listOf(
-            "pressure_curve=${prefs.getString("pressure_curve", PressureCurveType.LINEAR.name)}",
-            "is_left_handed=${prefs.getBoolean("is_left_handed", false)}",
-            "is_high_contrast=${prefs.getBoolean("is_high_contrast", false)}",
-            "show_guide_numbers=${prefs.getBoolean("show_guide_numbers", true)}",
-            "daily_goal_minutes=${prefs.getInt("daily_goal_minutes", 15)}"
-        )
-        FileOutputStream(temp).use { fos ->
-            fos.write(lines.joinToString("\n").toByteArray(Charsets.UTF_8))
-            fos.flush()
-            fos.fd.sync()
-        }
-        try {
-            Files.move(temp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
-        } catch (_: Throwable) {
-            Files.move(temp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
-        }
+        check(ScribePreferencesStore(this).writeBackupSnapshot(File(filesDir, ScribePreferencesStore.BACKUP_FILE_NAME)))
     }
 
     private fun restorePreferences() {
-        val file = File(filesDir, "preferences_snapshot.txt")
-        if (!file.isFile) return
-        val values = file.readLines(Charsets.UTF_8).mapNotNull { line ->
-            val index = line.indexOf('=')
-            if (index <= 0) null else line.substring(0, index) to line.substring(index + 1)
-        }.toMap()
-        getSharedPreferences("scribe_settings", Context.MODE_PRIVATE).edit()
-            .putString("pressure_curve", values["pressure_curve"] ?: PressureCurveType.LINEAR.name)
-            .putBoolean("is_left_handed", values["is_left_handed"]?.toBooleanStrictOrNull() ?: false)
-            .putBoolean("is_high_contrast", values["is_high_contrast"]?.toBooleanStrictOrNull() ?: false)
-            .putBoolean("show_guide_numbers", values["show_guide_numbers"]?.toBooleanStrictOrNull() ?: true)
-            .putInt("daily_goal_minutes", values["daily_goal_minutes"]?.toIntOrNull() ?: 15)
-            .commit()
+        ScribePreferencesStore(this).restoreBackupSnapshot(File(filesDir, ScribePreferencesStore.BACKUP_FILE_NAME))
     }
 
     private fun resolveDisplayName(uri: Uri): String {

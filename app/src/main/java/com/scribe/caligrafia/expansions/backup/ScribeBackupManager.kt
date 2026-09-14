@@ -1,6 +1,7 @@
 package com.scribe.caligrafia.expansions.backup
 
 import com.scribe.caligrafia.learning.history.LearningHistorySerializer
+import com.scribe.caligrafia.preferences.ScribePreferencesStore
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -320,18 +321,8 @@ class ScribeBackupManager(private val baseDir: File) {
     }
 
     private fun validatePreferencesSnapshot(bytes: ByteArray) {
-        val allowed = setOf(
-            "pressure_curve",
-            "is_left_handed",
-            "is_high_contrast",
-            "show_guide_numbers",
-            "daily_goal_minutes"
-        )
-        val text = bytes.toString(Charsets.UTF_8)
-        for (line in text.lineSequence().filter { it.isNotBlank() }) {
-            val idx = line.indexOf('=')
-            require(idx > 0) { "Linha inválida em preferences_snapshot.txt" }
-            require(line.substring(0, idx) in allowed) { "Preferência desconhecida no pacote" }
+        require(ScribePreferencesStore.parseBackupSnapshot(bytes.toString(Charsets.UTF_8)) != null) {
+            "preferences_snapshot.txt inválido"
         }
     }
 
@@ -502,9 +493,9 @@ class ScribeBackupManager(private val baseDir: File) {
             File(attemptsRoot, "manifest.json"),
             File(attemptsRoot, "attempts_manifest.json")
         ).firstOrNull { it.isFile }
-        val attemptCount = if (attemptManifest != null) {
+        val attemptCount = (if (attemptManifest != null) {
             countArray(attemptManifest, "attempts").takeIf { it >= 0 }
-        } else null
+        } else null)
             ?: attemptsRoot.takeIf { it.isDirectory }
                 ?.walkTopDown()?.count { it.isFile && it.extension.equals("scribe", true) } ?: 0
 

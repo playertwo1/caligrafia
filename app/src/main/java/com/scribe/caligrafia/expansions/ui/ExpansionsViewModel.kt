@@ -29,6 +29,7 @@ import com.scribe.caligrafia.expansions.styles.PressureCurveType
 import com.scribe.caligrafia.expansions.transfer.F5DocumentTransferActivity
 import com.scribe.caligrafia.expansions.watch.IWatchCompanionBridge
 import com.scribe.caligrafia.expansions.watch.WatchCompanionAdapter
+import com.scribe.caligrafia.preferences.ScribePreferencesStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -646,47 +647,12 @@ class ExpansionsViewModel @JvmOverloads constructor(
 
     private fun snapshotPreferencesForBackup() {
         val app = getApplication<Application>()
-        val prefs = app.getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
-        val file = File(app.filesDir, "preferences_snapshot.txt")
-        val temp = File.createTempFile("preferences_snapshot_", ".tmp", app.filesDir)
-        val entries = listOf(
-            "pressure_curve=${prefs.getString("pressure_curve", PressureCurveType.LINEAR.name)}",
-            "is_left_handed=${prefs.getBoolean("is_left_handed", false)}",
-            "is_high_contrast=${prefs.getBoolean("is_high_contrast", false)}",
-            "show_guide_numbers=${prefs.getBoolean("show_guide_numbers", true)}",
-            "daily_goal_minutes=${prefs.getInt("daily_goal_minutes", 15)}"
-        )
-        try {
-            FileOutputStream(temp).use { fos ->
-                fos.write(entries.joinToString("\n").toByteArray(Charsets.UTF_8))
-                fos.flush()
-                fos.fd.sync()
-            }
-            try {
-                Files.move(temp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
-            } catch (_: Throwable) {
-                Files.move(temp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING)
-            }
-        } finally {
-            if (temp.exists()) temp.delete()
-        }
+        check(ScribePreferencesStore(app).writeBackupSnapshot(File(app.filesDir, ScribePreferencesStore.BACKUP_FILE_NAME)))
     }
 
     private fun restorePreferencesFromBackupSnapshot() {
         val app = getApplication<Application>()
-        val file = File(app.filesDir, "preferences_snapshot.txt")
-        if (!file.exists()) return
-        val values = file.readLines(Charsets.UTF_8).mapNotNull { line ->
-            val idx = line.indexOf('=')
-            if (idx <= 0) null else line.substring(0, idx) to line.substring(idx + 1)
-        }.toMap()
-        app.getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE).edit()
-            .putString("pressure_curve", values["pressure_curve"] ?: PressureCurveType.LINEAR.name)
-            .putBoolean("is_left_handed", values["is_left_handed"]?.toBooleanStrictOrNull() ?: false)
-            .putBoolean("is_high_contrast", values["is_high_contrast"]?.toBooleanStrictOrNull() ?: false)
-            .putBoolean("show_guide_numbers", values["show_guide_numbers"]?.toBooleanStrictOrNull() ?: true)
-            .putInt("daily_goal_minutes", values["daily_goal_minutes"]?.toIntOrNull() ?: 15)
-            .commit()
+        ScribePreferencesStore(app).restoreBackupSnapshot(File(app.filesDir, ScribePreferencesStore.BACKUP_FILE_NAME))
     }
 
     private fun reloadPreferencesState() {
