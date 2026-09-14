@@ -11,12 +11,16 @@ import android.view.MotionEvent
 import android.view.View
 import com.scribe.caligrafia.core.model.Stroke
 import com.scribe.caligrafia.core.model.StrokePoint
-import com.scribe.caligrafia.core.model.ToolType
-import java.util.UUID
+import com.scribe.caligrafia.core.model.ToolConfig
+import com.scribe.caligrafia.ink.capture.StrokeCapturePipeline
+import com.scribe.caligrafia.ink.capture.StrokeEraserHelper
 
 /**
  * Superfície nativa de escrita otimizada para assinatura, rubricas e monogramas com a S Pen.
- * Inclui pautas específicas de assinatura e zona elíptica de floreio.
+ *
+ * F5.01: usa o mesmo [StrokeCapturePipeline] da escrita principal para manter uma única política de
+ * pointer, historical samples, endpoint de ACTION_UP, pressão/tilt/orientação e borracha.
+ * A assinatura continua sendo armazenada como raw strokes; a View apenas mantém o conjunto atual.
  */
 class SignatureCanvasView @JvmOverloads constructor(
     context: Context,
@@ -25,21 +29,19 @@ class SignatureCanvasView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     private val completedStrokes = mutableListOf<Stroke>()
-    private var activeStrokePoints = mutableListOf<StrokePoint>()
-    private var activeStrokeStartTime = 0L
 
     var onStrokeFinished: ((List<Stroke>) -> Unit)? = null
 
     // Pautas de assinatura
     private val baselinePaint = Paint().apply {
-        color = Color.parseColor("#3B82F6") // Azul
+        color = Color.parseColor("#3B82F6")
         strokeWidth = 2.5f
         style = Paint.Style.STROKE
         isAntiAlias = true
     }
 
     private val guidelinePaint = Paint().apply {
-        color = Color.parseColor("#94A3B8") // Slate claro tracejado
+        color = Color.parseColor("#94A3B8")
         strokeWidth = 1.5f
         style = Paint.Style.STROKE
         pathEffect = DashPathEffect(floatArrayOf(12f, 8f), 0f)
@@ -47,7 +49,7 @@ class SignatureCanvasView @JvmOverloads constructor(
     }
 
     private val flourishPaint = Paint().apply {
-        color = Color.parseColor("#CBD5E1") // Cinza muito sutil
+        color = Color.parseColor("#CBD5E1")
         strokeWidth = 1.2f
         style = Paint.Style.STROKE
         pathEffect = DashPathEffect(floatArrayOf(6f, 6f), 0f)
@@ -55,7 +57,7 @@ class SignatureCanvasView @JvmOverloads constructor(
     }
 
     private val strokePaint = Paint().apply {
-        color = Color.parseColor("#0F172A") // Nanquim profundo
+        color = Color.parseColor("#0F172A")
         strokeWidth = 4.0f
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
@@ -65,6 +67,34 @@ class SignatureCanvasView @JvmOverloads constructor(
 
     private val guidelinePath = Path()
 
+    private val capturePipeline = StrokeCapturePipeline(
+        toolConfig = ToolConfig(customStrokeWidthPx = strokePaint.strokeWidth),
+        onStrokeCompleted = { stroke ->
+            completedStrokes.add(stroke)
+            invalidate()
+            notifyStrokeSetChanged()
+        },
+        onStrokeCancelled = {
+            invalidate()
+        },
+        onStrokePointAdded = {
+            invalidate()
+        },
+        onEraserPointsAdded = { eraserPoints ->
+            val removed = completedStrokes.removeAll { stroke ->
+                StrokeEraserHelper.intersects(
+                    eraserPoints = eraserPoints,
+                    stroke = stroke,
+                    eraserRadius = capturePipeline.toolConfig.eraserRadiusPx
+                )
+            }
+            if (removed) {
+                invalidate()
+                notifyStrokeSetChanged()
+            }
+        }
+    )
+
     init {
         isFocusable = true
         isFocusableInTouchMode = true
@@ -72,128 +102,56 @@ class SignatureCanvasView @JvmOverloads constructor(
 
     fun getStrokes(): List<Stroke> = completedStrokes.toList()
 
+    /**
+     * Restaura o conjunto bruto no canvas. Usado também quando a AndroidView é recriada após
+     * navegação/configuration change (F5.04).
+     */
     fun setStrokes(newStrokes: List<Stroke>) {
+        capturePipeline.flushActiveStroke(commitIfValid = false)
         completedStrokes.clear()
         completedStrokes.addAll(newStrokes)
         invalidate()
     }
 
     fun clearCanvas() {
+        capturePipeline.flushActiveStroke(commitIfValid = false)
         completedStrokes.clear()
-        activeStrokePoints.clear()
         invalidate()
-        onStrokeFinished?.invoke(emptyList())
+        notifyStrokeSetChanged()
     }
 
     fun undoLastStroke() {
+        capturePipeline.flushActiveStroke(commitIfValid = false)
         if (completedStrokes.isNotEmpty()) {
             completedStrokes.removeAt(completedStrokes.size - 1)
             invalidate()
-            onStrokeFinished?.invoke(completedStrokes.toList())
+            notifyStrokeSetChanged()
         }
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        val toolType = when (event.getToolType(0)) {
-            MotionEvent.TOOL_TYPE_STYLUS -> ToolType.STYLUS
-            MotionEvent.TOOL_TYPE_ERASER -> ToolType.ERASER
-            else -> ToolType.FINGER
-        }
-
         when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                parent?.requestDisallowInterceptTouchEvent(true)
-                activeStrokePoints = mutableListOf()
-                activeStrokeStartTime = event.eventTime
+            MotionEvent.ACTION_DOWN,
+            MotionEvent.ACTION_POINTER_DOWN -> parent?.requestDisallowInterceptTouchEvent(true)
 
-                val pt = StrokePoint(
-                    x = event.x,
-                    y = event.y,
-                    tMs = event.eventTime,
-                    pressure = if (event.pressure > 0f) event.pressure else null,
-                    tiltRad = null,
-                    orientationRad = null
-                )
-                activeStrokePoints.add(pt)
-                invalidate()
-                return true
-            }
-
-            MotionEvent.ACTION_MOVE -> {
-                val histSize = event.historySize
-                for (h in 0 until histSize) {
-                    val hx = event.getHistoricalX(h)
-                    val hy = event.getHistoricalY(h)
-                    val ht = event.getHistoricalEventTime(h)
-                    val hp = event.getHistoricalPressure(h)
-                    activeStrokePoints.add(
-                        StrokePoint(
-                            x = hx,
-                            y = hy,
-                            tMs = ht,
-                            pressure = if (hp > 0f) hp else null,
-                            tiltRad = null,
-                            orientationRad = null
-                        )
-                    )
-                }
-
-                activeStrokePoints.add(
-                    StrokePoint(
-                        x = event.x,
-                        y = event.y,
-                        tMs = event.eventTime,
-                        pressure = if (event.pressure > 0f) event.pressure else null,
-                        tiltRad = null,
-                        orientationRad = null
-                    )
-                )
-                invalidate()
-                return true
-            }
-
-            MotionEvent.ACTION_UP -> {
-                if (activeStrokePoints.isNotEmpty()) {
-                    val lastPt = activeStrokePoints.last()
-                    if (lastPt.x != event.x || lastPt.y != event.y) {
-                        activeStrokePoints.add(
-                            StrokePoint(
-                                x = event.x,
-                                y = event.y,
-                                tMs = event.eventTime,
-                                pressure = if (event.pressure > 0f) event.pressure else null,
-                                tiltRad = null,
-                                orientationRad = null
-                            )
-                        )
-                    }
-                    val stroke = Stroke(
-                        id = UUID.randomUUID().toString(),
-                        tool = toolType,
-                        points = activeStrokePoints.toList(),
-                        startedAtMs = activeStrokeStartTime,
-                        endedAtMs = event.eventTime,
-                        isCancelled = false,
-                        color = strokePaint.color,
-                        baseWidthPx = strokePaint.strokeWidth
-                    )
-                    completedStrokes.add(stroke)
-                    activeStrokePoints.clear()
-                    invalidate()
-                    onStrokeFinished?.invoke(completedStrokes.toList())
-                }
-                parent?.requestDisallowInterceptTouchEvent(false)
-                return true
-            }
-
-            MotionEvent.ACTION_CANCEL -> {
-                activeStrokePoints.clear()
-                invalidate()
-                parent?.requestDisallowInterceptTouchEvent(false)
-                return true
-            }
+            MotionEvent.ACTION_UP,
+            MotionEvent.ACTION_POINTER_UP,
+            MotionEvent.ACTION_CANCEL -> parent?.requestDisallowInterceptTouchEvent(false)
         }
-        return super.onTouchEvent(event)
+
+        val consumed = capturePipeline.onMotionEvent(event)
+        if (consumed) invalidate()
+        return consumed || super.onTouchEvent(event)
+    }
+
+    override fun onHoverEvent(event: MotionEvent): Boolean {
+        val consumed = capturePipeline.onHoverEvent(event)
+        return consumed || super.onHoverEvent(event)
+    }
+
+    override fun onDetachedFromWindow() {
+        capturePipeline.flushActiveStroke(commitIfValid = true)
+        super.onDetachedFromWindow()
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -203,29 +161,22 @@ class SignatureCanvasView @JvmOverloads constructor(
         val h = height.toFloat()
         if (w <= 0f || h <= 0f) return
 
-        // 1. Desenha guias caligráficas da assinatura
         val baselineY = h * 0.65f
         val xHeightY = h * 0.45f
         val ascenderY = h * 0.22f
         val descenderY = h * 0.85f
 
-        // Linha base principal contínua
         canvas.drawLine(w * 0.05f, baselineY, w * 0.95f, baselineY, baselinePaint)
 
-        // Linhas auxiliares tracejadas
         guidelinePath.reset()
         guidelinePath.moveTo(w * 0.05f, xHeightY)
         guidelinePath.lineTo(w * 0.95f, xHeightY)
-
         guidelinePath.moveTo(w * 0.05f, ascenderY)
         guidelinePath.lineTo(w * 0.95f, ascenderY)
-
         guidelinePath.moveTo(w * 0.05f, descenderY)
         guidelinePath.lineTo(w * 0.95f, descenderY)
-
         canvas.drawPath(guidelinePath, guidelinePaint)
 
-        // Elipse sutil delimitadora de floreios
         canvas.drawOval(
             w * 0.08f,
             h * 0.15f,
@@ -234,15 +185,27 @@ class SignatureCanvasView @JvmOverloads constructor(
             flourishPaint
         )
 
-        // 2. Desenha traços completados
         for (stroke in completedStrokes) {
-            drawStroke(canvas, stroke.points, stroke.color ?: strokePaint.color, stroke.baseWidthPx ?: strokePaint.strokeWidth)
+            drawStroke(
+                canvas = canvas,
+                points = stroke.points,
+                color = stroke.color ?: strokePaint.color,
+                widthPx = stroke.baseWidthPx ?: strokePaint.strokeWidth
+            )
         }
 
-        // 3. Desenha traço ativo em tempo real
-        if (activeStrokePoints.isNotEmpty()) {
-            drawStroke(canvas, activeStrokePoints, strokePaint.color, strokePaint.strokeWidth)
+        capturePipeline.getActiveStrokePreview()?.let { activeStroke ->
+            drawStroke(
+                canvas = canvas,
+                points = activeStroke.points,
+                color = activeStroke.color ?: strokePaint.color,
+                widthPx = activeStroke.baseWidthPx ?: strokePaint.strokeWidth
+            )
         }
+    }
+
+    private fun notifyStrokeSetChanged() {
+        onStrokeFinished?.invoke(completedStrokes.toList())
     }
 
     private fun drawStroke(canvas: Canvas, points: List<StrokePoint>, color: Int, widthPx: Float) {
