@@ -1,30 +1,24 @@
 package com.scribe.caligrafia.ink.palm
 
 import com.scribe.caligrafia.core.model.InputMode
+import com.scribe.caligrafia.core.model.InputModeRuntime
 import com.scribe.caligrafia.core.model.ToolType
 
-/**
- * Resultado da avaliação de admissão de um evento de toque.
- */
 sealed interface PalmDecision {
     data object Allow : PalmDecision
     data class Reject(val reason: String) : PalmDecision
 }
 
 /**
- * Máquina de estados comportamental para Palm Rejection (rejeição de palma) e
- * isolamento de ferramentas no Scribe.
+ * Máquina de estados para Palm Rejection e isolamento de ferramentas.
  *
- * Funcionalidades centrais:
- * 1. Modo Stylus-Only: dedo nunca gera tinta (regra explícita de caligrafia).
- * 2. Preempção por proximidade: hover do stylus EMR suprime toques de dedo como palma.
- * 3. Preempção por contato ativo: stylus em DOWN suprime toques concorrentes.
- * 4. Janela de cooldown: evita que o descanso da palma entre traços rápidos gere pontos espúrios.
- * 5. Observabilidade completa para telemetria em tempo real.
+ * Quando [followRuntimeInputMode] é true, a política segue a preferência persistida carregada no
+ * processo. Testes/fluxos que injetam uma política própria mantêm o comportamento local por padrão.
  */
 class PalmRejectionPolicy(
     var inputMode: InputMode = InputMode.STYLUS_ONLY,
-    var hoverCooldownMs: Long = 500L
+    var hoverCooldownMs: Long = 500L,
+    private val followRuntimeInputMode: Boolean = false
 ) {
 
     var isStylusHovering: Boolean = false
@@ -45,23 +39,18 @@ class PalmRejectionPolicy(
     var lastRejectionReason: String? = null
         private set
 
-    /**
-     * Avalia se um determinado toque deve ser admitido para criação/continuação de traço
-     * ou rejeitado como contato involuntário de palma / ferramenta não autorizada.
-     */
     fun evaluateTouch(toolType: ToolType, eventTimeMs: Long): PalmDecision {
-        // Caneta e borracha têm passagem irrestrita
+        val effectiveInputMode = if (followRuntimeInputMode) InputModeRuntime.current else inputMode
+
         if (toolType == ToolType.STYLUS || toolType == ToolType.ERASER) {
             return PalmDecision.Allow
         }
 
-        // Avaliação para toques de dedo (FINGER)
         if (toolType == ToolType.FINGER) {
-            if (inputMode == InputMode.STYLUS_ONLY) {
+            if (effectiveInputMode == InputMode.STYLUS_ONLY) {
                 return reject("Dedo ignorado: Modo Stylus-Only ativo.")
             }
 
-            // No modo STYLUS_AND_FINGER, aplicar rejeição comportamental
             if (isStylusDown) {
                 return reject("Rejeição de palma: Stylus em escrita ativa.")
             }
@@ -83,8 +72,7 @@ class PalmRejectionPolicy(
             return PalmDecision.Allow
         }
 
-        // Outras ferramentas (MOUSE, UNKNOWN)
-        return if (inputMode == InputMode.STYLUS_ONLY) {
+        return if (effectiveInputMode == InputMode.STYLUS_ONLY) {
             reject("Ferramenta ${toolType.name} bloqueada em modo Stylus-Only.")
         } else {
             PalmDecision.Allow
