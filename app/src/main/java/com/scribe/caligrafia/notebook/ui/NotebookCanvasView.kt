@@ -5,9 +5,9 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.os.Build
 import android.view.MotionEvent
 import android.view.View
-import android.os.Build
 import androidx.core.view.ViewCompat
 import com.scribe.caligrafia.core.model.GuidelineConfig
 import com.scribe.caligrafia.core.model.ToolMode
@@ -17,16 +17,11 @@ import com.scribe.caligrafia.ink.capture.StrokeCapturePipeline
 import com.scribe.caligrafia.ink.gesture.EdgeGestureExclusionHelper
 import com.scribe.caligrafia.ink.renderer.GuidelineRenderer
 import com.scribe.caligrafia.ink.renderer.SmoothedReferenceRenderer
+import com.scribe.caligrafia.preferences.ScribePreferencesRuntime
 
 /**
- * Superfície de escrita nativa para o Caderno de Caligrafia (M1).
- *
- * Características:
- * 1. Fundo com textura/cor de papel suave para caligrafia.
- * 2. Pautas caligráficas renderizadas no plano de fundo (GuidelineRenderer).
- * 3. Ingestão de alta precisão via MotionEvent histórico e rejeição de palma.
- * 4. Renderização em tempo real de traços concluídos e do traço ativo em movimento.
- * 5. Cursor visual para feedback quando em modo de borracha.
+ * Superfície de escrita nativa para o Caderno de Caligrafia.
+ * Preferências F6 de contraste/pressão alteram somente a renderização derivada, nunca raw strokes.
  */
 @SuppressLint("ViewConstructor")
 class NotebookCanvasView(
@@ -70,10 +65,7 @@ class NotebookCanvasView(
         isFocusable = true
         isFocusableInTouchMode = true
 
-        // Callbacks de atualização de tela quando o pipeline captura pontos
-        pipeline.onStrokePointAdded = {
-            invalidate()
-        }
+        pipeline.onStrokePointAdded = { invalidate() }
         pipeline.onStrokeCompleted = { stroke ->
             if (stroke.tool != ToolType.ERASER) {
                 strokeRepository.addStroke(stroke)
@@ -86,9 +78,7 @@ class NotebookCanvasView(
                 eraserPoints = points,
                 eraserRadius = pipeline.toolConfig.eraserRadiusPx
             )
-            if (erased.isNotEmpty()) {
-                onStrokeChanged?.invoke()
-            }
+            if (erased.isNotEmpty()) onStrokeChanged?.invoke()
             invalidate()
         }
     }
@@ -98,12 +88,8 @@ class NotebookCanvasView(
         currentY = event.y
 
         when (event.actionMasked) {
-            MotionEvent.ACTION_HOVER_ENTER, MotionEvent.ACTION_HOVER_MOVE -> {
-                isHovering = true
-            }
-            MotionEvent.ACTION_HOVER_EXIT -> {
-                isHovering = false
-            }
+            MotionEvent.ACTION_HOVER_ENTER, MotionEvent.ACTION_HOVER_MOVE -> isHovering = true
+            MotionEvent.ACTION_HOVER_EXIT -> isHovering = false
         }
 
         pipeline.onHoverEvent(event)
@@ -128,9 +114,7 @@ class NotebookCanvasView(
                 height = height,
                 density = resources.displayMetrics.density
             )
-            if (rects.isNotEmpty()) {
-                ViewCompat.setSystemGestureExclusionRects(this, rects)
-            }
+            if (rects.isNotEmpty()) ViewCompat.setSystemGestureExclusionRects(this, rects)
         }
     }
 
@@ -140,13 +124,8 @@ class NotebookCanvasView(
         currentY = event.y
 
         when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                // Impede que contêineres pais (Scaffold, Column) furtem toques na borda
-                parent?.requestDisallowInterceptTouchEvent(true)
-            }
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                parent?.requestDisallowInterceptTouchEvent(false)
-            }
+            MotionEvent.ACTION_DOWN -> parent?.requestDisallowInterceptTouchEvent(true)
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> parent?.requestDisallowInterceptTouchEvent(false)
         }
 
         val consumed = pipeline.onMotionEvent(event)
@@ -157,30 +136,25 @@ class NotebookCanvasView(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        // 1. Fundo de Papel Caligráfico (Ivory / Off-White suave)
+        // Preferência de pressão é derivada no renderer; os pontos brutos permanecem imutáveis.
+        renderer.pressureCurve = ScribePreferencesRuntime.current.pressureCurve
+
         canvas.drawColor(Color.rgb(253, 252, 248))
 
         val w = width.toFloat()
         val h = height.toFloat()
         if (w <= 0f || h <= 0f) return
 
-        // 2. Renderizar Pautas Caligráficas (GuidelineRenderer)
         guidelineRenderer.draw(canvas, w, h, guidelineConfig)
 
-        // 3. Renderizar Traços Vetoriais Concluídos
         for (stroke in strokeRepository.allStrokes) {
             renderer.renderStroke(canvas, stroke)
         }
 
-        // 4. Renderizar Traço Ativo em Andamento
-        val activeStroke = pipeline.getActiveStrokePreview()
-        if (activeStroke != null) {
-            renderer.renderActiveStroke(canvas, activeStroke)
-        }
+        pipeline.getActiveStrokePreview()?.let { renderer.renderActiveStroke(canvas, it) }
 
-        // 5. Cursor visual da Borracha
         val isEraserMode = pipeline.toolConfig.mode == ToolMode.ERASER ||
-                pipeline.currentActiveTool == ToolType.ERASER
+            pipeline.currentActiveTool == ToolType.ERASER
 
         if (isEraserMode && (isHovering || pipeline.isCapturing) && currentX >= 0f && currentY >= 0f) {
             val radius = pipeline.toolConfig.eraserRadiusPx
