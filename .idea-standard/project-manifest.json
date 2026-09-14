@@ -1,0 +1,37 @@
+{
+  "schema_version": "0.1",
+  "project": {
+    "name": "Scribe / Caligrafia",
+    "type": "android",
+    "description": "Aplicativo Android local-first para treino de caligrafia com S Pen/stylus, preservando strokes vetoriais temporais."
+  },
+  "standard": {
+    "name": "Ideias Standard",
+    "version": "0.1.0-draft",
+    "profile": "DEEP"
+  },
+  "packs": ["android", "multi-agent", "sensitive-data"],
+  "capabilities": {
+    "independent_audit": true,
+    "context_compilation": false,
+    "human_gates": true,
+    "local_first": true,
+    "release_signing": true
+  },
+  "governance": {
+    "product_authority": "USER",
+    "builder": "IMPLEMENTATION_AGENT",
+    "auditor": "INDEPENDENT_CODEX_AUDITOR"
+  },
+  "context": {
+    "strategy": "PROGRESSIVE",
+    "full_repo_scan_default": false
+  },
+  "project_rules": [
+    "Preservar raw strokes e dados reais do usuario.",
+    "Nao inventar capacidades ou medidas de hardware ausentes.",
+    "Nenhum gate material fecha sem evidencia e auditoria correspondente.",
+    "Nenhum secret pode ser versionado ou publicado em logs/artefatos.",
+    "Backend, cloud ou IA funcional nova exigem autorizacao explicita da Product Authority."
+  ]
+}
