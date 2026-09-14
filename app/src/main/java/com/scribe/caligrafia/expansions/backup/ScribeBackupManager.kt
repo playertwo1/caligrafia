@@ -1,349 +1,616 @@
 package com.scribe.caligrafia.expansions.backup
 
+import com.scribe.caligrafia.learning.history.LearningHistorySerializer
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
+import java.security.MessageDigest
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
 /**
- * Gerenciador de exportação e restauração atômica de pacotes de dados Scribe (.scribepack).
- * 100% offline, local-first e sem qualquer dependência de nuvem.
+ * Gerenciador local-first de pacotes Scribe (.scribepack).
+ *
+ * F5: exporta inventário real, valida pacote antes do commit, restaura como SUBSTITUIÇÃO do conjunto
+ * gerenciado (nunca merge silencioso) e mantém rollback persistente para falha/interrupção.
  */
 class ScribeBackupManager(private val baseDir: File) {
 
-    private val supportedDirs = listOf(
+    private val canonicalDirs = listOf(
         "notebooks",
         "personal_alphabet",
         "attempts",
         "teacher",
         "custom_fonts",
         "signatures",
-        // Legados mantidos para compatibilidade retroativa com pacotes antigos
+        "passage_copies"
+    )
+
+    private val legacyDirs = listOf(
         "alphabet",
         "learning",
         "practice_attempts",
         "fonts"
     )
 
-    /**
-     * Exporta todos os dados do Scribe para um OutputStream compactado em ZIP (.scribepack).
-     * Garante o descarregamento de todos os buffers intermediários e a integridade do diretório central do ZIP (S01).
-     */
-    fun exportBackup(outputStream: OutputStream): BackupSummary {
-        val bufferedOut = outputStream.buffered()
-        val zipOut = ZipOutputStream(bufferedOut)
+    private val rootFiles = listOf(
+        "learning_history.json",
+        "active_session.json",
+        "personal_styles.json",
+        "preferences_snapshot.txt"
+    )
 
+    private val managedNames = canonicalDirs + legacyDirs + rootFiles
+    private val restoreMarker = File(baseDir, ".restore_in_progress")
+    private val stableRollbackDir = File(baseDir, ".restore_rollback")
+
+    init {
+        baseDir.mkdirs()
+        recoverInterruptedRestoreIfNeeded()
+    }
+
+    fun exportBackup(outputStream: OutputStream): BackupSummary = synchronized(restoreLock) {
+        val inventory = inventory(baseDir)
+        val manifest = inventory.toManifest()
+        val zipOut = ZipOutputStream(outputStream.buffered())
         var totalFiles = 0
         var totalBytes = 0L
 
-        var notebookCount = 0
-        var pageCount = 0
-        var glyphCount = 0
-        var lessonCount = 0
-        var attemptCount = 0
-        var hasTeacher = false
-
-        // 1. Contagem prévia exata nos caminhos canônicos e legados (S02)
-        val notebooksDir = File(baseDir, "notebooks")
-        if (notebooksDir.exists()) {
-            val nFiles = notebooksDir.listFiles() ?: emptyArray()
-            notebookCount = nFiles.count { it.isDirectory }
-            pageCount = notebooksDir.walkTopDown().count { it.isFile && it.extension == "scribe" }
+        fun putEntry(name: String, bytes: ByteArray) {
+            zipOut.putNextEntry(ZipEntry(name))
+            zipOut.write(bytes)
+            zipOut.closeEntry()
+            totalFiles++
+            totalBytes += bytes.size
         }
 
-        val alphabetDir = File(baseDir, "personal_alphabet").takeIf { it.exists() } ?: File(baseDir, "alphabet")
-        if (alphabetDir.exists()) {
-            glyphCount = alphabetDir.walkTopDown().count { it.isFile && it.extension == "scribe" }
-        }
+        val manifestBytes = BackupSerializer.serializeManifest(manifest).toByteArray(Charsets.UTF_8)
+        putEntry("manifest.json", manifestBytes)
 
-        val learningHistoryFile = File(baseDir, "learning_history.json").takeIf { it.exists() }
-            ?: File(baseDir, "learning/learning_history.json")
-        if (learningHistoryFile.exists()) {
-            lessonCount = 1
-        }
-
-        val attemptsDir = File(baseDir, "attempts").takeIf { it.exists() } ?: File(baseDir, "practice_attempts")
-        if (attemptsDir.exists()) {
-            attemptCount = attemptsDir.walkTopDown().count { it.isFile && it.extension == "scribe" }
-        }
-
-        val teacherDir = File(baseDir, "teacher")
-        if (teacherDir.exists()) {
-            hasTeacher = File(teacherDir, "diagnostic.json").exists() || File(teacherDir, "diagnostic_latest.json").exists()
-        }
-
-        val manifest = BackupManifest(
-            formatVersion = "1.0",
-            appVersion = "0.8.0",
-            appVersionCode = 10,
-            createdAtMs = System.currentTimeMillis(),
-            deviceInfo = "Samsung Galaxy S25 Ultra",
-            notebookCount = notebookCount,
-            pageCount = pageCount,
-            personalGlyphCount = glyphCount,
-            lessonHistoryCount = lessonCount,
-            practiceAttemptCount = attemptCount,
-            hasTeacherDiagnostic = hasTeacher
-        )
-
-        // 2. Grava manifest.json como primeira entrada do ZIP
-        val manifestJson = BackupSerializer.serializeManifest(manifest)
-        val manifestBytes = manifestJson.toByteArray(Charsets.UTF_8)
-        val manifestEntry = ZipEntry("manifest.json")
-        zipOut.putNextEntry(manifestEntry)
-        zipOut.write(manifestBytes)
-        zipOut.closeEntry()
-        totalFiles++
-        totalBytes += manifestBytes.size
-
-        // 3. Compacta os diretórios suportados
-        for (dirName in supportedDirs) {
+        val exportedDirs = mutableSetOf<String>()
+        for (dirName in canonicalDirs) {
             val folder = File(baseDir, dirName)
-            if (folder.exists() && folder.isDirectory) {
-                folder.walkTopDown().forEach { file ->
-                    if (file.isFile && !file.name.endsWith(".tmp") && !file.name.startsWith(".rollback")) {
-                        val relPath = file.relativeTo(baseDir).path.replace('\\', '/')
-                        val entry = ZipEntry(relPath)
-                        zipOut.putNextEntry(entry)
-                        val bytesWritten = file.inputStream().use { input ->
-                            input.copyTo(zipOut)
-                        }
-                        zipOut.closeEntry()
-                        totalFiles++
-                        totalBytes += bytesWritten
-                    }
+            if (folder.isDirectory) {
+                addDirectoryToZip(zipOut, folder) { bytes ->
+                    totalFiles++
+                    totalBytes += bytes
+                }
+                exportedDirs += dirName
+            }
+        }
+
+        // Legados entram apenas quando o equivalente canônico não existe, evitando duplicar entidades.
+        val legacyToCanonical = mapOf(
+            "alphabet" to "personal_alphabet",
+            "practice_attempts" to "attempts",
+            "fonts" to "custom_fonts",
+            "learning" to "learning"
+        )
+        for (dirName in legacyDirs) {
+            val canonical = legacyToCanonical[dirName]
+            if (canonical != null && canonical in exportedDirs) continue
+            val folder = File(baseDir, dirName)
+            if (folder.isDirectory) {
+                addDirectoryToZip(zipOut, folder) { bytes ->
+                    totalFiles++
+                    totalBytes += bytes
                 }
             }
         }
 
-        // 4. Compacta arquivos soltos na raiz (ex: learning_history.json, personal_styles.json)
-        val rootLearningHistory = File(baseDir, "learning_history.json")
-        if (rootLearningHistory.exists() && rootLearningHistory.isFile) {
-            val entry = ZipEntry("learning_history.json")
-            zipOut.putNextEntry(entry)
-            val bytesWritten = rootLearningHistory.inputStream().use { input ->
-                input.copyTo(zipOut)
+        for (fileName in rootFiles) {
+            val file = File(baseDir, fileName)
+            if (file.isFile) {
+                zipOut.putNextEntry(ZipEntry(fileName))
+                val bytes = file.inputStream().use { it.copyTo(zipOut) }
+                zipOut.closeEntry()
+                totalFiles++
+                totalBytes += bytes
             }
-            zipOut.closeEntry()
-            totalFiles++
-            totalBytes += bytesWritten
         }
 
-        val rootPersonalStyles = File(baseDir, "personal_styles.json")
-        if (rootPersonalStyles.exists() && rootPersonalStyles.isFile) {
-            val entry = ZipEntry("personal_styles.json")
-            zipOut.putNextEntry(entry)
-            val bytesWritten = rootPersonalStyles.inputStream().use { input ->
-                input.copyTo(zipOut)
-            }
-            zipOut.closeEntry()
-            totalFiles++
-            totalBytes += bytesWritten
-        }
-
-        // S01: Escreve o diretório central do ZIP e descarrega todos os buffers intermediários
         zipOut.finish()
         zipOut.flush()
-        bufferedOut.flush()
 
-        return BackupSummary(
+        BackupSummary(
             manifest = manifest,
             totalBytes = totalBytes,
             fileCount = totalFiles
         )
     }
 
-    /**
-     * Importa e restaura os dados a partir de um InputStream (.scribepack).
-     * Aplica proteção estrita contra Zip-Slip (S04) e restauração transacional com rollback automático (S03).
-     */
-    fun importBackup(inputStream: InputStream): BackupImportResult {
-        val tempRestoreDir = File(baseDir, "temp_restore_${System.currentTimeMillis()}")
-        tempRestoreDir.mkdirs()
+    /** Somente valida; não altera nenhum arquivo ativo. */
+    fun inspectBackup(inputStream: InputStream): BackupInspectionResult {
+        return try {
+            val validation = validateZip(inputStream, extractTo = null)
+            BackupInspectionResult(
+                isValid = true,
+                manifest = validation.manifest,
+                entryCount = validation.entryCount,
+                totalUncompressedBytes = validation.totalBytes
+            )
+        } catch (e: Throwable) {
+            BackupInspectionResult(isValid = false, errorMessage = e.message ?: "Pacote inválido")
+        }
+    }
 
-        var manifest: BackupManifest? = null
+    fun importBackup(inputStream: InputStream): BackupImportResult = synchronized(restoreLock) {
+        recoverInterruptedRestoreIfNeeded()
 
-        try {
-            val zipIn = ZipInputStream(inputStream.buffered())
-            var entry: ZipEntry? = zipIn.nextEntry
+        val stagingDir = File(baseDir, ".restore_staging_${System.currentTimeMillis()}")
+        if (stagingDir.exists()) stagingDir.deleteRecursively()
+        stagingDir.mkdirs()
 
-            val canonicalBase = tempRestoreDir.canonicalPath
-            val canonicalBaseWithSep = if (canonicalBase.endsWith(File.separator)) canonicalBase else canonicalBase + File.separator
+        val validation = try {
+            validateZip(inputStream, extractTo = stagingDir)
+        } catch (e: Throwable) {
+            stagingDir.deleteRecursively()
+            return@synchronized BackupImportResult(
+                isSuccess = false,
+                errorMessage = "Pacote rejeitado antes da restauração: ${e.message}"
+            )
+        }
 
-            while (entry != null) {
-                val entryName = entry.name
+        val previousDigest = computeManagedDigest(baseDir)
+        if (stableRollbackDir.exists()) stableRollbackDir.deleteRecursively()
+        stableRollbackDir.mkdirs()
 
-                // S04: Proteção rigorosa contra Zip Slip Vulnerability
-                val destinationFile = File(tempRestoreDir, entryName).canonicalFile
-                if (!destinationFile.canonicalPath.startsWith(canonicalBaseWithSep) && destinationFile.canonicalPath != canonicalBase) {
-                    throw SecurityException("Caminho de entrada inválido no arquivo de backup: $entryName")
+        return@synchronized try {
+            copyManagedSet(baseDir, stableRollbackDir)
+            val rollbackDigest = computeManagedDigest(stableRollbackDir)
+            check(rollbackDigest == previousDigest) { "Cópia de recuperação não corresponde ao acervo anterior" }
+            writeRestoreMarker(previousDigest)
+
+            // Substituição confirmada do conjunto: primeiro remove tudo que é gerenciado.
+            deleteManagedSet(baseDir)
+            copyStagedSetToActive(stagingDir)
+
+            val restoredInventory = inventory(baseDir)
+            validateRestoredInventory(validation.manifest, restoredInventory)
+
+            stagingDir.deleteRecursively()
+            stableRollbackDir.deleteRecursively()
+            restoreMarker.delete()
+
+            BackupImportResult(
+                isSuccess = true,
+                manifest = validation.manifest,
+                restoredNotebooks = restoredInventory.notebookCount,
+                restoredGlyphs = restoredInventory.personalGlyphCount,
+                restoredLessons = restoredInventory.lessonHistoryCount,
+                restoredAttempts = restoredInventory.practiceAttemptCount,
+                restoredTeacherData = restoredInventory.hasTeacherDiagnostic,
+                restoredPassageCopies = restoredInventory.passageCopyCount,
+                restoredStyles = restoredInventory.personalStyleCount,
+                restoredFonts = restoredInventory.importedFontCount,
+                restoredSignatureReferences = restoredInventory.signatureReferenceCount
+            )
+        } catch (commitError: Throwable) {
+            val recoveryVerified = restoreRollbackAndVerify(previousDigest)
+            stagingDir.deleteRecursively()
+            BackupImportResult(
+                isSuccess = false,
+                recoveryWasRequired = true,
+                errorMessage = if (recoveryVerified) {
+                    "Falha durante a restauração; o conjunto anterior foi recuperado e verificado: ${commitError.message}"
+                } else {
+                    "Falha durante a restauração e a recuperação não pôde ser verificada: ${commitError.message}"
                 }
+            )
+        }
+    }
+
+    /**
+     * Recupera automaticamente uma restauração interrompida entre remoção e commit. O marker contém
+     * o digest do conjunto anterior; só removemos o marker quando o conjunto recuperado confere.
+     */
+    fun recoverInterruptedRestoreIfNeeded(): Boolean = synchronized(restoreLock) {
+        if (!restoreMarker.exists()) return@synchronized false
+        val expectedDigest = restoreMarker.readText(Charsets.UTF_8).trim().substringAfter('|', "")
+        if (!stableRollbackDir.isDirectory || expectedDigest.isBlank()) return@synchronized false
+        restoreRollbackAndVerify(expectedDigest)
+    }
+
+    private fun restoreRollbackAndVerify(expectedDigest: String): Boolean {
+        return try {
+            deleteManagedSet(baseDir)
+            copyManagedSet(stableRollbackDir, baseDir)
+            val restoredDigest = computeManagedDigest(baseDir)
+            val verified = restoredDigest == expectedDigest
+            if (verified) {
+                stableRollbackDir.deleteRecursively()
+                restoreMarker.delete()
+            }
+            verified
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    private data class ValidationResult(
+        val manifest: BackupManifest,
+        val entryCount: Int,
+        val totalBytes: Long
+    )
+
+    private fun validateZip(inputStream: InputStream, extractTo: File?): ValidationResult {
+        var manifest: BackupManifest? = null
+        var entryCount = 0
+        var totalBytes = 0L
+        val seenNames = mutableSetOf<String>()
+
+        ZipInputStream(inputStream.buffered()).use { zipIn ->
+            var entry = zipIn.nextEntry
+            while (entry != null) {
+                entryCount++
+                require(entryCount <= MAX_ENTRIES) { "Pacote excede o limite de entradas" }
+                val entryName = entry.name
+                require(isSafeAndAllowedEntry(entryName)) { "Caminho ou tipo de entrada não permitido: $entryName" }
+                require(seenNames.add(entryName)) { "Entrada duplicada no pacote: $entryName" }
 
                 if (entry.isDirectory) {
-                    destinationFile.mkdirs()
-                } else {
-                    destinationFile.parentFile?.mkdirs()
-                    if (entryName == "manifest.json") {
-                        val baos = ByteArrayOutputStream()
-                        zipIn.copyTo(baos)
-                        val json = baos.toString(Charsets.UTF_8.name())
-                        manifest = BackupSerializer.deserializeManifest(json)
-                        destinationFile.writeBytes(baos.toByteArray())
-                    } else {
-                        FileOutputStream(destinationFile).use { fos ->
-                            zipIn.copyTo(fos)
-                            fos.fd.sync()
+                    if (extractTo != null) safeDestination(extractTo, entryName).mkdirs()
+                    zipIn.closeEntry()
+                    entry = zipIn.nextEntry
+                    continue
+                }
+
+                val captureBytes = entryName == "manifest.json" ||
+                    entryName.endsWith(".json", ignoreCase = true) ||
+                    entryName.endsWith(".scribe", ignoreCase = true) ||
+                    entryName.endsWith("preferences_snapshot.txt")
+
+                val memory = if (captureBytes) ByteArrayOutputStream() else null
+                val destination = extractTo?.let { safeDestination(it, entryName) }
+                destination?.parentFile?.mkdirs()
+                val destinationOut = destination?.let { FileOutputStream(it) }
+
+                var entryBytes = 0L
+                try {
+                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                    while (true) {
+                        val read = zipIn.read(buffer)
+                        if (read < 0) break
+                        entryBytes += read
+                        totalBytes += read
+                        require(entryBytes <= MAX_ENTRY_BYTES) { "Entrada excede o limite permitido: $entryName" }
+                        require(totalBytes <= MAX_TOTAL_BYTES) { "Pacote excede o tamanho total permitido" }
+                        destinationOut?.write(buffer, 0, read)
+                        if (memory != null) {
+                            require(memory.size() + read <= MAX_CAPTURE_BYTES) { "Payload de validação grande demais: $entryName" }
+                            memory.write(buffer, 0, read)
                         }
                     }
+                    destinationOut?.flush()
+                    try { destinationOut?.fd?.sync() } catch (_: Throwable) {}
+                } finally {
+                    destinationOut?.close()
                 }
+
+                val bytes = memory?.toByteArray()
+                when {
+                    entryName == "manifest.json" -> {
+                        val text = bytes?.toString(Charsets.UTF_8) ?: error("Manifesto ilegível")
+                        manifest = BackupSerializer.deserializeManifest(text)
+                            ?: error("Manifesto ausente, corrompido ou versão incompatível")
+                    }
+                    entryName.endsWith(".scribe", ignoreCase = true) -> {
+                        require(bytes != null && bytes.size >= SCRIBE_MAGIC.size) { "Arquivo .scribe truncado: $entryName" }
+                        require(bytes.copyOfRange(0, SCRIBE_MAGIC.size).contentEquals(SCRIBE_MAGIC)) {
+                            "Magic bytes inválidos em $entryName"
+                        }
+                    }
+                    entryName.endsWith(".json", ignoreCase = true) -> {
+                        val text = bytes?.toString(Charsets.UTF_8) ?: error("JSON ilegível: $entryName")
+                        require(BackupSerializer.parseJsonObject(text) != null) { "JSON inválido em $entryName" }
+                    }
+                    entryName.endsWith("preferences_snapshot.txt") -> validatePreferencesSnapshot(bytes ?: ByteArray(0))
+                }
+
                 zipIn.closeEntry()
                 entry = zipIn.nextEntry
             }
-
-            // S05: Validação do manifesto
-            if (manifest == null) {
-                tempRestoreDir.deleteRecursively()
-                return BackupImportResult(
-                    isSuccess = false,
-                    errorMessage = "Manifesto do backup ausente ou corrompido."
-                )
-            }
-
-            // S03: Restauração Atômica e Transacional com Backup de Rollback
-            val rollbackDir = File(baseDir, ".rollback_${System.currentTimeMillis()}")
-            rollbackDir.mkdirs()
-
-            // Criar cópia de segurança do estado ativo para rollback em caso de falha
-            val activeFolders = listOf(
-                "notebooks", "personal_alphabet", "attempts", "teacher", "custom_fonts", "signatures",
-                "learning_history.json", "personal_styles.json", "alphabet", "practice_attempts", "fonts"
-            )
-            for (item in activeFolders) {
-                val src = File(baseDir, item)
-                if (src.exists()) {
-                    val dest = File(rollbackDir, item)
-                    if (src.isDirectory) {
-                        src.copyRecursively(dest, overwrite = true)
-                    } else {
-                        src.copyTo(dest, overwrite = true)
-                    }
-                }
-            }
-
-            try {
-                // Copia com migração de legados para os caminhos canônicos
-                fun copyDirSafely(srcDir: File, targetDir: File) {
-                    if (!srcDir.exists()) return
-                    if (!targetDir.exists()) targetDir.mkdirs()
-                    srcDir.walkTopDown().forEach { srcFile ->
-                        if (srcFile.isFile) {
-                            val rel = srcFile.relativeTo(srcDir).path
-                            val dest = File(targetDir, rel)
-                            dest.parentFile?.mkdirs()
-                            Files.copy(srcFile.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING)
-                        }
-                    }
-                }
-
-                // 1. Restaura todos os diretórios suportados preservando seus caminhos relativos
-                for (dirName in supportedDirs) {
-                    val extracted = File(tempRestoreDir, dirName)
-                    if (extracted.exists() && extracted.isDirectory) {
-                        copyDirSafely(extracted, File(baseDir, dirName))
-                    }
-                }
-
-                // 2. Replicação de legados para os caminhos canônicos utilizados pelos repositórios
-                val stAlphabet = File(tempRestoreDir, "alphabet")
-                if (stAlphabet.exists()) {
-                    copyDirSafely(stAlphabet, File(baseDir, "personal_alphabet"))
-                }
-
-                val stPractice = File(tempRestoreDir, "practice_attempts")
-                if (stPractice.exists()) {
-                    copyDirSafely(stPractice, File(baseDir, "attempts"))
-                }
-
-                val stFonts = File(tempRestoreDir, "fonts")
-                if (stFonts.exists()) {
-                    copyDirSafely(stFonts, File(baseDir, "custom_fonts"))
-                }
-
-                // 3. Histórico de aprendizado e estilos pessoais
-                val stLearningRoot = File(tempRestoreDir, "learning_history.json")
-                val stLearningSub = File(tempRestoreDir, "learning/learning_history.json")
-                if (stLearningRoot.exists()) {
-                    Files.copy(stLearningRoot.toPath(), File(baseDir, "learning_history.json").toPath(), StandardCopyOption.REPLACE_EXISTING)
-                } else if (stLearningSub.exists()) {
-                    Files.copy(stLearningSub.toPath(), File(baseDir, "learning_history.json").toPath(), StandardCopyOption.REPLACE_EXISTING)
-                }
-
-                val stPersonalStyles = File(tempRestoreDir, "personal_styles.json")
-                if (stPersonalStyles.exists() && stPersonalStyles.isFile) {
-                    Files.copy(stPersonalStyles.toPath(), File(baseDir, "personal_styles.json").toPath(), StandardCopyOption.REPLACE_EXISTING)
-                }
-
-                // Contagens reais pós-restauração
-                val restoredNotebooks = File(baseDir, "notebooks").listFiles()?.count { it.isDirectory } ?: 0
-                val restoredGlyphs = (File(baseDir, "personal_alphabet").takeIf { it.exists() } ?: File(baseDir, "alphabet"))
-                    .walkTopDown().count { it.isFile && it.extension == "scribe" }
-                val restoredLessons = if (File(baseDir, "learning_history.json").exists() || File(baseDir, "learning/learning_history.json").exists()) 1 else 0
-                val restoredAttempts = (File(baseDir, "attempts").takeIf { it.exists() } ?: File(baseDir, "practice_attempts"))
-                    .walkTopDown().count { it.isFile && it.extension == "scribe" }
-                val restoredTeacher = File(baseDir, "teacher/diagnostic.json").exists() || File(baseDir, "teacher/diagnostic_latest.json").exists()
-
-                // Sucesso: descarta rollback e staging
-                rollbackDir.deleteRecursively()
-                tempRestoreDir.deleteRecursively()
-
-                return BackupImportResult(
-                    isSuccess = true,
-                    manifest = manifest,
-                    restoredNotebooks = restoredNotebooks,
-                    restoredGlyphs = restoredGlyphs,
-                    restoredLessons = restoredLessons,
-                    restoredAttempts = restoredAttempts,
-                    restoredTeacherData = restoredTeacher
-                )
-            } catch (copyError: Throwable) {
-                // S03: Rollback transacional automático em caso de erro na cópia
-                for (item in activeFolders) {
-                    val backupItem = File(rollbackDir, item)
-                    val activeTarget = File(baseDir, item)
-                    if (backupItem.exists()) {
-                        activeTarget.deleteRecursively()
-                        if (backupItem.isDirectory) {
-                            backupItem.copyRecursively(activeTarget, overwrite = true)
-                        } else {
-                            backupItem.copyTo(activeTarget, overwrite = true)
-                        }
-                    } else {
-                        // Se não existia no rollback, foi criado durante esta restauração e deve ser removido!
-                        if (activeTarget.exists()) {
-                            activeTarget.deleteRecursively()
-                        }
-                    }
-                }
-                rollbackDir.deleteRecursively()
-                tempRestoreDir.deleteRecursively()
-                return BackupImportResult(
-                    isSuccess = false,
-                    errorMessage = "Falha durante a restauração dos arquivos; dados anteriores preservados: ${copyError.message}"
-                )
-            }
-        } catch (e: Throwable) {
-            tempRestoreDir.deleteRecursively()
-            return BackupImportResult(
-                isSuccess = false,
-                errorMessage = "Falha ao restaurar backup: ${e.message}"
-            )
         }
+
+        val validatedManifest = manifest ?: error("manifest.json não encontrado")
+        return ValidationResult(validatedManifest, entryCount, totalBytes)
+    }
+
+    private fun validatePreferencesSnapshot(bytes: ByteArray) {
+        val allowed = setOf(
+            "pressure_curve",
+            "is_left_handed",
+            "is_high_contrast",
+            "show_guide_numbers",
+            "daily_goal_minutes"
+        )
+        val text = bytes.toString(Charsets.UTF_8)
+        for (line in text.lineSequence().filter { it.isNotBlank() }) {
+            val idx = line.indexOf('=')
+            require(idx > 0) { "Linha inválida em preferences_snapshot.txt" }
+            require(line.substring(0, idx) in allowed) { "Preferência desconhecida no pacote" }
+        }
+    }
+
+    private fun isSafeAndAllowedEntry(name: String): Boolean {
+        if (name.isBlank() || name.startsWith('/') || name.startsWith('\\')) return false
+        if ('\\' in name) return false
+        val segments = name.split('/')
+        if (segments.any { it == ".." || it.isBlank() }) return false
+        if (name == "manifest.json") return true
+        if (name in rootFiles) return true
+        val root = segments.first()
+        if (root !in canonicalDirs && root !in legacyDirs) return false
+        val lower = name.lowercase()
+        return lower.endsWith(".json") ||
+            lower.endsWith(".scribe") ||
+            lower.endsWith(".txt") ||
+            lower.endsWith(".ttf") ||
+            lower.endsWith(".otf") ||
+            !name.substringAfterLast('/').contains('.')
+    }
+
+    private fun safeDestination(root: File, entryName: String): File {
+        val destination = File(root, entryName).canonicalFile
+        val canonicalRoot = root.canonicalFile
+        val prefix = canonicalRoot.path + File.separator
+        require(destination.path == canonicalRoot.path || destination.path.startsWith(prefix)) {
+            "Zip Slip detectado: $entryName"
+        }
+        return destination
+    }
+
+    private fun copyStagedSetToActive(stagingDir: File) {
+        for (dirName in canonicalDirs) {
+            val src = File(stagingDir, dirName)
+            if (src.isDirectory) copyDirectory(src, File(baseDir, dirName))
+        }
+
+        // Migração de pacotes antigos para os caminhos canônicos atuais.
+        val legacyMappings = mapOf(
+            "alphabet" to "personal_alphabet",
+            "practice_attempts" to "attempts",
+            "fonts" to "custom_fonts"
+        )
+        for ((legacy, canonical) in legacyMappings) {
+            val src = File(stagingDir, legacy)
+            if (src.isDirectory && !File(baseDir, canonical).exists()) {
+                copyDirectory(src, File(baseDir, canonical))
+            }
+        }
+
+        val legacyLearning = File(stagingDir, "learning/learning_history.json")
+        val rootLearning = File(stagingDir, "learning_history.json")
+        if (rootLearning.isFile) rootLearning.copyTo(File(baseDir, "learning_history.json"), overwrite = true)
+        else if (legacyLearning.isFile) legacyLearning.copyTo(File(baseDir, "learning_history.json"), overwrite = true)
+
+        for (fileName in rootFiles.filter { it != "learning_history.json" }) {
+            val src = File(stagingDir, fileName)
+            if (src.isFile) src.copyTo(File(baseDir, fileName), overwrite = true)
+        }
+    }
+
+    private fun copyManagedSet(sourceRoot: File, targetRoot: File) {
+        targetRoot.mkdirs()
+        for (name in managedNames) {
+            val src = File(sourceRoot, name)
+            if (!src.exists()) continue
+            val dst = File(targetRoot, name)
+            if (src.isDirectory) copyDirectory(src, dst) else {
+                dst.parentFile?.mkdirs()
+                src.copyTo(dst, overwrite = true)
+            }
+        }
+    }
+
+    private fun deleteManagedSet(root: File) {
+        for (name in managedNames) {
+            val target = File(root, name)
+            if (target.exists()) target.deleteRecursively()
+        }
+    }
+
+    private fun copyDirectory(source: File, target: File) {
+        if (!target.exists()) target.mkdirs()
+        source.walkTopDown().forEach { file ->
+            val rel = file.relativeTo(source).path
+            val dst = if (rel.isEmpty()) target else File(target, rel)
+            if (file.isDirectory) dst.mkdirs() else {
+                dst.parentFile?.mkdirs()
+                file.copyTo(dst, overwrite = true)
+            }
+        }
+    }
+
+    private fun addDirectoryToZip(zipOut: ZipOutputStream, folder: File, onFile: (Long) -> Unit) {
+        folder.walkTopDown().forEach { file ->
+            if (!file.isFile || file.name.endsWith(".tmp") || file.name.startsWith(".rollback")) return@forEach
+            val relPath = file.relativeTo(baseDir).path.replace('\\', '/')
+            zipOut.putNextEntry(ZipEntry(relPath))
+            val bytes = file.inputStream().use { it.copyTo(zipOut) }
+            zipOut.closeEntry()
+            onFile(bytes)
+        }
+    }
+
+    private data class Inventory(
+        val notebookCount: Int,
+        val pageCount: Int,
+        val personalGlyphCount: Int,
+        val lessonHistoryCount: Int,
+        val spacedRepetitionCount: Int,
+        val practiceAttemptCount: Int,
+        val passageCopyCount: Int,
+        val personalStyleCount: Int,
+        val importedFontCount: Int,
+        val signatureReferenceCount: Int,
+        val hasTeacherDiagnostic: Boolean,
+        val hasPreferencesSnapshot: Boolean
+    ) {
+        fun toManifest() = BackupManifest(
+            notebookCount = notebookCount,
+            pageCount = pageCount,
+            personalGlyphCount = personalGlyphCount,
+            lessonHistoryCount = lessonHistoryCount,
+            spacedRepetitionCount = spacedRepetitionCount,
+            practiceAttemptCount = practiceAttemptCount,
+            passageCopyCount = passageCopyCount,
+            personalStyleCount = personalStyleCount,
+            importedFontCount = importedFontCount,
+            signatureReferenceCount = signatureReferenceCount,
+            hasTeacherDiagnostic = hasTeacherDiagnostic,
+            hasPreferencesSnapshot = hasPreferencesSnapshot
+        )
+    }
+
+    private fun inventory(root: File): Inventory {
+        val notebookManifest = File(root, "notebooks/manifest.json")
+        val notebookCount = countArray(notebookManifest, "notebooks")
+            .takeIf { it >= 0 }
+            ?: (File(root, "notebooks").listFiles()?.count { it.isDirectory } ?: 0)
+        val pageCount = File(root, "notebooks").takeIf { it.isDirectory }
+            ?.walkTopDown()?.count { it.isFile && it.extension.equals("scribe", true) } ?: 0
+
+        val alphabetRoot = File(root, "personal_alphabet").takeIf { it.exists() } ?: File(root, "alphabet")
+        val glyphCount = countArray(File(alphabetRoot, "manifest.json"), "glyphs")
+            .takeIf { it >= 0 }
+            ?: 0
+
+        val learningFile = File(root, "learning_history.json").takeIf { it.isFile }
+            ?: File(root, "learning/learning_history.json")
+        var sessionCount = 0
+        var srsCount = 0
+        if (learningFile.isFile) {
+            try {
+                val pair = LearningHistorySerializer.deserialize(learningFile.readText(Charsets.UTF_8))
+                sessionCount = pair.first.size
+                srsCount = pair.second.size
+            } catch (_: Throwable) {}
+        }
+
+        val attemptsRoot = File(root, "attempts").takeIf { it.exists() } ?: File(root, "practice_attempts")
+        val attemptCount = countArray(File(attemptsRoot, "manifest.json"), "attempts")
+            .takeIf { it >= 0 }
+            ?: attemptsRoot.takeIf { it.isDirectory }
+                ?.walkTopDown()?.count { it.isFile && it.extension.equals("scribe", true) } ?: 0
+
+        val copyManifest = File(root, "passage_copies/text_copies/manifest.json")
+        val passageCopyCount = countArray(copyManifest, "records").coerceAtLeast(0)
+
+        val stylesFile = File(root, "personal_styles.json")
+        val personalStyleCount = if (stylesFile.isFile) {
+            val parsed = BackupSerializer.parseJsonObject(stylesFile.readText(Charsets.UTF_8))
+            val styles = parsed?.get("styles") as? List<*>
+            styles?.size ?: Regex("\\\"id\\\"\\s*:").findAll(stylesFile.readText(Charsets.UTF_8)).count()
+        } else 0
+
+        val fontsRoot = File(root, "custom_fonts").takeIf { it.exists() } ?: File(root, "fonts")
+        val fontCount = fontsRoot.takeIf { it.isDirectory }?.listFiles()?.count {
+            it.isFile && (it.extension.equals("ttf", true) || it.extension.equals("otf", true))
+        } ?: 0
+
+        val signatures = File(root, "signatures")
+        val signatureCount = when {
+            File(signatures, "baseline_current.txt").isFile -> 1
+            File(signatures, "baseline.scribe").isFile -> 1
+            else -> 0
+        }
+
+        val teacher = File(root, "teacher")
+        val hasTeacher = File(teacher, "diagnostic.json").isFile || File(teacher, "diagnostic_latest.json").isFile
+
+        return Inventory(
+            notebookCount = notebookCount,
+            pageCount = pageCount,
+            personalGlyphCount = glyphCount,
+            lessonHistoryCount = sessionCount,
+            spacedRepetitionCount = srsCount,
+            practiceAttemptCount = attemptCount,
+            passageCopyCount = passageCopyCount,
+            personalStyleCount = personalStyleCount,
+            importedFontCount = fontCount,
+            signatureReferenceCount = signatureCount,
+            hasTeacherDiagnostic = hasTeacher,
+            hasPreferencesSnapshot = File(root, "preferences_snapshot.txt").isFile
+        )
+    }
+
+    private fun countArray(file: File, key: String): Int {
+        if (!file.isFile) return -1
+        return try {
+            val parsed = BackupSerializer.parseJsonObject(file.readText(Charsets.UTF_8)) ?: return -1
+            (parsed[key] as? List<*>)?.size ?: -1
+        } catch (_: Throwable) {
+            -1
+        }
+    }
+
+    private fun validateRestoredInventory(manifest: BackupManifest, actual: Inventory) {
+        require(actual.notebookCount == manifest.notebookCount) { "Contagem de cadernos divergiu do manifesto" }
+        require(actual.pageCount == manifest.pageCount) { "Contagem de páginas divergiu do manifesto" }
+        require(actual.practiceAttemptCount == manifest.practiceAttemptCount) { "Contagem de tentativas divergiu do manifesto" }
+        require(actual.lessonHistoryCount == manifest.lessonHistoryCount) { "Contagem de sessões divergiu do manifesto" }
+        require(actual.spacedRepetitionCount == manifest.spacedRepetitionCount) { "Contagem SRS divergiu do manifesto" }
+        require(actual.passageCopyCount == manifest.passageCopyCount) { "Contagem de cópias divergiu do manifesto" }
+        require(actual.personalStyleCount == manifest.personalStyleCount) { "Contagem de estilos divergiu do manifesto" }
+        require(actual.importedFontCount == manifest.importedFontCount) { "Contagem de fontes divergiu do manifesto" }
+        require(actual.signatureReferenceCount == manifest.signatureReferenceCount) { "Contagem de referências divergiu do manifesto" }
+    }
+
+    private fun writeRestoreMarker(previousDigest: String) {
+        val temp = File.createTempFile("restore_marker_", ".tmp", baseDir)
+        FileOutputStream(temp).use { fos ->
+            fos.write("v1|$previousDigest".toByteArray(Charsets.UTF_8))
+            fos.flush()
+            fos.fd.sync()
+        }
+        if (restoreMarker.exists()) restoreMarker.delete()
+        check(temp.renameTo(restoreMarker) || run {
+            temp.copyTo(restoreMarker, overwrite = true)
+            temp.delete()
+            true
+        }) { "Não foi possível registrar estado de restauração" }
+    }
+
+    private fun computeManagedDigest(root: File): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val files = mutableListOf<Pair<String, File>>()
+        for (name in managedNames) {
+            val item = File(root, name)
+            if (!item.exists()) continue
+            if (item.isFile) {
+                files += name to item
+            } else {
+                item.walkTopDown().filter { it.isFile }.forEach { file ->
+                    files += file.relativeTo(root).path.replace('\\', '/') to file
+                }
+            }
+        }
+        files.sortedBy { it.first }.forEach { (path, file) ->
+            digest.update(path.toByteArray(Charsets.UTF_8))
+            digest.update(0)
+            file.inputStream().use { input ->
+                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    digest.update(buffer, 0, read)
+                }
+            }
+            digest.update(0)
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
+    }
+
+    companion object {
+        private val restoreLock = Any()
+        private val SCRIBE_MAGIC = "SCRIBE01".toByteArray(Charsets.US_ASCII)
+        private const val MAX_ENTRIES = 100_000
+        private const val MAX_ENTRY_BYTES = 64L * 1024L * 1024L
+        private const val MAX_TOTAL_BYTES = 512L * 1024L * 1024L
+        private const val MAX_CAPTURE_BYTES = 8 * 1024 * 1024
     }
 }
