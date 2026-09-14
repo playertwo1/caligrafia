@@ -2,6 +2,8 @@ package com.scribe.caligrafia.notebook.viewmodel
 
 import android.app.Application
 import android.content.Context
+import android.content.Intent
+import android.graphics.Color
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.scribe.caligrafia.core.model.CalligraphyColor
@@ -11,6 +13,15 @@ import com.scribe.caligrafia.core.model.NotebookPage
 import com.scribe.caligrafia.core.model.PenThickness
 import com.scribe.caligrafia.core.model.ToolConfig
 import com.scribe.caligrafia.core.model.ToolMode
+import com.scribe.caligrafia.expansions.passage.ActiveTextCopySession
+import com.scribe.caligrafia.expansions.passage.LocalPassageCopyRepository
+import com.scribe.caligrafia.expansions.passage.PassageCatalog
+import com.scribe.caligrafia.expansions.passage.PassageCategory
+import com.scribe.caligrafia.expansions.passage.PassageCopyRecord
+import com.scribe.caligrafia.expansions.passage.PassageCopyRepository
+import com.scribe.caligrafia.expansions.passage.PassageItem
+import com.scribe.caligrafia.expansions.passage.PassagePacingEngine
+import com.scribe.caligrafia.expansions.transfer.F5DocumentTransferActivity
 import com.scribe.caligrafia.ink.capture.InMemoryStrokeRepository
 import com.scribe.caligrafia.ink.capture.StrokeCapturePipeline
 import com.scribe.caligrafia.ink.palm.PalmRejectionPolicy
@@ -31,15 +42,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
-
-import com.scribe.caligrafia.expansions.passage.ActiveTextCopySession
-import com.scribe.caligrafia.expansions.passage.LocalPassageCopyRepository
-import com.scribe.caligrafia.expansions.passage.PassageCatalog
-import com.scribe.caligrafia.expansions.passage.PassageCategory
-import com.scribe.caligrafia.expansions.passage.PassageCopyRecord
-import com.scribe.caligrafia.expansions.passage.PassageCopyRepository
-import com.scribe.caligrafia.expansions.passage.PassageItem
-import com.scribe.caligrafia.expansions.passage.PassagePacingEngine
 
 /**
  * Estado da interface do Caderno de Prática Caligráfica (M1 e M3, F4.12, F4.13).
@@ -151,7 +153,6 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
     fun selectNotebook(notebook: Notebook) {
         viewModelScope.launch(Dispatchers.IO) {
             pagePersistenceMutex.withLock {
-                // Salva a página atual antes de trocar de caderno
                 val currentPage = _uiState.value.currentPage
                 if (currentPage != null) {
                     notebookRepository.savePageStrokes(currentPage, strokeRepository.allStrokes)
@@ -299,14 +300,12 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
     fun previousPage() {
         val currentIndex = _uiState.value.currentPageIndex
         if (currentIndex <= 0) return
-
         switchPage(currentIndex - 1)
     }
 
     fun nextPage() {
         val currentIndex = _uiState.value.currentPageIndex
         if (currentIndex >= pagesList.size - 1) return
-
         switchPage(currentIndex + 1)
     }
 
@@ -316,12 +315,10 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
 
         viewModelScope.launch(Dispatchers.IO) {
             pagePersistenceMutex.withLock {
-                // 1. Salva a página atual com bloqueio exclusivo garantindo ordem estrita
                 if (currentPage != null) {
                     notebookRepository.savePageStrokes(currentPage, currentStrokes)
                 }
 
-                // 2. Carrega a página de destino
                 val targetPage = pagesList.getOrNull(targetIndex) ?: return@withLock
                 val targetStrokes = notebookRepository.loadPageStrokes(targetPage)
                 strokeRepository.loadStrokes(targetStrokes)
@@ -478,23 +475,11 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
         viewModelScope.launch(Dispatchers.IO) {
             notebookRepository.updatePageGuidelines(page.id, config)
             val updatedPage = page.copy(guidelineConfig = config)
-            // A15: Atualiza a lista interna e a lista em StateFlow para que navegação futura use a pauta correta
             pagesList = pagesList.map { if (it.id == updatedPage.id) updatedPage else it }
-            _uiState.update { state ->
-                state.copy(
-                    currentPage = updatedPage
-                )
-            }
+            _uiState.update { state -> state.copy(currentPage = updatedPage) }
         }
     }
 
-    /**
-     * Seleciona o estilo caligráfico ativo (M3 — SCR-023).
-     *
-     * @param styleId Identificador do estilo desejado.
-     * @param adaptPageGuidelines Se true, recalcula e aplica automaticamente as pautas da página para
-     *                            refletir a proporção e a inclinação recomendadas do estilo.
-     */
     fun selectStyle(styleId: String, adaptPageGuidelines: Boolean = false) {
         styleEngine.loadPersonalStyles()
         val style = styleEngine.getStyle(styleId)
@@ -506,9 +491,6 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
         }
     }
 
-    /**
-     * R17: Importa uma fonte local TTF/OTF, registra como estilo e disponibiliza para o caderno.
-     */
     fun importCustomFont(fontFile: File, name: String? = null, slantAngle: Float = 60.0f): Result<ScribeStyle> {
         val result = styleEngine.importCustomFont(fontFile, name, slantAngle)
         if (result.isSuccess) {
@@ -520,20 +502,13 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
                     notificationMessage = "Fonte importada com sucesso: ${imported?.name}"
                 )
             }
-            if (imported != null) {
-                selectStyle(imported.id, adaptPageGuidelines = true)
-            }
+            if (imported != null) selectStyle(imported.id, adaptPageGuidelines = true)
         } else {
-            _uiState.update {
-                it.copy(notificationMessage = "Erro ao importar fonte: ${result.exceptionOrNull()?.message}")
-            }
+            _uiState.update { it.copy(notificationMessage = "Erro ao importar fonte: ${result.exceptionOrNull()?.message}") }
         }
         return result
     }
 
-    /**
-     * A06: Flush de segurança quando a tela é pausada ou o app entra em segundo plano.
-     */
     fun onPauseLifecycle() {
         pipeline.flushActiveStroke(commitIfValid = true)
         val page = _uiState.value.currentPage ?: return
@@ -545,9 +520,6 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
         }
     }
 
-    /**
-     * Recarrega preferências atualizadas de hardware e curva de pressão da S Pen.
-     */
     fun onResumeLifecycle() {
         val savedCurve = try {
             val prefs = getApplication<Application>().getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
@@ -557,15 +529,11 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
     }
 
     fun undo() {
-        if (strokeRepository.undo()) {
-            onStrokesModified()
-        }
+        if (strokeRepository.undo()) onStrokesModified()
     }
 
     fun redo() {
-        if (strokeRepository.redo()) {
-            onStrokesModified()
-        }
+        if (strokeRepository.redo()) onStrokesModified()
     }
 
     fun clearPage() {
@@ -573,7 +541,6 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
         onStrokesModified()
     }
 
-    // R16: Dimensões físicas reais do canvas de escrita da tela para exportação fiel sem distorção
     var canvasWidthPx: Float = 0f
         private set
     var canvasHeightPx: Float = 0f
@@ -586,44 +553,84 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
         }
     }
 
+    /**
+     * F5.08-F5.10: gera duas variantes fiéis e envia a escolha para o Storage Access Framework.
+     * O sucesso só é mostrado pela Activity de transferência depois que o URI escolhido é gravado.
+     */
     fun exportCurrentPage(context: Context) {
         val page = _uiState.value.currentPage ?: return
-        val strokes = strokeRepository.allStrokes
+        val strokes = strokeRepository.allStrokes.toList()
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val exportsDir = File(context.getExternalFilesDir(null) ?: context.filesDir, "exports")
-                exportsDir.mkdirs()
-                val targetFile = File(exportsDir, "pagina_${page.pageIndex + 1}_${System.currentTimeMillis()}.png")
-
-                // R16: Preserva aspect ratio do canvas da tela se disponível, evitando distorções
                 val targetW = 1440
                 val targetH = if (canvasWidthPx > 0f && canvasHeightPx > 0f) {
                     (targetW * (canvasHeightPx / canvasWidthPx)).toInt().coerceIn(720, 4000)
                 } else {
                     2560
                 }
+                val sourceW = canvasWidthPx.takeIf { it > 0f }
+                val sourceH = canvasHeightPx.takeIf { it > 0f }
+                val tempDir = File(context.cacheDir, "f5_exports").apply { mkdirs() }
+                val stamp = System.nanoTime()
+                val guidedFile = File(tempDir, "page_${page.id}_${stamp}_ivory_guides.png")
+                val cleanFile = File(tempDir, "page_${page.id}_${stamp}_white_clean.png")
 
                 PageExporter.exportToPng(
                     page = page,
                     strokes = strokes,
-                    targetFile = targetFile,
+                    targetFile = guidedFile,
                     options = PageExportOptions(
                         widthPx = targetW,
                         heightPx = targetH,
-                        sourceWidthPx = if (canvasWidthPx > 0f) canvasWidthPx else null,
-                        sourceHeightPx = if (canvasHeightPx > 0f) canvasHeightPx else null,
-                        includeGuidelines = true
+                        sourceWidthPx = sourceW,
+                        sourceHeightPx = sourceH,
+                        includeGuidelines = true,
+                        backgroundColor = Color.rgb(255, 252, 240),
+                        compressQuality = 100
                     )
                 )
 
+                PageExporter.exportToPng(
+                    page = page,
+                    strokes = strokes,
+                    targetFile = cleanFile,
+                    options = PageExportOptions(
+                        widthPx = targetW,
+                        heightPx = targetH,
+                        sourceWidthPx = sourceW,
+                        sourceHeightPx = sourceH,
+                        includeGuidelines = false,
+                        backgroundColor = Color.WHITE,
+                        compressQuality = 100
+                    )
+                )
+
+                val appContext = context.applicationContext
+                val transferIntent = Intent(appContext, F5DocumentTransferActivity::class.java).apply {
+                    putExtra(F5DocumentTransferActivity.EXTRA_MODE, F5DocumentTransferActivity.MODE_EXPORT_CHOICE)
+                    putExtra(F5DocumentTransferActivity.EXTRA_FILE_PATH, guidedFile.absolutePath)
+                    putExtra(F5DocumentTransferActivity.EXTRA_PREVIEW_PATH, guidedFile.absolutePath)
+                    putExtra(F5DocumentTransferActivity.EXTRA_LABEL, "Papel marfim + pautas")
+                    putExtra(F5DocumentTransferActivity.EXTRA_FILE_PATH_2, cleanFile.absolutePath)
+                    putExtra(F5DocumentTransferActivity.EXTRA_PREVIEW_PATH_2, cleanFile.absolutePath)
+                    putExtra(F5DocumentTransferActivity.EXTRA_LABEL_2, "Branco sem pautas")
+                    putExtra(F5DocumentTransferActivity.EXTRA_MIME, "image/png")
+                    putExtra(F5DocumentTransferActivity.EXTRA_SUGGESTED_NAME, "pagina_${page.pageIndex + 1}.png")
+                    putExtra(F5DocumentTransferActivity.EXTRA_DIALOG_TITLE, "Aparência da página exportada")
+                    putExtra(
+                        F5DocumentTransferActivity.EXTRA_CHOICE_DESCRIPTION,
+                        "As duas opções preservam a mesma proporção lógica do canvas. Escolha a aparência e depois o nome/destino do PNG."
+                    )
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                appContext.startActivity(transferIntent)
+
                 _uiState.update {
-                    it.copy(notificationMessage = "Página exportada para: ${targetFile.name}")
+                    it.copy(notificationMessage = "Escolha a aparência e o destino no seletor do Android.")
                 }
             } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(notificationMessage = "Erro ao exportar: ${e.localizedMessage}")
-                }
+                _uiState.update { it.copy(notificationMessage = "Erro ao preparar exportação: ${e.localizedMessage}") }
             }
         }
     }
@@ -639,9 +646,6 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
     val copyRepository: PassageCopyRepository = LocalPassageCopyRepository(baseFilesDir)
     private var textCopyTimerJob: kotlinx.coroutines.Job? = null
 
-    /**
-     * Inicia sessão de cópia de texto com parâmetros vinculados (F4.12, F4.13).
-     */
     fun startTextCopyPractice(
         passage: PassageItem,
         styleId: String = passage.recommendedStyleId,
@@ -670,12 +674,7 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
             }
         } else {
             _uiState.update {
-                it.copy(
-                    activeTextCopy = ActiveTextCopySession(
-                        passage = passage,
-                        styleId = styleId
-                    )
-                )
+                it.copy(activeTextCopy = ActiveTextCopySession(passage = passage, styleId = styleId))
             }
         }
 
@@ -708,11 +707,8 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
     }
 
     fun pauseTextCopy() {
-        _uiState.update {
-            it.copy(activeTextCopy = it.activeTextCopy?.copy(isPaused = true))
-        }
+        _uiState.update { it.copy(activeTextCopy = it.activeTextCopy?.copy(isPaused = true)) }
 
-        // Auto-save do trabalho em andamento para retomada transparente (F4.15)
         viewModelScope.launch(Dispatchers.IO) {
             val session = _uiState.value.activeTextCopy ?: return@launch
             val currentStrokes = strokeRepository.allStrokes
@@ -738,9 +734,7 @@ class NotebookPracticeViewModel(application: Application) : AndroidViewModel(app
     }
 
     fun resumeTextCopy() {
-        _uiState.update {
-            it.copy(activeTextCopy = it.activeTextCopy?.copy(isPaused = false))
-        }
+        _uiState.update { it.copy(activeTextCopy = it.activeTextCopy?.copy(isPaused = false)) }
     }
 
     suspend fun finishTextCopyPractice(): PassageCopyRecord? {
