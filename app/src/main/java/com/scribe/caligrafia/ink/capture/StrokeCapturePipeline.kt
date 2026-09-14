@@ -18,13 +18,12 @@ import java.util.UUID
  * 2. Preservação de coordenadas x/y, timestamps, pressão, tilt e orientação.
  * 3. Ausência de dados fictícios (sensores não disponíveis ficam null).
  * 4. Isolamento do traço ativo por pointerId para evitar corrupção por multi-touch espúrio.
- * 5. Rejeição estrita de palma (Palm Rejection) e modo Stylus-Only via PalmRejectionPolicy.
+ * 5. Rejeição estrita de palma e política de entrada persistida via PalmRejectionPolicy.
  * 6. Roteamento transparente de borracha (TOOL_TYPE_ERASER e botão lateral S Pen).
  * 7. Tratamento de ACTION_CANCEL sem deixar estado inconsistente.
- * 8. Núcleo 100% testável independente do runtime do Android Framework.
  */
 class StrokeCapturePipeline(
-    val palmPolicy: PalmRejectionPolicy = PalmRejectionPolicy(),
+    val palmPolicy: PalmRejectionPolicy = PalmRejectionPolicy(followRuntimeInputMode = true),
     var toolConfig: ToolConfig = ToolConfig(),
     var onStrokeStarted: ((StrokePoint) -> Unit)? = null,
     var onStrokeCompleted: ((Stroke) -> Unit)? = null,
@@ -55,7 +54,7 @@ class StrokeCapturePipeline(
 
     fun getActiveStrokePreview(): Stroke? {
         val id = activeStrokeId ?: return null
-        if (activeTool == ToolType.ERASER) return null // A04: Borracha não produz prévia de tinta
+        if (activeTool == ToolType.ERASER) return null
         return Stroke(
             id = id,
             tool = activeTool,
@@ -68,10 +67,6 @@ class StrokeCapturePipeline(
         )
     }
 
-    /**
-     * Processa um MotionEvent recebido da superfície de escrita do Android.
-     * @return true se o evento foi consumido com sucesso pelo pipeline.
-     */
     fun onMotionEvent(event: MotionEvent): Boolean {
         return when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> handleActionDown(event)
@@ -84,9 +79,6 @@ class StrokeCapturePipeline(
         }
     }
 
-    /**
-     * Processa eventos de proximidade (hover) da S Pen / Stylus.
-     */
     fun onHoverEvent(event: MotionEvent): Boolean {
         val tool = ToolType.fromMotionEvent(event.getToolType(0), event.buttonState)
         val eventTime = event.eventTime
@@ -102,34 +94,26 @@ class StrokeCapturePipeline(
         return false
     }
 
-    /**
-     * Início de um traço desacoplado do MotionEvent (testável diretamente).
-     */
     fun onPointerDown(
         pointerId: Int,
         toolType: ToolType,
         point: StrokePoint,
         eventTime: Long = point.tMs
     ): Boolean {
-        // Se a ferramenta na UI estiver definida como Borracha e for Stylus, redireciona para ERASER
         val effectiveTool = if (toolType == ToolType.STYLUS && toolConfig.mode == ToolMode.ERASER) {
             ToolType.ERASER
         } else {
             toolType
         }
 
-        // 1. Avaliação pelas regras de Palm Rejection e modo de entrada
         when (val decision = palmPolicy.evaluateTouch(effectiveTool, eventTime)) {
             is PalmDecision.Reject -> {
                 onPalmTouchRejected?.invoke(effectiveTool, decision.reason)
                 return false
             }
-            is PalmDecision.Allow -> {
-                // Admitido para escrita
-            }
+            is PalmDecision.Allow -> Unit
         }
 
-        // Se a caneta acabou de tocar enquanto havia um traço de dedo ativo, preempção imediata
         if (activeStrokeId != null) {
             terminateActiveStroke(isCancelled = true, eventTime = eventTime)
         }
@@ -157,9 +141,6 @@ class StrokeCapturePipeline(
         return true
     }
 
-    /**
-     * Adiciona uma sequência de pontos de movimento (incluindo amostras históricas).
-     */
     fun onPointerMove(
         pointerId: Int,
         points: List<StrokePoint>,
@@ -174,7 +155,6 @@ class StrokeCapturePipeline(
         points.forEach { onStrokePointAdded?.invoke(it) }
 
         if (activeTool == ToolType.ERASER) {
-            // A05: Conecta o último ponto do evento anterior ao lote atual para não perder interseções
             val eraserBatch = if (lastEraserPoint != null) {
                 listOf(lastEraserPoint!!) + points
             } else {
@@ -187,9 +167,6 @@ class StrokeCapturePipeline(
         return true
     }
 
-    /**
-     * Finaliza o traço atual com sucesso.
-     */
     fun onPointerUp(
         pointerId: Int,
         finalPoints: List<StrokePoint> = emptyList(),
@@ -220,9 +197,6 @@ class StrokeCapturePipeline(
         return true
     }
 
-    /**
-     * Cancela o traço atual devido a interrupção do sistema operacional.
-     */
     fun onPointerCancel(
         pointerId: Int = activePointerId,
         eventTime: Long
@@ -237,15 +211,6 @@ class StrokeCapturePipeline(
         return true
     }
 
-    /**
-     * Efetua a descarga de segurança (flush) de qualquer traço ativo em andamento.
-     * Invocado quando o app perde o foco de janela (ex: notificação, diálogo, split-screen resize),
-     * quando a S Pen é guardada no silo físico, ou ao entrar em segundo plano (onPause/bloqueio de tela).
-     *
-     * @param commitIfValid se true e o traço tiver >= 2 pontos, finaliza-o como concluído para não descartar a escrita do usuário.
-     *                      se false ou tiver < 2 pontos, cancela-o com segurança.
-     * @return true se havia um traço ativo e ele foi descarregado.
-     */
     fun flushActiveStroke(commitIfValid: Boolean = true): Boolean {
         if (activeStrokeId == null) return false
 
@@ -264,7 +229,6 @@ class StrokeCapturePipeline(
         val pointerIndex = 0
         val pointerId = event.getPointerId(pointerIndex)
         val tool = ToolType.fromMotionEvent(event.getToolType(pointerIndex), event.buttonState)
-
         val firstPoint = extractPoint(event, pointerIndex)
         return onPointerDown(pointerId, tool, firstPoint, event.eventTime)
     }
@@ -273,20 +237,15 @@ class StrokeCapturePipeline(
         val actionIndex = event.actionIndex
         val tool = ToolType.fromMotionEvent(event.getToolType(actionIndex), event.buttonState)
 
-        // Se uma caneta tocar a tela enquanto havia outro ponteiro (ou multi-touch),
-        // o stylus toma posse do traço
         if (tool == ToolType.STYLUS || tool == ToolType.ERASER) {
             val pointerId = event.getPointerId(actionIndex)
             val point = extractPoint(event, actionIndex)
             return onPointerDown(pointerId, tool, point, event.eventTime)
         }
 
-        // Caso seja um dedo secundário (ex: palma repousando), rejeita
         when (val decision = palmPolicy.evaluateTouch(tool, event.eventTime)) {
-            is PalmDecision.Reject -> {
-                onPalmTouchRejected?.invoke(tool, decision.reason)
-            }
-            is PalmDecision.Allow -> {}
+            is PalmDecision.Reject -> onPalmTouchRejected?.invoke(tool, decision.reason)
+            is PalmDecision.Allow -> Unit
         }
         return false
     }
@@ -299,15 +258,10 @@ class StrokeCapturePipeline(
 
         val points = mutableListOf<StrokePoint>()
         val historySize = event.historySize
-
-        // 1. Consumir todas as amostras históricas geradas entre frames em ordem cronológica
         for (h in 0 until historySize) {
             points.add(extractPoint(event, pointerIndex, historicalIndex = h))
         }
-
-        // 2. Adicionar o ponto atual do evento
         points.add(extractPoint(event, pointerIndex))
-
         return onPointerMove(activePointerId, points, historicalCount = historySize)
     }
 
@@ -322,7 +276,6 @@ class StrokeCapturePipeline(
             for (h in 0 until historySize) {
                 finalPoints.add(extractPoint(event, pointerIndex, historicalIndex = h))
             }
-
             finalPoints.add(extractPoint(event, pointerIndex))
         }
 
@@ -351,7 +304,7 @@ class StrokeCapturePipeline(
 
     private fun terminateActiveStroke(isCancelled: Boolean, eventTime: Long) {
         val strokeId = activeStrokeId ?: return
-        val currentTool = activeTool ?: ToolType.STYLUS
+        val currentTool = activeTool
         activeStrokeId = null
         activePointerId = -1
         activeTool = ToolType.UNKNOWN
@@ -375,11 +328,8 @@ class StrokeCapturePipeline(
 
         if (isCancelled) {
             onStrokeCancelled?.invoke(completedStroke)
-        } else {
-            // A04: Ações de borracha nunca são adicionadas ao histórico de traços de tinta
-            if (completedStroke.tool != ToolType.ERASER) {
-                onStrokeCompleted?.invoke(completedStroke)
-            }
+        } else if (completedStroke.tool != ToolType.ERASER) {
+            onStrokeCompleted?.invoke(completedStroke)
         }
     }
 
