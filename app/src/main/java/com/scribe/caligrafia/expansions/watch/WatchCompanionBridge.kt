@@ -45,9 +45,10 @@ class WatchCompanionAdapter(
 
     override var postureAlertThresholdMinutes: Int = initialPreferences.breakIntervalMinutes
         set(value) {
-            field = value.coerceIn(5, 60)
+            val normalized = value.coerceIn(5, 60)
+            field = normalized
             runCatching {
-                preferencesStore.update { it.copy(breakIntervalMinutes = field) }
+                preferencesStore.update { it.copy(breakIntervalMinutes = normalized) }
             }
         }
 
@@ -108,12 +109,10 @@ class WatchCompanionAdapter(
     }
 
     override fun sendPhaseChangeHaptic(phaseName: String): Boolean {
-        // Fallback local permanece válido sem Watch: pulso duplo de transição de fase.
         return triggerDeviceVibration(longArrayOf(0, 70, 60, 70), intArrayOf(0, 180, 0, 180))
     }
 
     override fun sendPostureAlertHaptic(): Boolean {
-        // Fallback local: 3 pulsos suaves espaçados.
         return triggerDeviceVibration(longArrayOf(0, 100, 100, 100, 100, 100), intArrayOf(0, 150, 0, 150, 0, 150))
     }
 
