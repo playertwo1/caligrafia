@@ -1,8 +1,8 @@
 package com.scribe.caligrafia.expansions.backup
 
 /**
- * Serializador JSON puro em Kotlin para o manifesto de backup (.scribepack).
- * Não depende de android.jar para assegurar execução 100% verde em testes de JVM.
+ * Serializador JSON estrito do manifesto de backup (.scribepack).
+ * Não depende de android.jar e rejeita gramática incompleta, lixo após o objeto e tipos inválidos.
  */
 object BackupSerializer {
 
@@ -18,8 +18,14 @@ object BackupSerializer {
   "pageCount": ${manifest.pageCount},
   "personalGlyphCount": ${manifest.personalGlyphCount},
   "lessonHistoryCount": ${manifest.lessonHistoryCount},
+  "spacedRepetitionCount": ${manifest.spacedRepetitionCount},
   "practiceAttemptCount": ${manifest.practiceAttemptCount},
-  "hasTeacherDiagnostic": ${manifest.hasTeacherDiagnostic}
+  "passageCopyCount": ${manifest.passageCopyCount},
+  "personalStyleCount": ${manifest.personalStyleCount},
+  "importedFontCount": ${manifest.importedFontCount},
+  "signatureReferenceCount": ${manifest.signatureReferenceCount},
+  "hasTeacherDiagnostic": ${manifest.hasTeacherDiagnostic},
+  "hasPreferencesSnapshot": ${manifest.hasPreferencesSnapshot}
 }
 """.trimIndent()
     }
@@ -27,32 +33,44 @@ object BackupSerializer {
     fun deserializeManifest(json: String): BackupManifest? {
         val map = parseJsonObject(json) ?: return null
         val formatVersion = map["formatVersion"] as? String ?: return null
-        if (formatVersion != "1.0") {
-            return null // Versão não suportada
+        if (formatVersion != "1.0") return null
+
+        fun intField(name: String, default: Int = 0): Int? {
+            val value = map[name] ?: return default
+            return (value as? Number)?.toInt()
         }
+
+        fun longField(name: String, default: Long): Long? {
+            val value = map[name] ?: return default
+            return (value as? Number)?.toLong()
+        }
+
+        fun boolField(name: String, default: Boolean = false): Boolean? {
+            val value = map[name] ?: return default
+            return value as? Boolean
+        }
+
         val appVersion = map["appVersion"] as? String ?: "0.8.0"
-        val appVersionCode = (map["appVersionCode"] as? Number)?.toInt() ?: 10
-        val createdAtMs = (map["createdAtMs"] as? Number)?.toLong() ?: System.currentTimeMillis()
         val deviceInfo = map["deviceInfo"] as? String ?: "Android"
-        val notebookCount = (map["notebookCount"] as? Number)?.toInt() ?: 0
-        val pageCount = (map["pageCount"] as? Number)?.toInt() ?: 0
-        val personalGlyphCount = (map["personalGlyphCount"] as? Number)?.toInt() ?: 0
-        val lessonHistoryCount = (map["lessonHistoryCount"] as? Number)?.toInt() ?: 0
-        val practiceAttemptCount = (map["practiceAttemptCount"] as? Number)?.toInt() ?: 0
-        val hasTeacherDiagnostic = map["hasTeacherDiagnostic"] as? Boolean ?: false
 
         return BackupManifest(
             formatVersion = formatVersion,
             appVersion = appVersion,
-            appVersionCode = appVersionCode,
-            createdAtMs = createdAtMs,
+            appVersionCode = intField("appVersionCode", 10) ?: return null,
+            createdAtMs = longField("createdAtMs", 0L) ?: return null,
             deviceInfo = deviceInfo,
-            notebookCount = notebookCount,
-            pageCount = pageCount,
-            personalGlyphCount = personalGlyphCount,
-            lessonHistoryCount = lessonHistoryCount,
-            practiceAttemptCount = practiceAttemptCount,
-            hasTeacherDiagnostic = hasTeacherDiagnostic
+            notebookCount = intField("notebookCount") ?: return null,
+            pageCount = intField("pageCount") ?: return null,
+            personalGlyphCount = intField("personalGlyphCount") ?: return null,
+            lessonHistoryCount = intField("lessonHistoryCount") ?: return null,
+            spacedRepetitionCount = intField("spacedRepetitionCount") ?: return null,
+            practiceAttemptCount = intField("practiceAttemptCount") ?: return null,
+            passageCopyCount = intField("passageCopyCount") ?: return null,
+            personalStyleCount = intField("personalStyleCount") ?: return null,
+            importedFontCount = intField("importedFontCount") ?: return null,
+            signatureReferenceCount = intField("signatureReferenceCount") ?: return null,
+            hasTeacherDiagnostic = boolField("hasTeacherDiagnostic") ?: return null,
+            hasPreferencesSnapshot = boolField("hasPreferencesSnapshot") ?: return null
         )
     }
 
@@ -73,10 +91,10 @@ object BackupSerializer {
             return if (index == trimmed.length) map else null
         }
 
-        fun parseObject(): Map<String, Any?>? {
+        private fun parseObject(): Map<String, Any?>? {
             skipWhitespace()
             if (index >= trimmed.length || trimmed[index] != '{') return null
-            index++ // skip {
+            index++
             val map = mutableMapOf<String, Any?>()
             skipWhitespace()
             if (index < trimmed.length && trimmed[index] == '}') {
@@ -88,7 +106,7 @@ object BackupSerializer {
                 val key = parseString() ?: return null
                 skipWhitespace()
                 if (index >= trimmed.length || trimmed[index] != ':') return null
-                index++ // skip :
+                index++
                 skipWhitespace()
                 val parsed = parseValue() ?: return null
                 map[key] = parsed.value
@@ -109,14 +127,12 @@ object BackupSerializer {
         }
 
         private fun skipWhitespace() {
-            while (index < trimmed.length && trimmed[index].isWhitespace()) {
-                index++
-            }
+            while (index < trimmed.length && trimmed[index].isWhitespace()) index++
         }
 
         private fun parseString(): String? {
             if (index >= trimmed.length || trimmed[index] != '"') return null
-            index++ // skip opening quote
+            index++
             val sb = StringBuilder()
             while (index < trimmed.length) {
                 val c = trimmed[index++]
@@ -142,7 +158,7 @@ object BackupSerializer {
                     }
                 } else if (c == '"') {
                     return sb.toString()
-                } else if (c < ' ' && c != '\t' && c != '\r' && c != '\n') {
+                } else if (c < ' ') {
                     return null
                 } else {
                     sb.append(c)
@@ -153,9 +169,7 @@ object BackupSerializer {
 
         private fun parseNumber(): Number? {
             val start = index
-            if (index < trimmed.length && (trimmed[index] == '-' || trimmed[index] == '+')) {
-                index++
-            }
+            if (index < trimmed.length && trimmed[index] == '-') index++
             var hasDigits = false
             while (index < trimmed.length && trimmed[index].isDigit()) {
                 index++
@@ -192,47 +206,29 @@ object BackupSerializer {
             skipWhitespace()
             if (index >= trimmed.length) return null
             return when (trimmed[index]) {
-                '"' -> {
-                    val s = parseString() ?: return null
-                    ParsedValue(s)
-                }
-                '{' -> {
-                    val o = parseObject() ?: return null
-                    ParsedValue(o)
-                }
-                '[' -> {
-                    val a = parseArray() ?: return null
-                    ParsedValue(a)
-                }
-                't' -> {
-                    if (trimmed.startsWith("true", index)) {
-                        index += 4
-                        ParsedValue(true)
-                    } else null
-                }
-                'f' -> {
-                    if (trimmed.startsWith("false", index)) {
-                        index += 5
-                        ParsedValue(false)
-                    } else null
-                }
-                'n' -> {
-                    if (trimmed.startsWith("null", index)) {
-                        index += 4
-                        ParsedValue(null)
-                    } else null
-                }
-                '-', in '0'..'9' -> {
-                    val n = parseNumber() ?: return null
-                    ParsedValue(n)
-                }
+                '"' -> ParsedValue(parseString() ?: return null)
+                '{' -> ParsedValue(parseObject() ?: return null)
+                '[' -> ParsedValue(parseArray() ?: return null)
+                't' -> if (trimmed.startsWith("true", index)) {
+                    index += 4
+                    ParsedValue(true)
+                } else null
+                'f' -> if (trimmed.startsWith("false", index)) {
+                    index += 5
+                    ParsedValue(false)
+                } else null
+                'n' -> if (trimmed.startsWith("null", index)) {
+                    index += 4
+                    ParsedValue(null)
+                } else null
+                '-', in '0'..'9' -> ParsedValue(parseNumber() ?: return null)
                 else -> null
             }
         }
 
-        fun parseArray(): List<Any?>? {
+        private fun parseArray(): List<Any?>? {
             if (index >= trimmed.length || trimmed[index] != '[') return null
-            index++ // skip [
+            index++
             val list = mutableListOf<Any?>()
             skipWhitespace()
             if (index < trimmed.length && trimmed[index] == ']') {
