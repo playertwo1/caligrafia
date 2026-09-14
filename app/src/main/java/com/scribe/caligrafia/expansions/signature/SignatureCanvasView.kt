@@ -32,7 +32,8 @@ class SignatureCanvasView @JvmOverloads constructor(
 
     var onStrokeFinished: ((List<Stroke>) -> Unit)? = null
 
-    // Pautas de assinatura
+    private val eraserRadiusPx = 24f
+
     private val baselinePaint = Paint().apply {
         color = Color.parseColor("#3B82F6")
         strokeWidth = 2.5f
@@ -68,7 +69,10 @@ class SignatureCanvasView @JvmOverloads constructor(
     private val guidelinePath = Path()
 
     private val capturePipeline = StrokeCapturePipeline(
-        toolConfig = ToolConfig(customStrokeWidthPx = strokePaint.strokeWidth),
+        toolConfig = ToolConfig(
+            customStrokeWidthPx = strokePaint.strokeWidth,
+            eraserRadiusPx = eraserRadiusPx
+        ),
         onStrokeCompleted = { stroke ->
             completedStrokes.add(stroke)
             invalidate()
@@ -85,7 +89,7 @@ class SignatureCanvasView @JvmOverloads constructor(
                 StrokeEraserHelper.intersects(
                     eraserPoints = eraserPoints,
                     stroke = stroke,
-                    eraserRadius = capturePipeline.toolConfig.eraserRadiusPx
+                    eraserRadius = eraserRadiusPx
                 )
             }
             if (removed) {
