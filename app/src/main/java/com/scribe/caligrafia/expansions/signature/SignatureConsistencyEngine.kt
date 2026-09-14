@@ -4,8 +4,8 @@ import com.scribe.caligrafia.core.model.Stroke
 import kotlin.math.hypot
 
 /**
- * Motor determinístico de cálculo de métricas e repetibilidade de assinaturas.
- * 100% offline, local e fundamentado em cinemática neuromotora.
+ * Motor determinístico de comparação de assinaturas baseado somente em medidas temporais e
+ * geométricas disponíveis nos raw strokes. Não autentica identidade e não infere condição muscular.
  */
 object SignatureConsistencyEngine {
 
@@ -22,7 +22,7 @@ object SignatureConsistencyEngine {
         }
 
         val strokeCount = strokes.size
-        val firstStart = strokes.first().startedAtMs
+        val firstStart = strokes.minOf { it.startedAtMs }
         val lastEnd = strokes.maxOf { it.endedAtMs }.coerceAtLeast(firstStart)
         val durationMs = (lastEnd - firstStart).coerceAtLeast(1L)
 
@@ -105,13 +105,12 @@ object SignatureConsistencyEngine {
                 durationVariationPercent = 100f,
                 speedRatio = 0f,
                 aspectVariationPercent = 100f,
-                feedbackTitle = "Assinatura incompleta",
-                feedbackDetails = "Desenhe a assinatura completa na linha de base para calibrar.",
-                ergonomicTip = "Apoie confortavelmente a palma da mão na tela do S25 Ultra antes de iniciar o traço."
+                feedbackTitle = "Dados insuficientes para comparação",
+                feedbackDetails = "Desenhe a tentativa completa para comparar medidas geométricas e temporais com a referência.",
+                ergonomicTip = "Use uma posição confortável e estável durante a escrita."
             )
         }
 
-        // 1. Concordância na quantidade de traços
         val strokeDiff = kotlin.math.abs(baseline.strokeCount - attempt.strokeCount)
         val strokeScore = when (strokeDiff) {
             0 -> 100f
@@ -121,41 +120,41 @@ object SignatureConsistencyEngine {
         }
         val strokeMatch = strokeDiff == 0
 
-        // 2. Variação de duração temporal
         val dMin = kotlin.math.min(baseline.durationMs, attempt.durationMs).toFloat()
         val dMax = kotlin.math.max(baseline.durationMs, attempt.durationMs).toFloat().coerceAtLeast(1f)
         val durationRatio = dMin / dMax
         val durationScore = (durationRatio * 100f).coerceIn(0f, 100f)
         val durationVariationPercent = ((1f - durationRatio) * 100f)
 
-        // 3. Proporção geométrica (Aspect Ratio)
         val aMin = kotlin.math.min(baseline.aspectRatio, attempt.aspectRatio)
         val aMax = kotlin.math.max(baseline.aspectRatio, attempt.aspectRatio).coerceAtLeast(0.01f)
         val aspectScore = ((aMin / aMax) * 100f).coerceIn(0f, 100f)
         val aspectVariationPercent = ((1f - (aMin / aMax)) * 100f)
 
-        // 4. Velocidade média de traçado
         val sMin = kotlin.math.min(baseline.averageSpeedPxPerMs, attempt.averageSpeedPxPerMs)
         val sMax = kotlin.math.max(baseline.averageSpeedPxPerMs, attempt.averageSpeedPxPerMs).coerceAtLeast(0.001f)
-        val speedRatio = if (baseline.averageSpeedPxPerMs > 0) attempt.averageSpeedPxPerMs / baseline.averageSpeedPxPerMs else 1f
+        val speedRatio = if (baseline.averageSpeedPxPerMs > 0) {
+            attempt.averageSpeedPxPerMs / baseline.averageSpeedPxPerMs
+        } else {
+            1f
+        }
         val speedScore = ((sMin / sMax) * 100f).coerceIn(0f, 100f)
 
-        // 5. Alinhamento angular da trajetória líquida (S16)
         val angleDiff = kotlin.math.abs(baseline.dominantAngleDegrees - attempt.dominantAngleDegrees)
         val normalizedAngleDiff = if (angleDiff > 180f) 360f - angleDiff else angleDiff
         val angleScore = (100f - normalizedAngleDiff * (100f / 90f)).coerceIn(0f, 100f)
 
-        // 6. Alinhamento de sentido de rotação/trajetória (winding order)
-        val isOppositeWinding = baseline.windingSign != 0f && attempt.windingSign != 0f && (baseline.windingSign * attempt.windingSign < 0)
+        val isOppositeWinding = baseline.windingSign != 0f &&
+            attempt.windingSign != 0f &&
+            (baseline.windingSign * attempt.windingSign < 0)
 
-        // Score ponderado final
         val rawScore = (
             strokeScore * 0.25f +
-            durationScore * 0.20f +
-            aspectScore * 0.20f +
-            speedScore * 0.15f +
-            angleScore * 0.20f
-        ).coerceIn(0f, 100f)
+                durationScore * 0.20f +
+                aspectScore * 0.20f +
+                speedScore * 0.15f +
+                angleScore * 0.20f
+            ).coerceIn(0f, 100f)
 
         val repeatabilityScore = if (isOppositeWinding) {
             (rawScore * 0.35f).coerceAtMost(35f)
@@ -171,39 +170,39 @@ object SignatureConsistencyEngine {
 
         when {
             isOppositeWinding -> {
-                title = "Sentido de Traçado Invertido"
-                details = "A trajetória da assinatura foi percorrida no sentido inverso ao da referência gravada."
-                tip = "Mantenha o mesmo sentido natural de escrita dos contornos e floreios."
+                title = "Sentido de Traçado Diferente"
+                details = "A trajetória observada foi percorrida no sentido oposto ao da referência salva."
+                tip = "Repita a tentativa buscando o mesmo sentido de percurso dos traços da referência."
             }
             normalizedAngleDiff > 35f -> {
-                title = "Direção e Orientação Inconsistentes"
-                details = "A orientação geométrica dos traços diverge da referência (desvio angular de ${normalizedAngleDiff.toInt()}°)."
-                tip = "Atente para a inclinação e direção natural do traçado da assinatura."
+                title = "Orientação Geométrica Diferente"
+                details = "A direção líquida dos traços divergiu da referência em ${normalizedAngleDiff.toInt()}°."
+                tip = "Use as guias visuais para aproximar a inclinação da referência."
             }
             repeatabilityScore >= 90f -> {
-                title = "Excelente Consistência Geométrica!"
-                details = "Sua assinatura apresenta ritmo, proporção e velocidade de traçado altamente consistentes com a referência gravada."
-                tip = "Mantenha esse mesmo ponto de apoio no punho para garantir estabilidade do traço."
+                title = "Alta Repetibilidade das Medidas"
+                details = "Contagem de traços, duração, proporção, velocidade média e orientação ficaram próximas da referência."
+                tip = "Mantenha condições de escrita semelhantes quando quiser comparar novas tentativas."
             }
             repeatabilityScore >= 75f -> {
-                title = "Assinatura Consistente"
-                details = "Boa estabilidade de traçado com pequenas oscilações de tempo ou proporção."
-                tip = "Tente executar os floreios finais com velocidade uniforme, sem hesitar na saída da S Pen."
+                title = "Medidas Consistentes com a Referência"
+                details = "As medidas observadas ficaram próximas, com pequenas diferenças de tempo, velocidade ou proporção."
+                tip = "Compare novamente após outra tentativa para observar a repetibilidade."
             }
             !strokeMatch -> {
                 title = "Variação na Contagem de Traços"
                 details = "A referência possui ${baseline.strokeCount} traço(s), mas esta tentativa registrou ${attempt.strokeCount}."
-                tip = "Verifique se a caneta foi levantada involuntariamente no meio do monograma."
+                tip = "Observe onde a caneta foi levantada em relação à referência."
             }
             aspectVariationPercent > 35f -> {
-                title = "Distorção de Proporção"
-                details = "A assinatura ficou significativamente mais comprimida ou esticada que a referência."
-                tip = "Observe a linha-guia inferior e as marcações de limites para calibrar a largura."
+                title = "Variação de Proporção"
+                details = "A relação entre largura e altura ficou diferente da referência salva."
+                tip = "Use a linha-guia e os limites visuais para comparar escala e proporção."
             }
             else -> {
-                title = "Ritmo Oscilante"
-                details = "Houve variação perceptível na velocidade de execução em relação à sua referência."
-                tip = "Assine com o movimento vindo do cotovelo e ombro, evitando contrair em excesso os dedos sobre a caneta."
+                title = "Variação de Ritmo Medido"
+                details = "A velocidade média ou a duração ficaram diferentes da referência nesta tentativa."
+                tip = "Faça outra tentativa em ritmo confortável e compare as medidas novamente."
             }
         }
 
