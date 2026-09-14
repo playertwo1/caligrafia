@@ -1,0 +1,74 @@
+{
+  "schema_version": "0.1",
+  "standard_version": "0.1.0-draft",
+  "profile": "DEEP",
+  "packs": ["android", "multi-agent", "sensitive-data"],
+  "bundle": null,
+  "workflow": "default",
+  "adapters": ["generic"],
+  "template_fingerprint": "ideias-standard@26549c1140517de02ff0f591e2c83d8b14a72de7+scribe-standard-adoption-v1",
+  "generated_at": "2026-09-14T11:01:27Z",
+  "local_overrides": [
+    "Scribe product invariants",
+    "F5/F6/F7 existing supervised delivery workflow",
+    "Android/S Pen physical validation gates"
+  ],
+  "source_revision": "26549c1140517de02ff0f591e2c83d8b14a72de7",
+  "artifacts": [
+    {
+      "path": ".idea-standard/project-manifest.json",
+      "ownership": "MANAGED",
+      "source": "Ideias Standard project contract",
+      "source_revision": "26549c1140517de02ff0f591e2c83d8b14a72de7",
+      "fingerprint": "scribe-project-manifest-v1",
+      "profile": "DEEP",
+      "pack": null,
+      "local_override": true,
+      "rationale": "Declara perfil, packs, governanca e estrategia de contexto do Scribe."
+    },
+    {
+      "path": "context-manifest.json",
+      "ownership": "MANAGED",
+      "source": "Ideias Standard context policy",
+      "source_revision": "26549c1140517de02ff0f591e2c83d8b14a72de7",
+      "fingerprint": "scribe-context-manifest-v1",
+      "profile": "DEEP",
+      "pack": "multi-agent",
+      "local_override": true,
+      "rationale": "Roteia contexto progressivo por tipo de tarefa."
+    },
+    {
+      "path": "AGENTS.md",
+      "ownership": "MERGEABLE",
+      "source": "Ideias Standard agent bootstrap",
+      "source_revision": "26549c1140517de02ff0f591e2c83d8b14a72de7",
+      "fingerprint": "scribe-agents-v1",
+      "profile": "DEEP",
+      "pack": "multi-agent",
+      "local_override": true,
+      "rationale": "Combina bootstrap minimo do Standard com invariantes do Scribe."
+    },
+    {
+      "path": "PROJECT_STATE.md",
+      "ownership": "MERGEABLE",
+      "source": "Ideias Standard resume card",
+      "source_revision": "26549c1140517de02ff0f591e2c83d8b14a72de7",
+      "fingerprint": "scribe-project-state-v1",
+      "profile": "DEEP",
+      "pack": null,
+      "local_override": true,
+      "rationale": "Estado operacional conciso; historico detalhado permanece fora do bootstrap."
+    },
+    {
+      "path": "INVARIANTS.yaml",
+      "ownership": "MERGEABLE",
+      "source": "Ideias Standard invariant registry",
+      "source_revision": "26549c1140517de02ff0f591e2c83d8b14a72de7",
+      "fingerprint": "scribe-invariants-v1",
+      "profile": "DEEP",
+      "pack": "sensitive-data",
+      "local_override": true,
+      "rationale": "Codifica invariantes gerais e especificos do Scribe."
+    }
+  ]
+}
