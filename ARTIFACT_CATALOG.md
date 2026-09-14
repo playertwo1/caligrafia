@@ -31,13 +31,14 @@
 | `AUDIT.md` | MERGEABLE | protocolo de revisão/gate |
 | `WATCHDOG.md` | MERGEABLE | guardrails de alto risco |
 | `CHANGELOG.md` | USER_OWNED | mudanças relevantes |
+| `docs/EVIDENCE_POLICY.md` | MERGEABLE | retenção, reprodução e limpeza de evidência |
 | `docs/design/**` | USER_OWNED | referências visuais aprovadas |
 | `app/src/main/**` | USER_OWNED | código de produção |
 | `app/src/test/**` | USER_OWNED | testes de produto/auditoria |
 | `docs/product-delivery/**` | USER_OWNED | contratos/evidências funcionais correntes |
 
 ## Histórico e evidência
-Relatórios históricos em Markdown podem permanecer quando contêm findings/decisões não deriváveis. Logs, XMLs de teste/lint, outputs de build e resultados reproduzíveis não são fontes canônicas: devem preferir CI artifacts e podem ser removidos da árvore ativa.
+Relatórios históricos em Markdown podem permanecer quando contêm findings/decisões não deriváveis. Logs, XMLs de teste/lint, outputs de build e resultados reproduzíveis não são fontes canônicas: devem preferir CI artifacts e podem ser removidos da árvore ativa. A política detalhada e a referência para recuperação histórica estão em `docs/EVIDENCE_POLICY.md`.
 
 ## Regra de upgrade
 - `MANAGED`: preview + diff antes de substituir.
