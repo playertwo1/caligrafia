@@ -1,0 +1,72 @@
+version: '0.1'
+invariants:
+  - id: STD-INV-001
+    severity: CRITICAL
+    statement: NOT_RUN nunca equivale a PASS.
+    applies_to: [validation, gates, audit]
+    enforcement: governance
+  - id: STD-INV-002
+    severity: CRITICAL
+    statement: Contexto REQUIRED nunca pode ser truncado silenciosamente por orçamento.
+    applies_to: [context]
+    enforcement: governance
+  - id: STD-INV-003
+    severity: HIGH
+    statement: Builder não pode autoaprovar gate material; auditor independente deve ser distinto.
+    applies_to: [multi-agent, gates, audit]
+    enforcement: governance
+  - id: STD-INV-004
+    severity: CRITICAL
+    statement: Nenhum secret, senha, token, keystore ou chave privada pode ser versionado ou exposto em logs/artefatos.
+    applies_to: [security, release, ci]
+    enforcement: deterministic
+  - id: SCR-INV-001
+    severity: CRITICAL
+    statement: Raw strokes do usuário nunca são substituídos ou descartados por bitmap, smoothing ou referência derivada.
+    applies_to: [ink, persistence, export, backup]
+    enforcement: semantic
+  - id: SCR-INV-002
+    severity: CRITICAL
+    statement: Pressure, tilt e orientation ausentes não podem ser inventados, imputados ou convertidos em medida física falsa.
+    applies_to: [stylus, metrics, teacher]
+    enforcement: semantic
+  - id: SCR-INV-003
+    severity: CRITICAL
+    statement: Migração, restore ou atualização deve preservar dados reais anteriores ou falhar de forma recuperável.
+    applies_to: [migration, backup, restore, persistence]
+    enforcement: test
+  - id: SCR-INV-004
+    severity: HIGH
+    statement: O núcleo de escrita e treino permanece local-first e funcional offline.
+    applies_to: [architecture, product]
+    enforcement: architecture
+  - id: SCR-INV-005
+    severity: HIGH
+    statement: O domínio não depende diretamente de SDK proprietário; integrações específicas ficam atrás de adapters.
+    applies_to: [architecture, samsung, watch]
+    enforcement: architecture
+  - id: SCR-INV-006
+    severity: HIGH
+    statement: WebView não pode ser usada como superfície de escrita.
+    applies_to: [ink, ui]
+    enforcement: deterministic
+  - id: SCR-INV-007
+    severity: HIGH
+    statement: Seed, mock, default artificial ou catch silencioso não pode ser usado como evidência de recurso funcional.
+    applies_to: [product, validation, tests]
+    enforcement: audit
+  - id: SCR-INV-008
+    severity: HIGH
+    statement: Teste JVM, build debug ou screenshot isolado não comprova hardware, assinatura, lifecycle ou fluxo ponta a ponta quando o requisito depende deles.
+    applies_to: [validation, device, release]
+    enforcement: audit
+  - id: SCR-INV-009
+    severity: HIGH
+    statement: Mudança de requisito ou autoridade do produto exige decisão explícita da Product Authority.
+    applies_to: [governance, product]
+    enforcement: governance
+  - id: SCR-INV-010
+    severity: HIGH
+    statement: Gates F5.G, F6.G e F7.G permanecem abertos até evidência específica de seus critérios de aceite.
+    applies_to: [F5, F6, F7, gates]
+    enforcement: governance
