@@ -4,8 +4,8 @@ import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import com.scribe.caligrafia.core.model.InputMode
-import com.scribe.caligrafia.core.model.Stroke
 import com.scribe.caligrafia.core.model.ToolType
+import com.scribe.caligrafia.expansions.styles.PressureCurveType
 import com.scribe.caligrafia.ink.capture.InMemoryStrokeRepository
 import com.scribe.caligrafia.ink.capture.StrokeCapturePipeline
 import com.scribe.caligrafia.ink.lifecycle.SPenInsertionDetector
@@ -16,26 +16,17 @@ import com.scribe.caligrafia.ink.persistence.benchmark.PersistenceBenchmarkRunne
 import com.scribe.caligrafia.ink.persistence.strategies.DedicatedFileStrategy
 import com.scribe.caligrafia.ink.renderer.RendererManager
 import com.scribe.caligrafia.ink.renderer.RendererType
+import com.scribe.caligrafia.ink.renderer.SmoothedReferenceRenderer
 import com.scribe.caligrafia.ink.replay.ReplayFrame
 import com.scribe.caligrafia.ink.replay.ReplaySpeed
 import com.scribe.caligrafia.ink.replay.StrokeReplayEngine
+import com.scribe.caligrafia.preferences.ScribePreferencesStore
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
 
-/**
- * ViewModel central do Stylus Lab para preservação de estado e resiliência de ciclo de vida.
- *
- * Garante:
- * 1. Sobrevivência total do repositório em memória contra mudanças de configuração (rotação retrato/paisagem,
- *    redimensionamento em multi-janela / Split-Screen e alternância do Samsung DeX).
- * 2. Auto-Save atômico em segundo plano via SessionLifecycleManager (.scribe binário).
- * 3. Restauração automática de contingência após interrupções do sistema operacional.
- * 4. Integração com o detector de silo da S Pen do Galaxy S25 Ultra (SPenInsertionDetector).
- */
 /**
  * Predefinições visuais de pauta caligráfica para treino no Stylus Lab.
  */
@@ -46,6 +37,14 @@ enum class GuidelinePreset(val displayName: String) {
     SPENCERIAN("Spencerian (68°)")
 }
 
+/**
+ * ViewModel do Laboratório da S Pen.
+ *
+ * O laboratório permanece isolado de aprendizado, SRS e alfabeto: todos os seus vetores são
+ * persistidos exclusivamente em diretórios de laboratório. Preferências de entrada/render são
+ * compartilhadas de forma explícita com o app, mas raw strokes do laboratório nunca alimentam
+ * progresso pedagógico.
+ */
 class StylusLabViewModel @JvmOverloads constructor(
     application: Application,
     val lifecycleManager: SessionLifecycleManager = SessionLifecycleManager(
@@ -59,12 +58,16 @@ class StylusLabViewModel @JvmOverloads constructor(
     )
 ) : AndroidViewModel(application) {
 
+    private val preferencesStore = ScribePreferencesStore(application)
+    private val initialPreferences = preferencesStore.load()
+
     val repository = InMemoryStrokeRepository()
-    val rendererManager = RendererManager()
+    val rendererManager = RendererManager(
+        smoothedRenderer = SmoothedReferenceRenderer(pressureCurve = initialPreferences.pressureCurve)
+    )
     val replayEngine = StrokeReplayEngine()
     val sPenDetector = SPenInsertionDetector()
 
-    // Estados observáveis
     private val _strokeCount = MutableStateFlow(0)
     val strokeCount: StateFlow<Int> = _strokeCount.asStateFlow()
 
@@ -89,8 +92,11 @@ class StylusLabViewModel @JvmOverloads constructor(
     private val _selectedRendererType = MutableStateFlow(rendererManager.activeRenderer.type)
     val selectedRendererType: StateFlow<RendererType> = _selectedRendererType.asStateFlow()
 
-    private val _selectedInputMode = MutableStateFlow(InputMode.STYLUS_ONLY)
+    private val _selectedInputMode = MutableStateFlow(initialPreferences.inputMode)
     val selectedInputMode: StateFlow<InputMode> = _selectedInputMode.asStateFlow()
+
+    private val _pressureCurve = MutableStateFlow(initialPreferences.pressureCurve)
+    val pressureCurve: StateFlow<PressureCurveType> = _pressureCurve.asStateFlow()
 
     private val _isReplayMode = MutableStateFlow(false)
     val isReplayMode: StateFlow<Boolean> = _isReplayMode.asStateFlow()
@@ -153,19 +159,15 @@ class StylusLabViewModel @JvmOverloads constructor(
             _lastRejectionReason.value = reason
         }
     ).apply {
-        palmPolicy.inputMode = InputMode.STYLUS_ONLY
+        palmPolicy.inputMode = initialPreferences.inputMode
     }
 
     init {
-        // Configura callback de inserção da S Pen no silo físico:
-        // Ao guardar a caneta no aparelho, finaliza com segurança qualquer traço ativo
         sPenDetector.onPenInserted = {
             pipeline.flushActiveStroke(commitIfValid = true)
             updateMetrics()
             triggerAutoSave()
         }
-
-        // Tenta auto-restauração inicial caso haja sessão de contingência
         restoreIfAutoSaveExists()
     }
 
@@ -176,9 +178,6 @@ class StylusLabViewModel @JvmOverloads constructor(
         _isStylusHovering.value = pipeline.palmPolicy.isStylusHovering
     }
 
-    /**
-     * Restaura a sessão automaticamente se o repositório estiver vazio e houver auto-save em disco.
-     */
     fun restoreIfAutoSaveExists(): Boolean {
         if (repository.isEmpty && lifecycleManager.hasAutoSave()) {
             val restored = lifecycleManager.restore()
@@ -192,9 +191,6 @@ class StylusLabViewModel @JvmOverloads constructor(
         return false
     }
 
-    /**
-     * Executa auto-save em disco em background.
-     */
     fun triggerAutoSave(): Long {
         val bytes = lifecycleManager.autoSave(repository.allStrokes)
         if (bytes > 0) {
@@ -203,28 +199,22 @@ class StylusLabViewModel @JvmOverloads constructor(
         return bytes
     }
 
-    /**
-     * Invocado no ciclo de vida onPause da Activity ou quando o app perde o foco de janela.
-     */
     fun onPauseLifecycle(context: Context? = null) {
-        if (context != null) {
-            sPenDetector.unregister(context)
-        }
+        if (context != null) sPenDetector.unregister(context)
         pipeline.flushActiveStroke(commitIfValid = true)
         updateMetrics()
         triggerAutoSave()
     }
 
-    /**
-     * Invocado no ciclo de vida onResume da Activity.
-     */
     fun onResumeLifecycle(context: Context) {
+        val current = preferencesStore.load()
+        pipeline.palmPolicy.inputMode = current.inputMode
+        _selectedInputMode.value = current.inputMode
+        rendererManager.smoothedRenderer.pressureCurve = current.pressureCurve
+        _pressureCurve.value = current.pressureCurve
         sPenDetector.register(context)
     }
 
-    /**
-     * Invocado quando a janela perde o foco.
-     */
     fun onWindowFocusLost() {
         pipeline.flushActiveStroke(commitIfValid = true)
         updateMetrics()
@@ -240,9 +230,7 @@ class StylusLabViewModel @JvmOverloads constructor(
     }
 
     fun clearSession() {
-        if (_isReplayMode.value) {
-            stopReplay()
-        }
+        if (_isReplayMode.value) stopReplay()
         repository.clear()
         pipeline.resetMetrics()
         lifecycleManager.clearAutoSave()
@@ -268,17 +256,29 @@ class StylusLabViewModel @JvmOverloads constructor(
             loaded.forEach { repository.addStroke(it) }
             updateMetrics()
             triggerAutoSave()
-            _persistenceFeedback.value = "Recarregado com fidelidade 100%: ${loaded.size} traços (${repository.totalPointsCount} pts)"
+            _persistenceFeedback.value = "Recarregado com fidelidade vetorial: ${loaded.size} traços (${repository.totalPointsCount} pts)"
             return true
-        } else {
-            _persistenceFeedback.value = "Nenhuma sessão salva encontrada."
-            return false
         }
+        _persistenceFeedback.value = "Nenhuma sessão salva encontrada."
+        return false
     }
 
     fun setInputMode(mode: InputMode) {
         _selectedInputMode.value = mode
         pipeline.palmPolicy.inputMode = mode
+        runCatching { preferencesStore.update { it.copy(inputMode = mode) } }
+    }
+
+    fun setPressureCurve(curve: PressureCurveType) {
+        val contracted = when (curve) {
+            PressureCurveType.LINEAR,
+            PressureCurveType.SOFT,
+            PressureCurveType.FIRM -> curve
+            PressureCurveType.SIGMOID_CALLIGRAPHIC -> PressureCurveType.LINEAR
+        }
+        rendererManager.smoothedRenderer.pressureCurve = contracted
+        _pressureCurve.value = contracted
+        runCatching { preferencesStore.update { it.copy(pressureCurve = contracted) } }
     }
 
     fun setRenderer(type: RendererType) {
@@ -329,7 +329,6 @@ class StylusLabViewModel @JvmOverloads constructor(
 
     override fun onCleared() {
         super.onCleared()
-        // Libera receptores e timers
         replayEngine.stop()
     }
 }
