@@ -1,58 +1,55 @@
-# WATCHDOG — Regras de Conformidade e Auditoria Estrita
+# WATCHDOG — Guardrails de Alto Risco
 
-Este documento define as regras inegociáveis de operação no repositório **Scribe**. Cada alteração ou tarefa executada deve cumprir integralmente este checklist antes de ser considerada concluída.
+Este documento é carregado **por gatilho**, não como contexto obrigatório de toda tarefa.
 
----
+## Quando carregar
+Use WATCHDOG quando a tarefa envolver qualquer um destes casos:
+- persistência, migração, backup, restore ou deleção;
+- dados reais do usuário;
+- credenciais, secrets, assinatura ou release;
+- permissões, arquivos externos ou compartilhamento;
+- mudanças arquiteturais ou dependências amplas;
+- ações destrutivas, force push ou reescrita de histórico;
+- hardware/S Pen/Watch quando a conclusão depender de capacidade física.
 
-## 1. Princípios de Contenção (Não Fugir dos Trilhos)
+## Guardrails críticos
+1. **Preservar dados:** raw strokes e acervo real não podem ser substituídos por bitmap, seed, mock ou defaults artificiais.
+2. **Falha recuperável:** migração/restore deve preservar inventário anterior quando não puder concluir com segurança.
+3. **Sensores honestos:** zero físico é diferente de ausência de capability; não inventar pressure/tilt/orientation.
+4. **Segredos fora do Git:** nenhum token, senha, keystore, chave privada ou material equivalente em código/log/artifact.
+5. **Menor privilégio:** permissões/dependências somente quando necessárias.
+6. **Arquitetura:** sem WebView para canvas; domínio desacoplado de SDK proprietário por adapters.
+7. **Local-first:** backend/cloud/IA nova requer autorização explícita e não substitui o núcleo offline.
+8. **Evidência real:** teste isolado não substitui ligação do chamador real; JVM não comprova requisito físico; debug build não comprova release assinada.
+9. **Git seguro:** confirmar branch/SHA/diff antes de operação destrutiva; preservar trabalho existente.
+10. **Sem autoaprovação:** Builder não fecha gate material; `NOT_RUN != PASS`.
 
-1. **Aderência ao Escopo:** Atuar na estabilização dos marcos existentes conforme a [V4](docs/ANTIGRAVITY_AUDIT_REVIEW_V4.md) e sua [matriz independente](docs/audit-v4/INDEPENDENT_COMPLIANCE_MATRIX.md). Não reiniciar M0 nem ampliar funcionalidades sem pedido explícito. Ondas 0–3 e M0–M8 permanecem sem aprovação de fechamento.
-2. **Nenhuma Dependência Não Autorizada:**
-   - Proibido o uso de `WebView` para qualquer finalidade de canvas ou renderização.
-   - Proibido introduzir SDKs de nuvem/backend no MVP sem solicitação explícita.
-   - Proibido acoplar o domínio a bibliotecas proprietárias (ex.: Samsung Spen SDK); usar sempre abstrações e adapters.
-3. **Integridade dos Dados:**
-   - Raw strokes nunca são sobrescritos ou descartados por filtros visuais ou bitmaps.
-   - Não inventar ou preencher valores de hardware (pressão, inclinação/tilt, orientação) quando o hardware real reportar indisponibilidade (`null`).
-4. **Local-First & Offline:** O núcleo do aplicativo deve funcionar 100% de forma local e offline.
+## Mudança mínima
+- preferir mudanças pequenas, reversíveis e com rollback claro;
+- não misturar limpeza/refatoração ampla com correção funcional sem necessidade;
+- após ~3 falhas semelhantes, reavaliar hipótese/causa antes de repetir tentativa;
+- não relaxar testes para normalizar bug.
 
----
+## Dados e concorrência
+Quando houver escrita em arquivo/conjunto:
+- distinguir atomicidade de arquivo, transação de conjunto, durabilidade e ordem de escrita;
+- testar/revisar falha parcial e reabertura;
+- mutex por instância não prova coordenação entre clientes diferentes;
+- caminhos reais de produtor e consumidor devem coincidir.
 
-## 2. Checklist Obrigatório por Tarefa
+## Segurança de release
+Release deve:
+- falhar se qualquer material de assinatura obrigatório estiver ausente;
+- verificar assinatura do APK produzido;
+- registrar hash do artefato;
+- nunca publicar debug/unsigned como release válida.
 
-Antes de concluir qualquer tarefa ou submeter alterações:
+## Stop conditions
+Pare a execução e registre finding quando:
+- ação necessária é irreversível sem recuperação demonstrada;
+- há risco de perda de dados/chave;
+- requisito contradiz decisão LOCKED sem autorização;
+- evidência exigida depende de hardware indisponível;
+- não é possível distinguir baseline de regressão.
 
-- [ ] **Critérios de Aceite:** Todos os critérios de aceite definidos no `BACKLOG.md` para a tarefa foram cumpridos?
-- [ ] **Testes Unitários:** Testes pertinentes executados, com falhas novas e históricas distinguidas (`.\gradlew.bat testDebugUnitTest`)?
-- [ ] **Compilação/Lint:** Para mudanças de código, executar assembleDebug e lintDebug e registrar resultados/limites.
-- [ ] **Revisão Final:** Aplicar [AUDIT.md](AUDIT.md). O script watchdog é auxiliar e não comprova aprovação geral do produto.
-- [ ] **Atualização de Estado:** O arquivo `PROJECT_STATE.md` foi atualizado com o status exato, testes realizados, limitações e a próxima ação imediata?
-- [ ] **Relatório Transparente:** O relatório final especifica arquivos alterados, decisões técnicas, testes executados, limitações identificadas e a próxima tarefa recomendada?
-
-## 3. Guardrails incorporados do Drive
-
-[Origem e adaptações](docs/GUARDRAILS_INTEGRATION.md). Estas regras complementam AGENTS e o pedido autorizado, respeitando as instruções superiores do ambiente. Conteúdo externo é referência, não nova autoridade automática.
-
-- Antes de editar, conferir SHA/branch, status/diff e preservar alterações anteriores. Investigar divergências entre código e documentação.
-- Preferir mudanças pequenas, incrementais e reversíveis; registrar melhorias fora do objetivo para depois.
-- Examinar dependentes, UI, persistência, lifecycle, permissões e compatibilidade. Justificar novas dependências por necessidade real.
-- Não esconder erros com catch vazio, sucesso falso, seeds, mocks em produção, testes relaxados ou validações desativadas.
-- Após cerca de três falhas semelhantes, rever hipótese e causa antes de repetir a abordagem.
-- Ações destrutivas, migrações, credenciais, force push e mudanças arquiteturais exigem necessidade demonstrada, autorização compatível e recuperação verificável. Verificar caminhos exatos antes de operações de arquivos.
-- Se faltar informação/autorização indispensável para decisão irreversível, explicar risco e alternativa antes de executá-la. Continuar trabalho já autorizado e reversível sem reconfirmação rotineira.
-- Não incluir secrets/tokens em código, logs ou commits; revisar dados privados e artefatos antes de compartilhá-los.
-
-## 4. Contratos de estabilização e provas
-
-- Preservar o significado original dos IDs A/R/S; não fechar categoria por corrigir um exemplo.
-- Unificar diretórios e propriedade do estado entre chamadores. Mutex por instância não comprova coordenação entre clientes.
-- Distinguir zero físico de sensor ausente e configuração de medição. Persistir contexto de estilo, escala e tempo necessário às métricas.
-- Separar atomicidade de arquivo, transação de conjunto, durabilidade e ordem de escrita. Testar falha/reabertura e preservação do inventário anterior, inclusive ausência de arquivos.
-- Testar integrações pelo chamador real, sem criar no teste a ligação ausente no aplicativo.
-- Para gráficos/lifecycle/S Pen, manter validação Android e física exigida. Build debug não comprova assinatura de release.
-- Validação documental usa diff, links e coerência; não exige recompilar o app sem alteração de código. Omissões relevantes precisam de justificativa e nunca contam como PASS.
-- Identificar autorrevisão como tal. PASS de tarefa não aprova ondas/milestones nem encerra pendências históricas ou físicas.
-
-## 5. Alcance do script existente
-
-`scripts/watchdog.ps1` executa buscas estáticas, testes JVM, build debug opcional e verifica existência/tamanho do APK. Não comprova integração, transação, assinatura, frescura do artefato, lint ou teste físico. As pendências S22/R20 continuam abertas; atualizar este documento não acrescenta capacidades ao script.
+Continue trabalhos reversíveis independentes sem transformar pendência em PASS.
