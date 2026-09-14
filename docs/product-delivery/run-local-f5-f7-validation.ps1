@@ -16,8 +16,8 @@ function Invoke-Step {
     Write-Host "`n=== $Name ===" -ForegroundColor Cyan
     try {
         & $Command *>&1 | Tee-Object -FilePath $LogPath
-        $exitCode = $LASTEXITCODE
-        if ($null -eq $exitCode) { $exitCode = 0 }
+        $exitCodeVariable = Get-Variable LASTEXITCODE -ErrorAction SilentlyContinue
+        $exitCode = if ($null -ne $exitCodeVariable) { [int]$exitCodeVariable.Value } else { 0 }
     } catch {
         $_ | Out-String | Tee-Object -FilePath $LogPath -Append | Write-Host
         $exitCode = 1
@@ -42,13 +42,13 @@ if (-not (Test-Path ".git")) {
 $branch = (git branch --show-current).Trim()
 $sha = (git rev-parse HEAD).Trim()
 $shortSha = $sha.Substring(0, [Math]::Min(12, $sha.Length))
-$statusBefore = git status --porcelain
+$statusBefore = @(git status --porcelain)
 
 if ($branch -ne "phase-f6-f7-finalization") {
     Write-Warning "Branch atual: $branch. A branch esperada para esta validação é phase-f6-f7-finalization."
 }
 
-if ($statusBefore) {
+if ($statusBefore.Count -gt 0) {
     Write-Warning "Working tree não está limpo ANTES dos testes. Não use este run como evidência final até entender as alterações locais."
     $statusBefore | ForEach-Object { Write-Warning $_ }
 }
@@ -56,52 +56,32 @@ if ($statusBefore) {
 $artifactRoot = Join-Path $repoRoot "validation-artifacts/$shortSha"
 New-Item -ItemType Directory -Force -Path $artifactRoot | Out-Null
 
-$meta = @(
+$javaSummary = try { (& java -version 2>&1 | Select-Object -First 1) } catch { "java indisponível" }
+$wrapperSummary = if (Test-Path "./gradlew.bat") { "gradlew.bat" } elseif (Test-Path "./gradlew") { "./gradlew" } else { "missing" }
+
+@(
     "timestamp=$(Get-Date -Format o)",
     "branch=$branch",
     "sha=$sha",
-    "java=$(& java -version 2>&1 | Select-Object -First 1)",
-    "gradle_wrapper=$(if (Test-Path './gradlew.bat') { 'gradlew.bat' } elseif (Test-Path './gradlew') { './gradlew' } else { 'missing' })"
-)
-$meta | Set-Content -Encoding UTF8 (Join-Path $artifactRoot "run-metadata.txt")
+    "java=$javaSummary",
+    "gradle_wrapper=$wrapperSummary"
+) | Set-Content -Encoding UTF8 (Join-Path $artifactRoot "run-metadata.txt")
 
 $gradle = if (Test-Path "./gradlew.bat") { ".\gradlew.bat" } elseif (Test-Path "./gradlew") { "./gradlew" } else { throw "Gradle wrapper não encontrado." }
 
 $results = [ordered]@{}
-$results["testDebugUnitTest"] = Invoke-Step \
-    -Name "Unit tests" \
-    -Command { & $gradle testDebugUnitTest --no-daemon --stacktrace } \
-    -LogPath (Join-Path $artifactRoot "testDebugUnitTest.log")
-
-if ($results["testDebugUnitTest"]) {
-    $results["assembleDebug"] = Invoke-Step \
-        -Name "assembleDebug" \
-        -Command { & $gradle assembleDebug --no-daemon --stacktrace } \
-        -LogPath (Join-Path $artifactRoot "assembleDebug.log")
-} else {
-    $results["assembleDebug"] = $false
-    Write-Warning "assembleDebug ainda será executado para obter diagnóstico independente."
-    $results["assembleDebug"] = Invoke-Step \
-        -Name "assembleDebug" \
-        -Command { & $gradle assembleDebug --no-daemon --stacktrace } \
-        -LogPath (Join-Path $artifactRoot "assembleDebug.log")
-}
+$results["testDebugUnitTest"] = Invoke-Step -Name "Unit tests" -Command { & $gradle testDebugUnitTest --no-daemon --stacktrace } -LogPath (Join-Path $artifactRoot "testDebugUnitTest.log")
+$results["assembleDebug"] = Invoke-Step -Name "assembleDebug" -Command { & $gradle assembleDebug --no-daemon --stacktrace } -LogPath (Join-Path $artifactRoot "assembleDebug.log")
 
 if (-not $SkipLint) {
-    $results["lint"] = Invoke-Step \
-        -Name "lint" \
-        -Command { & $gradle lint --no-daemon --stacktrace } \
-        -LogPath (Join-Path $artifactRoot "lint.log")
+    $results["lint"] = Invoke-Step -Name "lint" -Command { & $gradle lint --no-daemon --stacktrace } -LogPath (Join-Path $artifactRoot "lint.log")
 } else {
     $results["lint"] = $null
 }
 
 $auditScript = Join-Path $repoRoot "docs/audit-v5/run-all-audits.ps1"
 if (-not $SkipAudit -and (Test-Path $auditScript)) {
-    $results["audit"] = Invoke-Step \
-        -Name "audit runner" \
-        -Command { & powershell -ExecutionPolicy Bypass -File $auditScript } \
-        -LogPath (Join-Path $artifactRoot "audit.log")
+    $results["audit"] = Invoke-Step -Name "audit runner" -Command { & $auditScript } -LogPath (Join-Path $artifactRoot "audit.log")
 } elseif ($SkipAudit) {
     $results["audit"] = $null
 } else {
@@ -114,10 +94,13 @@ if (Test-Path $testResultsDir) {
     Copy-Item -Recurse -Force $testResultsDir (Join-Path $artifactRoot "test-results")
 }
 
-$lintResults = Get-ChildItem -Path "app/build/reports" -Recurse -ErrorAction SilentlyContinue |
-    Where-Object { $_.Name -match '^lint-results.*\.(html|xml|txt)$' }
-foreach ($item in $lintResults) {
-    Copy-Item -Force $item.FullName $artifactRoot
+$reportsDir = Join-Path $repoRoot "app/build/reports"
+if (Test-Path $reportsDir) {
+    $lintResults = Get-ChildItem -Path $reportsDir -Recurse -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -match '^lint-results.*\.(html|xml|txt)$' }
+    foreach ($item in $lintResults) {
+        Copy-Item -Force $item.FullName $artifactRoot
+    }
 }
 
 $debugApk = Join-Path $repoRoot "app/build/outputs/apk/debug/app-debug.apk"
@@ -130,12 +113,9 @@ if (Test-Path $debugApk) {
     ) | Set-Content -Encoding UTF8 (Join-Path $artifactRoot "debug-apk-sha256.txt")
 }
 
-$statusAfter = git status --porcelain
-$statusAfter | Set-Content -Encoding UTF8 (Join-Path $artifactRoot "git-status-after.txt")
+@(git status --porcelain) | Set-Content -Encoding UTF8 (Join-Path $artifactRoot "git-status-after.txt")
 
-$summary = @()
-$summary += "branch=$branch"
-$summary += "sha=$sha"
+$summary = @("branch=$branch", "sha=$sha")
 foreach ($key in $results.Keys) {
     $value = $results[$key]
     $text = if ($null -eq $value) { "SKIPPED" } elseif ($value) { "PASS" } else { "FAIL" }
@@ -147,7 +127,7 @@ Write-Host "`n=== RESUMO ===" -ForegroundColor Cyan
 $summary | ForEach-Object { Write-Host $_ }
 Write-Host "Artefatos: $artifactRoot"
 
-$failed = $results.Values | Where-Object { $_ -eq $false }
+$failed = @($results.Values | Where-Object { $_ -eq $false })
 if ($failed.Count -gt 0) {
     Write-Host "Validação local encontrou falhas. NÃO feche F5.G/F6.G/F7.G." -ForegroundColor Red
     exit 1
