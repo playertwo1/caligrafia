@@ -1,5 +1,9 @@
 # PROJECT_STATE
 
+## Estado interrompido a pedido — 2026-09-14
+
+F6 enviado a `phase-f6-f7-finalization`: runner local confiável; preferências e backup centralizados; UI, lateralidade, pausas, curvas, Watch conservador e controles do laboratório implementados. Testes dirigidos e compilação Kotlin passaram. F5.G/F6.G/F7.G seguem abertos. Próxima ação: suíte consolidada, E2E, upgrade e aparelhos físicos.
+
 ## Prioridade vigente — checklist funcional para execução
 
 Por solicitação do usuário, o planejamento foi convertido em [ordens detalhadas com checkboxes](docs/ANTIGRAVITY_EXECUTION_CHECKLIST.md). Codex decide requisitos e verifica; Antigravity executa na sequência F0–F7 e apresenta provas por ID. Todas as caixas começam desmarcadas: não se certificou implementação nesta tarefa documental. ROADMAP, plano funcional e AGENTS apontam para o novo contrato. Próxima ação: F0.01, registrar checkout e preservar alterações; depois seguir a primeira caixa pendente.

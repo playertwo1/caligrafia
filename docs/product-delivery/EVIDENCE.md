@@ -124,3 +124,10 @@
 #### [F2.G] Gate F2
 - **Resultado:** Trilha de aprendizado, cronômetro deliberado, resolução canônica de exercícios, persistência atômica de sessão interrompida e avaliação geométrica real 100% integrados e validados. 272 testes unitários passando. Fase F2 concluída com sucesso.
 
+## Pausa supervisionada F5/F6/F7 — 2026-09-14
+
+- `PhaseF6AcceptanceTest` e `ScribePreferencesBackupTest`: sucesso local; XML em `app/build/test-results/testDebugUnitTest/`.
+- `:app:compileDebugKotlin`: sucesso local após as alterações F6.
+- Implementado: snapshot F6 completo/legado, UI agrupada, barra por lateralidade, pausa ativa/lifecycle, três curvas, Watch conservador e Gravar/Parar no laboratório.
+- Pendente: suíte consolidada final, jornadas E2E, upgrade, S25 Ultra, S Pen física, Watch e release. F5.G/F6.G/F7.G seguem abertos.
+

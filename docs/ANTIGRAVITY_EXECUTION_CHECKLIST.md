@@ -211,14 +211,14 @@ Alvos: preferências persistidas, adaptadores de captura/render, Watch e laborat
 - [ ] F6.06 Implementar contraste das guias com preview e efeito no canvas, sem modificar raw.
 - [ ] F6.07 Implementar reduzir animações e aplicar às transições; replay voluntário permanece disponível.
 - [ ] F6.08 Implementar curva Linear/Suave/Firme, preview e teste; aplicar só ao render derivado e persistir escolha.
-- [ ] F6.09 Testar igualdade dos dados de pressão bruta antes/depois das três curvas.
+- [x] F6.09 Testar igualdade dos dados de pressão bruta antes/depois das três curvas. Evidência local: `PhaseF6AcceptanceTest`.
 - [ ] F6.10 Implementar lembrete de pausa habilitado/intervalo durante sessão ativa; pausa/fundo não acumulam alertas indevidos.
 - [ ] F6.11 Implementar vibração habilitada e Testar vibração, tratando capacidade/permissão indisponível.
 - [ ] F6.12 Exibir Watch conectado/desconectado pela conexão real; sem relógio, manter fallback no telefone.
 - [ ] F6.13 Conectar eventos de fase/pausa ao adapter e testar desconexão sem travar sessão; registrar recepção física separadamente.
 - [ ] F6.14 Expor Laboratório no menu Mais com gravar/parar, limpar, salvar/reabrir e replay de amostra.
 - [ ] F6.15 Mostrar pressão/tilt/orientação disponíveis/ausentes/a verificar conforme dispositivo, sem inferir suporte pelo valor zero.
-- [ ] F6.16 Isolar amostras do laboratório de histórico de aprendizagem, SRS e alfabeto pessoal.
+- [x] F6.16 Isolar amostras do laboratório de histórico de aprendizagem, SRS e alfabeto pessoal. Repositórios/diretórios exclusivos confirmados.
 - [ ] F6.17 Testar reinício para cada preferência e raw do laboratório; registrar o efeito visual, não apenas valor em memória.
 - [ ] F6.18 Registrar teste físico S25 Ultra e Watch quando disponíveis; sem aparelho, marcar pendência física específica.
 - [ ] F6.G Entregar matriz opção → efeito → persistência → teste; nenhuma opção deve existir só como texto/snackbar.
