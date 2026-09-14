@@ -1,0 +1,41 @@
+{
+  "schema_version": "0.1",
+  "strategy": "PROGRESSIVE",
+  "routes": {
+    "bootstrap": {
+      "required": ["AGENTS.md", "PROJECT_STATE.md"],
+      "conditional": ["PHASE_CURRENT.md"]
+    },
+    "functional_change": {
+      "required": ["AGENTS.md", "PROJECT_STATE.md", "PHASE_CURRENT.md"],
+      "conditional": ["PRODUCT_SPEC.md", "ARCHITECTURE.md", "WATCHDOG.md"],
+      "discovery": ["ROADMAP.md", "docs/ANTIGRAVITY_FUNCTIONAL_ROADMAP.md"]
+    },
+    "data_or_backup": {
+      "required": ["AGENTS.md", "PROJECT_STATE.md", "PHASE_CURRENT.md", "WATCHDOG.md", "docs/product-delivery/DATA_CONTRACT.md"],
+      "conditional": ["AUDIT.md", "docs/product-delivery/EVIDENCE.md"]
+    },
+    "security_or_release": {
+      "required": ["AGENTS.md", "PROJECT_STATE.md", "SECURITY_INCIDENT.md", "WATCHDOG.md"],
+      "conditional": ["SECURITY_PRIVACY.md", ".github/workflows/build-release.yml", "app/build.gradle.kts"]
+    },
+    "audit_gate": {
+      "required": ["AGENTS.md", "PROJECT_STATE.md", "PHASE_CURRENT.md", "AUDIT.md"],
+      "conditional": ["docs/product-delivery/EVIDENCE.md"],
+      "discovery": ["docs/audit-v5/INDEPENDENT_COMPLIANCE_MATRIX.md"]
+    },
+    "standard_adoption": {
+      "required": ["AGENTS.md", "PROJECT_STATE.md", "PHASE_CURRENT.md", ".idea-standard/project-manifest.json", ".idea-standard/standard.lock", "INVARIANTS.yaml", "CONTEXT_POLICY.md"],
+      "conditional": ["ARTIFACT_CATALOG.md", "AUDIT.md"]
+    }
+  },
+  "budgets": {
+    "bootstrap_target_max_bytes": 12000,
+    "task_target_max_bytes": 25000,
+    "command_output_initial_max_bytes": 6000
+  },
+  "fallback": {
+    "on_missing_context": "EXPAND_PROGRESSIVELY",
+    "on_required_overflow": "CONTEXT_OVERFLOW"
+  }
+}
