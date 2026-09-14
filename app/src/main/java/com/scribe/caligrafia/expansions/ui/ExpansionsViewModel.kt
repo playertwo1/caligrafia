@@ -2,10 +2,12 @@ package com.scribe.caligrafia.expansions.ui
 
 import android.app.Application
 import android.graphics.Bitmap
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.scribe.caligrafia.core.model.Stroke
 import com.scribe.caligrafia.expansions.backup.BackupImportResult
+import com.scribe.caligrafia.expansions.backup.BackupInspectionResult
 import com.scribe.caligrafia.expansions.backup.BackupSummary
 import com.scribe.caligrafia.expansions.backup.ScribeBackupManager
 import com.scribe.caligrafia.expansions.passage.LocalPassageCopyRepository
@@ -36,6 +38,8 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.io.OutputStreamWriter
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.util.UUID
 
 enum class ExpansionsTab(val title: String) {
@@ -68,8 +72,13 @@ data class ExpansionsUiState(
     // Backup
     val isExporting: Boolean = false,
     val isImporting: Boolean = false,
+    val isInspectingBackup: Boolean = false,
     val lastBackupSummary: BackupSummary? = null,
     val lastImportResult: BackupImportResult? = null,
+    val pendingBackupInspection: BackupInspectionResult? = null,
+    val pendingRestoreUri: Uri? = null,
+    val pendingRestoreDisplayName: String? = null,
+    val restoreRevision: Long = 0L,
     // S Pen & Watch
     val pressureCurve: PressureCurveType = PressureCurveType.LINEAR,
     val postureAlertMinutes: Int = 15,
@@ -107,40 +116,7 @@ class ExpansionsViewModel @JvmOverloads constructor(
     init {
         loadBaselineSignature()
         loadCopyHistory()
-        val savedCurve = try {
-            val prefs = application.getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
-            prefs.getString("pressure_curve", null)?.let { PressureCurveType.valueOf(it) }
-        } catch (_: Throwable) { null } ?: PressureCurveType.LINEAR
-
-        val isLeftHanded = try {
-            val prefs = application.getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
-            prefs.getBoolean("is_left_handed", false)
-        } catch (_: Throwable) { false }
-        val isHighContrast = try {
-            val prefs = application.getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
-            prefs.getBoolean("is_high_contrast", false)
-        } catch (_: Throwable) { false }
-        val showGuideNumbers = try {
-            val prefs = application.getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
-            prefs.getBoolean("show_guide_numbers", true)
-        } catch (_: Throwable) { true }
-        val dailyGoal = try {
-            val prefs = application.getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
-            prefs.getInt("daily_goal_minutes", 15)
-        } catch (_: Throwable) { 15 }
-
-        _uiState.update {
-            it.copy(
-                isWatchConnected = watchBridge.isWatchConnected(),
-                postureAlertMinutes = watchBridge.postureAlertThresholdMinutes,
-                isPostureReminderEnabled = watchBridge.isPostureReminderEnabled,
-                pressureCurve = savedCurve,
-                isLeftHanded = isLeftHanded,
-                isHighContrast = isHighContrast,
-                showGuideNumbers = showGuideNumbers,
-                dailyPracticeGoalMinutes = dailyGoal
-            )
-        }
+        reloadPreferencesState()
     }
 
     fun setTab(tab: ExpansionsTab) {
@@ -278,9 +254,7 @@ class ExpansionsViewModel @JvmOverloads constructor(
     fun generateSvg(source: SignatureExportSource = _uiState.value.selectedSignatureExportSource): String? {
         val strokes = signatureStrokesFor(source)
         if (strokes.isEmpty()) {
-            _uiState.update {
-                it.copy(snackbarMessage = "${source.displayName} não possui traços para exportar.")
-            }
+            _uiState.update { it.copy(snackbarMessage = "${source.displayName} não possui traços para exportar.") }
             return null
         }
         val svg = SignatureExporter.exportToSvg(strokes, 1080, 500)
@@ -294,10 +268,10 @@ class ExpansionsViewModel @JvmOverloads constructor(
     ): Boolean {
         val svg = generateSvg(source) ?: return false
         return try {
-            OutputStreamWriter(outputStream, Charsets.UTF_8).use { writer ->
-                writer.write(svg)
-                writer.flush()
-            }
+            val writer = OutputStreamWriter(outputStream, Charsets.UTF_8)
+            writer.write(svg)
+            writer.flush()
+            outputStream.flush()
             _uiState.update { it.copy(snackbarMessage = "SVG exportado com sucesso.") }
             true
         } catch (e: Throwable) {
@@ -333,15 +307,29 @@ class ExpansionsViewModel @JvmOverloads constructor(
         }
     }
 
-    fun exportSvg(
-        outputDir: File,
-        source: SignatureExportSource = _uiState.value.selectedSignatureExportSource
-    ): File? {
-        val strokes = signatureStrokesFor(source)
-        if (strokes.isEmpty()) {
-            _uiState.update { it.copy(snackbarMessage = "${source.displayName} não possui traços para exportar.") }
-            return null
+    fun exportSignatureToUri(uri: Uri, mimeType: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val resolver = getApplication<Application>().contentResolver
+                resolver.openOutputStream(uri, "wt")?.use { output ->
+                    val ok = when (mimeType) {
+                        "image/svg+xml" -> writeSvg(output)
+                        "image/png" -> writePng(output)
+                        else -> false
+                    }
+                    if (!ok) throw java.io.IOException("Formato ou conteúdo indisponível")
+                } ?: throw java.io.IOException("Destino não pôde ser aberto para escrita")
+            } catch (e: Throwable) {
+                _uiState.update { it.copy(snackbarMessage = "Falha ao gravar arquivo escolhido: ${e.message}") }
+            }
         }
+    }
+
+    // Compatibilidade com rotas internas antigas; a UI F5 usa URI externo.
+    fun exportSvg(outputDir: File): File? {
+        val source = _uiState.value.selectedSignatureExportSource
+        val strokes = signatureStrokesFor(source)
+        if (strokes.isEmpty()) return null
         return try {
             outputDir.mkdirs()
             val file = File(outputDir, "assinatura_${System.currentTimeMillis()}.svg")
@@ -353,24 +341,14 @@ class ExpansionsViewModel @JvmOverloads constructor(
                 fos.fd.sync()
                 _uiState.update { it.copy(exportedSvgSnippet = svg) }
             }
-            _uiState.update { it.copy(snackbarMessage = "Arquivo SVG salvo em: ${file.name}") }
             file
-        } catch (e: Throwable) {
-            _uiState.update { it.copy(snackbarMessage = "Erro ao exportar SVG: ${e.message}") }
-            null
-        }
+        } catch (_: Throwable) { null }
     }
 
-    fun exportPng(
-        outputDir: File,
-        source: SignatureExportSource = _uiState.value.selectedSignatureExportSource
-    ): File? {
+    fun exportPng(outputDir: File): File? {
+        val source = _uiState.value.selectedSignatureExportSource
         val strokes = signatureStrokesFor(source)
-        if (strokes.isEmpty()) {
-            _uiState.update { it.copy(snackbarMessage = "${source.displayName} não possui traços para exportar.") }
-            return null
-        }
-
+        if (strokes.isEmpty()) return null
         return try {
             val bitmap = SignatureExporter.exportToTransparentPng(strokes, 1200, 600)
             outputDir.mkdirs()
@@ -385,24 +363,16 @@ class ExpansionsViewModel @JvmOverloads constructor(
             } finally {
                 bitmap.recycle()
             }
-            _uiState.update { it.copy(snackbarMessage = "Assinatura PNG transparente salva em: ${file.name}") }
             file
-        } catch (e: Throwable) {
-            _uiState.update { it.copy(snackbarMessage = "Erro ao exportar PNG: ${e.message}") }
-            null
-        }
+        } catch (_: Throwable) { null }
     }
 
     private fun loadBaselineSignature() {
         try {
             val attempt = signatureBaselineStore.load()
-            if (attempt != null) {
-                _uiState.update { it.copy(baselineAttempt = attempt) }
-            }
+            _uiState.update { it.copy(baselineAttempt = attempt) }
         } catch (e: Throwable) {
-            _uiState.update {
-                it.copy(snackbarMessage = "A referência salva não pôde ser carregada: ${e.message}")
-            }
+            _uiState.update { it.copy(snackbarMessage = "A referência salva não pôde ser carregada: ${e.message}") }
         }
     }
 
@@ -420,12 +390,7 @@ class ExpansionsViewModel @JvmOverloads constructor(
     }
 
     fun selectPassage(passage: PassageItem) {
-        _uiState.update {
-            it.copy(
-                selectedPassage = passage,
-                passagePacingResult = null
-            )
-        }
+        _uiState.update { it.copy(selectedPassage = passage, passagePacingResult = null) }
     }
 
     fun evaluatePassage(durationMs: Long) {
@@ -467,28 +432,21 @@ class ExpansionsViewModel @JvmOverloads constructor(
                 onComplete?.invoke(true)
             } catch (e: Throwable) {
                 if (destinationFile.exists()) destinationFile.delete()
-                _uiState.update {
-                    it.copy(
-                        isExporting = false,
-                        snackbarMessage = "Falha ao criar backup: ${e.message}"
-                    )
-                }
+                _uiState.update { it.copy(isExporting = false, snackbarMessage = "Falha ao criar backup: ${e.message}") }
                 onComplete?.invoke(false)
             }
         }
     }
 
-    fun createBackup(
-        outputStream: OutputStream,
-        displayName: String,
-        onComplete: ((Boolean) -> Unit)? = null
-    ) {
+    fun createBackup(uri: Uri, displayName: String, onComplete: ((Boolean) -> Unit)? = null) {
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(isExporting = true) }
             try {
                 snapshotPreferencesForBackup()
-                val summary = backupManager.exportBackup(outputStream)
-                outputStream.flush()
+                val resolver = getApplication<Application>().contentResolver
+                val summary = resolver.openOutputStream(uri, "wt")?.use { output ->
+                    backupManager.exportBackup(output)
+                } ?: throw java.io.IOException("Destino do backup não pôde ser aberto")
                 _uiState.update {
                     it.copy(
                         isExporting = false,
@@ -498,8 +456,77 @@ class ExpansionsViewModel @JvmOverloads constructor(
                 }
                 onComplete?.invoke(true)
             } catch (e: Throwable) {
+                _uiState.update { it.copy(isExporting = false, snackbarMessage = "Falha ao criar backup: ${e.message}") }
+                onComplete?.invoke(false)
+            }
+        }
+    }
+
+    fun inspectBackup(uri: Uri, displayName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _uiState.update {
+                it.copy(
+                    isInspectingBackup = true,
+                    pendingBackupInspection = null,
+                    pendingRestoreUri = null,
+                    pendingRestoreDisplayName = null
+                )
+            }
+            try {
+                val resolver = getApplication<Application>().contentResolver
+                val inspection = resolver.openInputStream(uri)?.use { backupManager.inspectBackup(it) }
+                    ?: BackupInspectionResult(isValid = false, errorMessage = "Arquivo não pôde ser aberto")
+                if (inspection.isValid) {
+                    _uiState.update {
+                        it.copy(
+                            isInspectingBackup = false,
+                            pendingBackupInspection = inspection,
+                            pendingRestoreUri = uri,
+                            pendingRestoreDisplayName = displayName
+                        )
+                    }
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            isInspectingBackup = false,
+                            snackbarMessage = "Pacote rejeitado: ${inspection.errorMessage}"
+                        )
+                    }
+                }
+            } catch (e: Throwable) {
+                _uiState.update { it.copy(isInspectingBackup = false, snackbarMessage = "Falha ao validar backup: ${e.message}") }
+            }
+        }
+    }
+
+    fun cancelPendingRestore() {
+        _uiState.update {
+            it.copy(
+                pendingBackupInspection = null,
+                pendingRestoreUri = null,
+                pendingRestoreDisplayName = null
+            )
+        }
+    }
+
+    fun confirmPendingRestore(onComplete: ((Boolean) -> Unit)? = null) {
+        val uri = _uiState.value.pendingRestoreUri ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            _uiState.update { it.copy(isImporting = true) }
+            try {
+                val resolver = getApplication<Application>().contentResolver
+                val result = resolver.openInputStream(uri)?.use { backupManager.importBackup(it) }
+                    ?: BackupImportResult(isSuccess = false, errorMessage = "Arquivo não pôde ser reaberto")
+                afterRestore(result, onComplete)
+            } catch (e: Throwable) {
                 _uiState.update {
-                    it.copy(isExporting = false, snackbarMessage = "Falha ao criar backup: ${e.message}")
+                    it.copy(
+                        isImporting = false,
+                        pendingBackupInspection = null,
+                        pendingRestoreUri = null,
+                        pendingRestoreDisplayName = null,
+                        snackbarMessage = "Erro ao restaurar backup: ${e.message}"
+                    )
                 }
                 onComplete?.invoke(false)
             }
@@ -510,12 +537,10 @@ class ExpansionsViewModel @JvmOverloads constructor(
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(isImporting = true) }
             try {
-                val result = sourceFile.inputStream().use { input -> backupManager.importBackup(input) }
+                val result = sourceFile.inputStream().use { backupManager.importBackup(it) }
                 afterRestore(result, onComplete)
             } catch (e: Throwable) {
-                _uiState.update {
-                    it.copy(isImporting = false, snackbarMessage = "Erro ao ler arquivo de backup: ${e.message}")
-                }
+                _uiState.update { it.copy(isImporting = false, snackbarMessage = "Erro ao ler arquivo de backup: ${e.message}") }
                 onComplete?.invoke(false)
             }
         }
@@ -528,9 +553,7 @@ class ExpansionsViewModel @JvmOverloads constructor(
                 val result = backupManager.importBackup(inputStream)
                 afterRestore(result, onComplete)
             } catch (e: Throwable) {
-                _uiState.update {
-                    it.copy(isImporting = false, snackbarMessage = "Erro ao ler arquivo de backup: ${e.message}")
-                }
+                _uiState.update { it.copy(isImporting = false, snackbarMessage = "Erro ao ler arquivo de backup: ${e.message}") }
                 onComplete?.invoke(false)
             }
         }
@@ -541,15 +564,20 @@ class ExpansionsViewModel @JvmOverloads constructor(
             restorePreferencesFromBackupSnapshot()
             loadBaselineSignature()
             loadCopyHistory()
+            reloadPreferencesState()
         }
         _uiState.update {
             it.copy(
                 isImporting = false,
+                pendingBackupInspection = null,
+                pendingRestoreUri = null,
+                pendingRestoreDisplayName = null,
                 lastImportResult = result,
+                restoreRevision = if (result.isSuccess) it.restoreRevision + 1 else it.restoreRevision,
                 snackbarMessage = if (result.isSuccess) {
-                    "Backup restaurado com sucesso! (${result.restoredNotebooks} cadernos, ${result.restoredGlyphs} glifos)"
+                    "Backup restaurado e verificado. O aplicativo recarregará os repositórios locais."
                 } else {
-                    "Erro na restauração: ${result.errorMessage}"
+                    result.errorMessage ?: "Restauração não concluída."
                 }
             )
         }
@@ -557,8 +585,10 @@ class ExpansionsViewModel @JvmOverloads constructor(
     }
 
     private fun snapshotPreferencesForBackup() {
-        val prefs = getApplication<Application>().getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
-        val file = File(getApplication<Application>().filesDir, "preferences_snapshot.txt")
+        val app = getApplication<Application>()
+        val prefs = app.getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
+        val file = File(app.filesDir, "preferences_snapshot.txt")
+        val temp = File.createTempFile("preferences_snapshot_", ".tmp", app.filesDir)
         val entries = listOf(
             "pressure_curve=${prefs.getString("pressure_curve", PressureCurveType.LINEAR.name)}",
             "is_left_handed=${prefs.getBoolean("is_left_handed", false)}",
@@ -566,11 +596,30 @@ class ExpansionsViewModel @JvmOverloads constructor(
             "show_guide_numbers=${prefs.getBoolean("show_guide_numbers", true)}",
             "daily_goal_minutes=${prefs.getInt("daily_goal_minutes", 15)}"
         )
-        file.writeText(entries.joinToString("\n"), Charsets.UTF_8)
+        try {
+            FileOutputStream(temp).use { fos ->
+                fos.write(entries.joinToString("\n").toByteArray(Charsets.UTF_8))
+                fos.flush()
+                fos.fd.sync()
+            }
+            try {
+                Files.move(
+                    temp.toPath(),
+                    file.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE
+                )
+            } catch (_: Throwable) {
+                Files.move(temp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            }
+        } finally {
+            if (temp.exists()) temp.delete()
+        }
     }
 
     private fun restorePreferencesFromBackupSnapshot() {
-        val file = File(getApplication<Application>().filesDir, "preferences_snapshot.txt")
+        val app = getApplication<Application>()
+        val file = File(app.filesDir, "preferences_snapshot.txt")
         if (!file.exists()) return
         val values = file.readLines(Charsets.UTF_8)
             .mapNotNull { line ->
@@ -578,7 +627,7 @@ class ExpansionsViewModel @JvmOverloads constructor(
                 if (idx <= 0) null else line.substring(0, idx) to line.substring(idx + 1)
             }
             .toMap()
-        val prefs = getApplication<Application>().getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
+        val prefs = app.getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
         prefs.edit()
             .putString("pressure_curve", values["pressure_curve"] ?: PressureCurveType.LINEAR.name)
             .putBoolean("is_left_handed", values["is_left_handed"]?.toBooleanStrictOrNull() ?: false)
@@ -586,6 +635,27 @@ class ExpansionsViewModel @JvmOverloads constructor(
             .putBoolean("show_guide_numbers", values["show_guide_numbers"]?.toBooleanStrictOrNull() ?: true)
             .putInt("daily_goal_minutes", values["daily_goal_minutes"]?.toIntOrNull() ?: 15)
             .commit()
+    }
+
+    private fun reloadPreferencesState() {
+        val app = getApplication<Application>()
+        val prefs = app.getSharedPreferences("scribe_settings", android.content.Context.MODE_PRIVATE)
+        val curve = try {
+            prefs.getString("pressure_curve", PressureCurveType.LINEAR.name)?.let(PressureCurveType::valueOf)
+        } catch (_: Throwable) { PressureCurveType.LINEAR } ?: PressureCurveType.LINEAR
+
+        _uiState.update {
+            it.copy(
+                isWatchConnected = watchBridge.isWatchConnected(),
+                postureAlertMinutes = watchBridge.postureAlertThresholdMinutes,
+                isPostureReminderEnabled = watchBridge.isPostureReminderEnabled,
+                pressureCurve = curve,
+                isLeftHanded = prefs.getBoolean("is_left_handed", false),
+                isHighContrast = prefs.getBoolean("is_high_contrast", false),
+                showGuideNumbers = prefs.getBoolean("show_guide_numbers", true),
+                dailyPracticeGoalMinutes = prefs.getInt("daily_goal_minutes", 15)
+            )
+        }
     }
 
     // --- S Pen & Watch ---
@@ -626,5 +696,9 @@ class ExpansionsViewModel @JvmOverloads constructor(
 
     fun dismissSnackbar() {
         _uiState.update { it.copy(snackbarMessage = null) }
+    }
+
+    fun notifyUser(message: String) {
+        _uiState.update { it.copy(snackbarMessage = message) }
     }
 }
