@@ -2,6 +2,12 @@ package com.scribe.caligrafia.expansions.signature
 
 import com.scribe.caligrafia.core.model.Stroke
 
+/** Fonte explicitamente escolhida para preview/exportação. */
+enum class SignatureExportSource(val displayName: String) {
+    CURRENT_ATTEMPT("Tentativa atual"),
+    SAVED_REFERENCE("Referência salva")
+}
+
 /**
  * Representação de uma tentativa de assinatura capturada com dados vetoriais brutos.
  */
@@ -37,9 +43,10 @@ data class SignatureMetrics(
 
 /**
  * Relatório de consistência e repetibilidade de assinatura em relação a uma referência.
+ * Não representa autenticação de identidade; compara somente medidas disponíveis dos traços.
  */
 data class SignatureConsistencyReport(
-    val repeatabilityScore: Float, // 0.0f a 100.0f
+    val repeatabilityScore: Float,
     val isConsistent: Boolean,
     val strokeCountMatch: Boolean,
     val durationVariationPercent: Float,
