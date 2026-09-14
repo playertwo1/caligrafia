@@ -5,7 +5,7 @@
 **Baseline funcional preservada:** `phase-f6-f7-finalization` @ `cdb0fd47704edb5c0903626fb53d36cca05616b1`  
 **Perfil Ideias Standard:** `DEEP`  
 **Packs:** `android`, `multi-agent`, `sensitive-data`  
-**Status da adoção:** `IMPLEMENTED_AWAITING_VALIDATION`  
+**Status da adoção:** `VALIDATED_WITH_PRE_EXISTING_FAILURES`  
 **Gate da adoção:** `NOT_RUN`
 
 ## Estado do produto
@@ -31,7 +31,7 @@ Validar e auditar a adoção do Ideias Standard sem alterar comportamento Kotlin
 - evidência/pacote de auditoria preparados.
 
 ## Última validação observada
-Comparação contra a baseline não mostra alterações Kotlin nesta adoção. O workflow `Scribe CI` foi criado e disparado; o run `34840429488` para `da53fd8ed1f8c015258534aaff4718fbf25173ce` ainda estava `pending` na última observação registrada. Portanto, nenhuma nova validação Gradle é declarada PASS aqui.
+Em `e92d511`, `testDebugUnitTest` executou localmente 303 testes: 293 aprovados e 10 falhas. A baseline `cdb0fd4` reproduziu os mesmos 303 testes e as mesmas 10 falhas; classificação: `PRE_EXISTING`, sem `ADOPTION_REGRESSION`. Lint/build não foram executados porque não houve regressão a corrigir. `ADOPTION_AUDIT` continua `NOT_RUN`.
 
 ## Findings abertos
 1. **SECURITY/HIGH:** valores de credenciais de assinatura foram versionados historicamente; rotação humana continua obrigatória. Ver `SECURITY_INCIDENT.md`.
@@ -40,15 +40,15 @@ Comparação contra a baseline não mostra alterações Kotlin nesta adoção. O
 4. **HISTORY/LOW:** diretórios `baseline*` XML históricos foram preservados conservadoramente; ficam fora do contexto padrão e podem ser consolidados em change futura.
 
 ## Bloqueios
-- `ADOPTION_VALIDATION` depende de resultado real da CI para o SHA auditável;
+- as 10 falhas unitárias preexistentes impedem validação integral verde;
 - rotação dos secrets de assinatura depende da Product Authority/GitHub Secrets;
 - gates físicos dependem dos aparelhos reais;
 - `ADOPTION_AUDIT` depende de auditor independente.
 
 ## Próxima ação
-1. observar a conclusão real da CI;
-2. se houver falha, corrigir e reexecutar;
-3. se a CI estiver verde, executar `STANDARD_ADOPTION_AUDIT_PACKET.md` com auditor independente;
+1. tratar as 10 falhas preexistentes em mudança funcional separada;
+2. reexecutar validação local completa;
+3. executar `STANDARD_ADOPTION_AUDIT_PACKET.md` com auditor independente;
 4. somente após auditoria PASS e decisão explícita da Product Authority considerar merge.
 
 ## Evidências/pointers

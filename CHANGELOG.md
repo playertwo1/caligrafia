@@ -37,6 +37,8 @@
 
 ## Em desenvolvimento — F5/F6/F7
 
+- Adoção Standard comparada localmente com a baseline: as 10 falhas unitárias são preexistentes; nenhuma regressão da adoção foi encontrada.
+
 - Runner local corrigido para resultados reais e descoberta do Android SDK.
 - Backup/restore centralizado para todas as preferências F6, compatível com pacotes antigos.
 - Controles F6, lateralidade, pausa ativa, animações, Watch conservador e laboratório ampliados.

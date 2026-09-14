@@ -112,3 +112,13 @@ Portanto, **ADOPTION_VALIDATION continua NOT_RUN/PENDING e não deve ser convert
 4. somente após auditoria e decisão explícita da Product Authority considerar merge no `main`.
 
 **Regra:** evidência antes de PASS. `NOT_RUN != PASS`.
+
+## Comparação local HEAD × baseline — 2026-09-14
+
+- HEAD `e92d511`: 303 testes, 293 aprovados, 10 falhas.
+- Baseline `cdb0fd4`: 303 testes, 293 aprovados, as mesmas 10 falhas.
+- Classificação: 10 `PRE_EXISTING`; 0 `ADOPTION_REGRESSION`; 0 `ENVIRONMENT_SPECIFIC`.
+- Grupos afetados: `AuditFixAcceptanceTest` (5), `AuditV5RecheckTest` (1) e `PhaseF4AcceptanceTest` (4).
+- Causas observadas: oito NPEs de `applicationContext == null` em doubles JVM e duas asserções de inventário/restore de backup.
+- Logs ficaram apenas em `%TEMP%`; XML/outputs gerados não foram versionados.
+- `ADOPTION_VALIDATION = FAIL_PRE_EXISTING`; `ADOPTION_AUDIT = NOT_RUN`.
