@@ -13,3 +13,4 @@ build/
 keystore/*.jks
 keystore/*.txt
 keystore/*.properties
+/validation-artifacts/
