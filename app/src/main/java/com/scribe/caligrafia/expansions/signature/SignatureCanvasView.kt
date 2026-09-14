@@ -14,13 +14,18 @@ import com.scribe.caligrafia.core.model.StrokePoint
 import com.scribe.caligrafia.core.model.ToolConfig
 import com.scribe.caligrafia.ink.capture.StrokeCapturePipeline
 import com.scribe.caligrafia.ink.capture.StrokeEraserHelper
+import com.scribe.caligrafia.ink.persistence.strategies.DedicatedFileStrategy
+import java.io.File
+import java.util.concurrent.Executors
 
 /**
  * Superfície nativa de escrita otimizada para assinatura, rubricas e monogramas com a S Pen.
  *
  * F5.01: usa o mesmo [StrokeCapturePipeline] da escrita principal para manter uma única política de
  * pointer, historical samples, endpoint de ACTION_UP, pressão/tilt/orientação e borracha.
- * A assinatura continua sendo armazenada como raw strokes; a View apenas mantém o conjunto atual.
+ *
+ * F5.04: a tentativa em andamento é persistida como raw strokes e reaplicada quando a View é
+ * recriada, inclusive após sair/voltar da tela ou reiniciar o processo.
  */
 class SignatureCanvasView @JvmOverloads constructor(
     context: Context,
@@ -29,10 +34,12 @@ class SignatureCanvasView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     private val completedStrokes = mutableListOf<Stroke>()
-
     var onStrokeFinished: ((List<Stroke>) -> Unit)? = null
 
     private val eraserRadiusPx = 24f
+    private val draftDir = File(context.applicationContext.filesDir, "signatures")
+    private val draftFile = File(draftDir, DRAFT_FILE_NAME)
+    private val draftPersistence = DedicatedFileStrategy(draftDir)
 
     private val baselinePaint = Paint().apply {
         color = Color.parseColor("#3B82F6")
@@ -78,12 +85,8 @@ class SignatureCanvasView @JvmOverloads constructor(
             invalidate()
             notifyStrokeSetChanged()
         },
-        onStrokeCancelled = {
-            invalidate()
-        },
-        onStrokePointAdded = {
-            invalidate()
-        },
+        onStrokeCancelled = { invalidate() },
+        onStrokePointAdded = { invalidate() },
         onEraserPointsAdded = { eraserPoints ->
             val removed = completedStrokes.removeAll { stroke ->
                 StrokeEraserHelper.intersects(
@@ -102,19 +105,25 @@ class SignatureCanvasView @JvmOverloads constructor(
     init {
         isFocusable = true
         isFocusableInTouchMode = true
+        restoreDraft()
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if (completedStrokes.isNotEmpty()) {
+            // O callback é configurado pela AndroidView factory antes do attach.
+            post { notifyStrokeSetChanged(persist = false) }
+        }
     }
 
     fun getStrokes(): List<Stroke> = completedStrokes.toList()
 
-    /**
-     * Restaura o conjunto bruto no canvas. Usado também quando a AndroidView é recriada após
-     * navegação/configuration change (F5.04).
-     */
     fun setStrokes(newStrokes: List<Stroke>) {
         capturePipeline.flushActiveStroke(commitIfValid = false)
         completedStrokes.clear()
         completedStrokes.addAll(newStrokes)
         invalidate()
+        persistDraftAsync()
     }
 
     fun clearCanvas() {
@@ -155,6 +164,7 @@ class SignatureCanvasView @JvmOverloads constructor(
 
     override fun onDetachedFromWindow() {
         capturePipeline.flushActiveStroke(commitIfValid = true)
+        persistDraftSync(completedStrokes.toList())
         super.onDetachedFromWindow()
     }
 
@@ -208,8 +218,39 @@ class SignatureCanvasView @JvmOverloads constructor(
         }
     }
 
-    private fun notifyStrokeSetChanged() {
-        onStrokeFinished?.invoke(completedStrokes.toList())
+    private fun restoreDraft() {
+        try {
+            if (draftFile.isFile) {
+                completedStrokes.addAll(draftPersistence.load(draftFile))
+            }
+        } catch (_: Throwable) {
+            // Draft corrompido não substitui nem afeta a referência salva.
+            completedStrokes.clear()
+        }
+    }
+
+    private fun notifyStrokeSetChanged(persist: Boolean = true) {
+        val snapshot = completedStrokes.toList()
+        if (persist) persistDraftAsync(snapshot)
+        onStrokeFinished?.invoke(snapshot)
+    }
+
+    private fun persistDraftAsync(snapshot: List<Stroke> = completedStrokes.toList()) {
+        draftExecutor.execute {
+            persistDraftSync(snapshot)
+        }
+    }
+
+    private fun persistDraftSync(snapshot: List<Stroke>) {
+        try {
+            if (snapshot.isEmpty()) {
+                if (draftFile.exists()) draftFile.delete()
+            } else {
+                draftPersistence.save(draftFile, snapshot, DRAFT_SESSION_ID)
+            }
+        } catch (_: Throwable) {
+            // Falha do draft nunca pode afetar raw strokes em memória nem a referência oficial.
+        }
     }
 
     private fun drawStroke(canvas: Canvas, points: List<StrokePoint>, color: Int, widthPx: Float) {
@@ -230,5 +271,13 @@ class SignatureCanvasView @JvmOverloads constructor(
             path.lineTo(points[i].x, points[i].y)
         }
         canvas.drawPath(path, strokePaint)
+    }
+
+    companion object {
+        private const val DRAFT_FILE_NAME = "current_attempt.scribe"
+        private const val DRAFT_SESSION_ID = "signature_current_attempt"
+        private val draftExecutor = Executors.newSingleThreadExecutor { runnable ->
+            Thread(runnable, "scribe-signature-draft").apply { isDaemon = true }
+        }
     }
 }
