@@ -6,16 +6,27 @@ import android.graphics.Paint
 import android.graphics.Path
 import com.scribe.caligrafia.core.model.Stroke
 import java.util.Locale
+import kotlin.math.min
 
 /**
- * Exportador profissional de assinaturas em formatos vetoriais (SVG) e bitmap transparente (PNG).
- * 100% offline e sem bibliotecas externas.
+ * Exportador offline de assinaturas em SVG e PNG transparente.
+ *
+ * F5.07: SVG e PNG compartilham a mesma transformação uniforme de enquadramento. Os limites
+ * incluem metade da espessura do traço, portanto coordenadas negativas, floreios largos e pontos
+ * únicos não são cortados nem deformados.
  */
 object SignatureExporter {
 
-    /**
-     * Gera uma representação vetorial em SVG (Scalable Vector Graphics) pura a partir dos traços.
-     */
+    private data class ExportTransform(
+        val scale: Float,
+        val offsetX: Float,
+        val offsetY: Float
+    ) {
+        fun x(value: Float): Float = value * scale + offsetX
+        fun y(value: Float): Float = value * scale + offsetY
+        fun width(value: Float): Float = value * scale
+    }
+
     fun exportToSvg(
         strokes: List<Stroke>,
         width: Int,
@@ -24,41 +35,11 @@ object SignatureExporter {
     ): String {
         val w = width.coerceAtLeast(100)
         val h = height.coerceAtLeast(100)
-
-        // S15: Ajusta coordenadas para enquadrar traços com coordenadas negativas ou fora do quadro
-        var minX = Float.MAX_VALUE
-        var minY = Float.MAX_VALUE
-        var maxX = -Float.MAX_VALUE
-        var maxY = -Float.MAX_VALUE
-        var hasPoints = false
-
-        for (stroke in strokes) {
-            for (p in stroke.points) {
-                hasPoints = true
-                if (p.x < minX) minX = p.x
-                if (p.y < minY) minY = p.y
-                if (p.x > maxX) maxX = p.x
-                if (p.y > maxY) maxY = p.y
-            }
-        }
-
-        val padding = 20f
-        val offsetX = if (hasPoints && minX < 0f) -minX + padding else 0f
-        val offsetY = if (hasPoints && minY < 0f) -minY + padding else 0f
-
-        val effectiveMaxX = if (hasPoints) (maxX + offsetX + padding).coerceAtLeast(w.toFloat()) else w.toFloat()
-        val effectiveMaxY = if (hasPoints) (maxY + offsetY + padding).coerceAtLeast(h.toFloat()) else h.toFloat()
+        val transform = computeTransform(strokes, w, h)
 
         val sb = StringBuilder()
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n")
-        sb.append(
-            String.format(
-                Locale.US,
-                "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 %.0f %.0f\" width=\"$w\" height=\"$h\">\n",
-                effectiveMaxX,
-                effectiveMaxY
-            )
-        )
+        sb.append("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 $w $h\" width=\"$w\" height=\"$h\">\n")
         sb.append("  <g id=\"signature-strokes\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\n")
 
         for (stroke in strokes) {
@@ -66,6 +47,7 @@ object SignatureExporter {
             if (pts.isEmpty()) continue
 
             val baseWidth = (stroke.baseWidthPx ?: 3.5f).coerceAtLeast(1.5f)
+            val exportedWidth = transform.width(baseWidth).coerceAtLeast(1f)
 
             if (pts.size == 1) {
                 val p = pts[0]
@@ -73,15 +55,15 @@ object SignatureExporter {
                     String.format(
                         Locale.US,
                         "    <circle cx=\"%.2f\" cy=\"%.2f\" r=\"%.2f\" fill=\"%s\" />\n",
-                        p.x + offsetX, p.y + offsetY, baseWidth / 2f, strokeColorHex
+                        transform.x(p.x), transform.y(p.y), exportedWidth / 2f, strokeColorHex
                     )
                 )
             } else {
                 sb.append("    <path d=\"")
                 for (i in pts.indices) {
                     val p = pts[i]
-                    val px = p.x + offsetX
-                    val py = p.y + offsetY
+                    val px = transform.x(p.x)
+                    val py = transform.y(p.y)
                     if (i == 0) {
                         sb.append(String.format(Locale.US, "M %.2f %.2f", px, py))
                     } else {
@@ -92,7 +74,7 @@ object SignatureExporter {
                     String.format(
                         Locale.US,
                         "\" stroke=\"%s\" stroke-width=\"%.2f\" />\n",
-                        strokeColorHex, baseWidth
+                        strokeColorHex, exportedWidth
                     )
                 )
             }
@@ -103,9 +85,6 @@ object SignatureExporter {
         return sb.toString()
     }
 
-    /**
-     * Gera um Bitmap com canal alfa transparente para assinatura digital em documentos e contratos.
-     */
     fun exportToTransparentPng(
         strokes: List<Stroke>,
         width: Int,
@@ -114,9 +93,9 @@ object SignatureExporter {
     ): Bitmap {
         val w = width.coerceAtLeast(200)
         val h = height.coerceAtLeast(100)
-
         val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
+        val transform = computeTransform(strokes, w, h)
 
         val paint = Paint().apply {
             isAntiAlias = true
@@ -130,21 +109,66 @@ object SignatureExporter {
             val pts = stroke.points
             if (pts.isEmpty()) continue
 
-            paint.strokeWidth = (stroke.baseWidthPx ?: 3.5f).coerceAtLeast(2f)
+            val baseWidth = (stroke.baseWidthPx ?: 3.5f).coerceAtLeast(1.5f)
+            paint.strokeWidth = transform.width(baseWidth).coerceAtLeast(1f)
 
             if (pts.size == 1) {
                 val p = pts[0]
-                canvas.drawCircle(p.x, p.y, paint.strokeWidth / 2f, paint)
+                paint.style = Paint.Style.FILL
+                canvas.drawCircle(
+                    transform.x(p.x),
+                    transform.y(p.y),
+                    paint.strokeWidth / 2f,
+                    paint
+                )
+                paint.style = Paint.Style.STROKE
             } else {
                 val path = Path()
-                path.moveTo(pts[0].x, pts[0].y)
+                path.moveTo(transform.x(pts[0].x), transform.y(pts[0].y))
                 for (i in 1 until pts.size) {
-                    path.lineTo(pts[i].x, pts[i].y)
+                    path.lineTo(transform.x(pts[i].x), transform.y(pts[i].y))
                 }
                 canvas.drawPath(path, paint)
             }
         }
 
         return bitmap
+    }
+
+    private fun computeTransform(strokes: List<Stroke>, width: Int, height: Int): ExportTransform {
+        var minX = Float.MAX_VALUE
+        var minY = Float.MAX_VALUE
+        var maxX = -Float.MAX_VALUE
+        var maxY = -Float.MAX_VALUE
+        var hasPoints = false
+
+        for (stroke in strokes) {
+            val halfWidth = (stroke.baseWidthPx ?: 3.5f).coerceAtLeast(1.5f) / 2f
+            for (p in stroke.points) {
+                hasPoints = true
+                minX = kotlin.math.min(minX, p.x - halfWidth)
+                minY = kotlin.math.min(minY, p.y - halfWidth)
+                maxX = kotlin.math.max(maxX, p.x + halfWidth)
+                maxY = kotlin.math.max(maxY, p.y + halfWidth)
+            }
+        }
+
+        if (!hasPoints) {
+            return ExportTransform(scale = 1f, offsetX = 0f, offsetY = 0f)
+        }
+
+        val contentWidth = (maxX - minX).coerceAtLeast(1f)
+        val contentHeight = (maxY - minY).coerceAtLeast(1f)
+        val padding = min(width, height) * 0.05f
+        val availableWidth = (width - 2f * padding).coerceAtLeast(1f)
+        val availableHeight = (height - 2f * padding).coerceAtLeast(1f)
+        val scale = min(availableWidth / contentWidth, availableHeight / contentHeight).coerceAtLeast(0.0001f)
+
+        val renderedWidth = contentWidth * scale
+        val renderedHeight = contentHeight * scale
+        val offsetX = (width - renderedWidth) / 2f - minX * scale
+        val offsetY = (height - renderedHeight) / 2f - minY * scale
+
+        return ExportTransform(scale = scale, offsetX = offsetX, offsetY = offsetY)
     }
 }
