@@ -13,8 +13,14 @@ import java.nio.file.StandardCopyOption
  * A referência é gravada em um diretório versionado contendo raw strokes + metadados. Somente
  * depois de ambos os arquivos estarem íntegros o ponteiro `baseline_current.txt` é substituído.
  * Assim, uma falha intermediária nunca transforma um conjunto parcial na referência ativa.
+ *
+ * [beforePublishForTest] existe apenas como seam determinístico de teste para provar que uma falha
+ * entre a verificação dos arquivos e a publicação do ponteiro preserva a referência anterior.
  */
-class SignatureBaselineStore(private val signaturesDir: File) {
+class SignatureBaselineStore(
+    private val signaturesDir: File,
+    private val beforePublishForTest: (() -> Unit)? = null
+) {
 
     private val versionsDir = File(signaturesDir, "baseline_versions")
     private val persistence = DedicatedFileStrategy(signaturesDir)
@@ -39,7 +45,6 @@ class SignatureBaselineStore(private val signaturesDir: File) {
             persistence.save(rawFile, attempt.strokes, attempt.id)
             writeMetadata(metadataFile, attempt)
 
-            // Leitura de verificação antes de publicar o ponteiro.
             val verifiedStrokes = persistence.load(rawFile)
             require(verifiedStrokes.size == attempt.strokes.size) {
                 "Falha de integridade ao verificar os traços da referência"
@@ -49,16 +54,25 @@ class SignatureBaselineStore(private val signaturesDir: File) {
 
             if (finalDir.exists()) finalDir.deleteRecursively()
             moveDirectory(stagingDir, finalDir)
+            beforePublishForTest?.invoke()
             writePointerAtomically(attempt.id)
             return verifiedAttempt
         } catch (t: Throwable) {
             stagingDir.deleteRecursively()
+            val publishedId = try {
+                pointerFile.takeIf { it.isFile }?.readText(Charsets.UTF_8)?.trim()
+            } catch (_: Throwable) {
+                null
+            }
+            if (publishedId != attempt.id && finalDir.exists()) {
+                finalDir.deleteRecursively()
+            }
             throw t
         }
     }
 
     fun load(): SignatureAttempt? {
-        val currentId = pointerFile.takeIf { it.exists() }
+        val currentId = pointerFile.takeIf { it.isFile }
             ?.readText(Charsets.UTF_8)
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
@@ -73,7 +87,6 @@ class SignatureBaselineStore(private val signaturesDir: File) {
             }
         }
 
-        // Compatibilidade com instalações anteriores à F5.
         val legacyRaw = File(signaturesDir, "baseline.scribe")
         val legacyMeta = File(signaturesDir, "baseline_meta.txt")
         if (legacyRaw.exists() && legacyMeta.exists()) {
