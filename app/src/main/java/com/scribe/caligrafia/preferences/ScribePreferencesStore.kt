@@ -82,36 +82,50 @@ class ScribePreferencesStore(context: Context) {
             dailyPracticeGoalMinutes = prefs.getInt(KEY_DAILY_GOAL_MINUTES, 15).coerceIn(5, 60)
         )
         InputModeRuntime.current = loaded.inputMode
+        ScribePreferencesRuntime.publish(loaded)
         return loaded
     }
 
     fun save(value: ScribePreferences): Boolean {
-        val committed = prefs.edit()
-            .putBoolean(KEY_LEFT_HANDED, value.isLeftHanded)
-            .apply {
-                if (value.toolbarSideOverride == null) remove(KEY_TOOLBAR_SIDE)
-                else putString(KEY_TOOLBAR_SIDE, value.toolbarSideOverride.name)
+        val normalized = value.copy(
+            breakIntervalMinutes = value.breakIntervalMinutes.coerceIn(5, 60),
+            dailyPracticeGoalMinutes = value.dailyPracticeGoalMinutes.coerceIn(5, 60),
+            pressureCurve = when (value.pressureCurve) {
+                PressureCurveType.LINEAR,
+                PressureCurveType.SOFT,
+                PressureCurveType.FIRM -> value.pressureCurve
+                PressureCurveType.SIGMOID_CALLIGRAPHIC -> PressureCurveType.LINEAR
             }
-            .putString(KEY_INPUT_MODE, value.inputMode.name)
-            .putString(KEY_TEXT_SCALE, value.textScale.name)
-            .putString(KEY_GUIDE_CONTRAST, value.guideContrast.name)
-            .putBoolean(KEY_LEGACY_HIGH_CONTRAST, value.guideContrast == GuideContrastOption.HIGH)
-            .putBoolean(KEY_REDUCE_ANIMATIONS, value.reduceAnimations)
-            .putString(KEY_PRESSURE_CURVE, value.pressureCurve.name)
-            .putBoolean(KEY_BREAK_ENABLED, value.breakReminderEnabled)
-            .putInt(KEY_BREAK_INTERVAL_MINUTES, value.breakIntervalMinutes.coerceIn(5, 60))
-            .putBoolean(KEY_VIBRATION_ENABLED, value.vibrationEnabled)
-            .putBoolean(KEY_SHOW_GUIDE_NUMBERS, value.showGuideNumbers)
-            .putInt(KEY_DAILY_GOAL_MINUTES, value.dailyPracticeGoalMinutes.coerceIn(5, 60))
+        )
+        val committed = prefs.edit()
+            .putBoolean(KEY_LEFT_HANDED, normalized.isLeftHanded)
+            .apply {
+                if (normalized.toolbarSideOverride == null) remove(KEY_TOOLBAR_SIDE)
+                else putString(KEY_TOOLBAR_SIDE, normalized.toolbarSideOverride.name)
+            }
+            .putString(KEY_INPUT_MODE, normalized.inputMode.name)
+            .putString(KEY_TEXT_SCALE, normalized.textScale.name)
+            .putString(KEY_GUIDE_CONTRAST, normalized.guideContrast.name)
+            .putBoolean(KEY_LEGACY_HIGH_CONTRAST, normalized.guideContrast == GuideContrastOption.HIGH)
+            .putBoolean(KEY_REDUCE_ANIMATIONS, normalized.reduceAnimations)
+            .putString(KEY_PRESSURE_CURVE, normalized.pressureCurve.name)
+            .putBoolean(KEY_BREAK_ENABLED, normalized.breakReminderEnabled)
+            .putInt(KEY_BREAK_INTERVAL_MINUTES, normalized.breakIntervalMinutes)
+            .putBoolean(KEY_VIBRATION_ENABLED, normalized.vibrationEnabled)
+            .putBoolean(KEY_SHOW_GUIDE_NUMBERS, normalized.showGuideNumbers)
+            .putInt(KEY_DAILY_GOAL_MINUTES, normalized.dailyPracticeGoalMinutes)
             .commit()
-        if (committed) InputModeRuntime.current = value.inputMode
+        if (committed) {
+            InputModeRuntime.current = normalized.inputMode
+            ScribePreferencesRuntime.publish(normalized)
+        }
         return committed
     }
 
     fun update(transform: (ScribePreferences) -> ScribePreferences): ScribePreferences {
         val updated = transform(load())
         check(save(updated)) { "Não foi possível persistir preferências locais" }
-        return updated
+        return ScribePreferencesRuntime.current
     }
 
     private inline fun <reified T : Enum<T>> enumOrDefault(raw: String?, fallback: T): T {
