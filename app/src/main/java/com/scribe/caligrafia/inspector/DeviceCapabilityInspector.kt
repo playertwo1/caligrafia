@@ -238,7 +238,7 @@ object DeviceCapabilityInspector {
         if ((sourceBits and InputDevice.SOURCE_TOUCHPAD) == InputDevice.SOURCE_TOUCHPAD) sources.add("TOUCHPAD")
         if ((sourceBits and InputDevice.SOURCE_MOUSE) == InputDevice.SOURCE_MOUSE) sources.add("MOUSE")
         if ((sourceBits and InputDevice.SOURCE_KEYBOARD) == InputDevice.SOURCE_KEYBOARD) sources.add("KEYBOARD")
-        if (sources.isEmpty()) sources.add("UNKNOWN_SOURCE ($sourceBits")
+        if (sources.isEmpty()) sources.add("UNKNOWN_SOURCE ($sourceBits)")
         return sources
     }
 }
