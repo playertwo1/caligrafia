@@ -38,8 +38,34 @@ Antes de telas finais, cursos ou IA, provar:
 
 ## Ordem de leitura para agentes
 
-`README.md` → `PRODUCT_SPEC.md` → `ROADMAP.md` → `ARCHITECTURE.md` → `STYLUS_ENGINE.md` → `PROJECT_STATE.md` → `BACKLOG.md` → `AGENTS.md`.
+`STATE.md` → `AGENTS.md` → `ROADMAP.md` (marco ativo) → `PROJECT.md`; abrir `docs/PRODUCT_SPEC.md`, `docs/ARCHITECTURE.md`, `docs/STYLUS_ENGINE.md` e `docs/BACKLOG.md` quando a tarefa pedir.
+
+## Como rodar
+```bash
+# Requisitos: JDK 17 e Android SDK (compileSdk 35, minSdk 26)
+./gradlew assembleDebug     # APK em app/build/outputs/apk/debug/
+./gradlew installDebug      # instala no aparelho conectado
+```
+
+## Como verificar
+```bash
+./gradlew testDebugUnitTest assembleDebug
+```
+A CI (`.github/workflows/build-release.yml`) roda `testDebugUnitTest` e `assembleRelease assembleDebug`. `scripts/watchdog.ps1` faz verificações auxiliares de regras.
+
+## Documentação
+| Pergunta | Arquivo |
+|---|---|
+| Por que existe, MVP, fora de escopo | [PROJECT.md](PROJECT.md) · detalhe em [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md) |
+| Onde paramos, próxima ação | [STATE.md](STATE.md) |
+| Marcos e fila | [ROADMAP.md](ROADMAP.md) · [checklist F0–F7](docs/ANTIGRAVITY_EXECUTION_CHECKLIST.md) |
+| Regras para agentes | [AGENTS.md](AGENTS.md) (`CLAUDE.md` só importa este), [WATCHDOG.md](WATCHDOG.md), [docs/AUDIT.md](docs/AUDIT.md) |
+| Arquitetura e motores | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/STYLUS_ENGINE.md](docs/STYLUS_ENGINE.md), [docs/STYLE_ENGINE.md](docs/STYLE_ENGINE.md), [LEARNING_SYSTEM.md](LEARNING_SYSTEM.md), [docs/DATA_MODEL.md](docs/DATA_MODEL.md) |
+| UX, privacidade, referências | [docs/UI_UX.md](docs/UI_UX.md), [docs/SECURITY_PRIVACY.md](docs/SECURITY_PRIVACY.md), [docs/REFERENCES.md](docs/REFERENCES.md) |
+| Relatórios de auditoria | `docs/audit-reports/`, `docs/audit*/` |
+| Histórico de mudanças | [CHANGELOG.md](CHANGELOG.md) |
+| Histórico (não editar) | `docs/archive/` |
 
 ## Estado atual
 
-A documentação v0.1 é a pedra fundamental do projeto. Quando o desenvolvimento começar, a primeira tarefa é **SCR-001 — Bootstrap Android**, seguida de **SCR-002 — Device Capability Inspector**. Não avançar além do M0 até o Gate M0 ser aprovado.
+Ver [STATE.md](STATE.md). Histórico: a documentação v0.1 foi a pedra fundamental do projeto, começando por **SCR-001 — Bootstrap Android** e **SCR-002 — Device Capability Inspector**; o app já passou pelos marcos M0–M8 e pelas fases funcionais F0–F4.

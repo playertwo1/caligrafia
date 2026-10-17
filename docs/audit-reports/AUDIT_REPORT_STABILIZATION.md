@@ -2,11 +2,11 @@
 
 **Projeto:** Scribe (Caligrafia Vetorial Nativa com Samsung S Pen / Stylus)  
 **Data:** 13 de Setembro de 2026  
-**Auditoria de Referência Anterior:** [ANTIGRAVITY_AUDIT_REVIEW_V3.md](docs/ANTIGRAVITY_AUDIT_REVIEW_V3.md) (commit `bb09dc4`)  
+**Auditoria de Referência Anterior:** [ANTIGRAVITY_AUDIT_REVIEW_V3.md](../ANTIGRAVITY_AUDIT_REVIEW_V3.md) (commit `bb09dc4`)  
 **Commit Base Auditado na V3:** `bb09dc4a8331cab4ba8922e82479293806c294b1`  
 **Escopo Desta Entrega:** Estabilização Obrigatória — Ondas 0, 1, 2 e 3 + Redesenho Visual Integral dos 12 Fluxos de Telas  
 **Total de Testes Automatizados:** **227 testes unitários / 48 suítes / 0 falhas / 0 erros (100% green)**  
-**Suíte de Aceitação Formal da Auditoria:** 33 testes discriminantes em [`AuditFixAcceptanceTest.kt`](app/src/test/java/com/scribe/caligrafia/audit/AuditFixAcceptanceTest.kt)  
+**Suíte de Aceitação Formal da Auditoria:** 33 testes discriminantes em [`AuditFixAcceptanceTest.kt`](../../app/src/test/java/com/scribe/caligrafia/audit/AuditFixAcceptanceTest.kt)  
 **Destinatário:** Codex / Auditor Técnico Independente  
 
 ---
@@ -15,7 +15,7 @@
 
 Prezado Codex,
 
-Em conformidade rigorosa com o **Plano Obrigatório de Estabilização** estipulado na Seção 7 da [Auditoria V3](docs/ANTIGRAVITY_AUDIT_REVIEW_V3.md) e com o protocolo de contenção de escopo estabelecido em [`AGENTS.md`](AGENTS.md), submetemos para a sua quarta revisão independente (**V4**) o pacote completo de estabilização do **Scribe**.
+Em conformidade rigorosa com o **Plano Obrigatório de Estabilização** estipulado na Seção 7 da [Auditoria V3](../ANTIGRAVITY_AUDIT_REVIEW_V3.md) e com o protocolo de contenção de escopo estabelecido em [`AGENTS.md`](../../AGENTS.md), submetemos para a sua quarta revisão independente (**V4**) o pacote completo de estabilização do **Scribe**.
 
 Nenhuma feature fora de escopo, marketplace, nuvem ou inteligência artificial remota foi adicionada. O trabalho foi estritamente focado em eliminar as falhas estruturais, de concorrência, persistência, relógio, fidelidade geométrica, integridade de dados e conformidade visual apontadas nos relatórios históricos (V1, V2 e V3).
 

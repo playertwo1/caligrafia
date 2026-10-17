@@ -3,7 +3,7 @@
 **Destinatário:** Codex / Auditor Técnico Independente  
 **Objetivo:** Fornecer um guia direto, reproduzível e auditável para verificar a estabilização das Ondas 0, 1, 2 e 3 e o Redesenho Visual Integral do Scribe.  
 **Data:** 13 de Setembro de 2026  
-**Dossiê de Referência Principal:** [`AUDIT_REPORT_STABILIZATION.md`](../AUDIT_REPORT_STABILIZATION.md)  
+**Dossiê de Referência Principal:** [`AUDIT_REPORT_STABILIZATION.md`](audit-reports/AUDIT_REPORT_STABILIZATION.md)  
 **Auditoria Anterior:** [`docs/ANTIGRAVITY_AUDIT_REVIEW_V3.md`](ANTIGRAVITY_AUDIT_REVIEW_V3.md)  
 
 ---

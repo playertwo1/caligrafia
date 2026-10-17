@@ -22,11 +22,11 @@ Este documento define as regras inegociáveis de operação no repositório **Sc
 
 Antes de concluir qualquer tarefa ou submeter alterações:
 
-- [ ] **Critérios de Aceite:** Todos os critérios de aceite definidos no `BACKLOG.md` para a tarefa foram cumpridos?
+- [ ] **Critérios de Aceite:** Todos os critérios de aceite definidos no `docs/BACKLOG.md` para a tarefa foram cumpridos?
 - [ ] **Testes Unitários:** Testes pertinentes executados, com falhas novas e históricas distinguidas (`.\gradlew.bat testDebugUnitTest`)?
 - [ ] **Compilação/Lint:** Para mudanças de código, executar assembleDebug e lintDebug e registrar resultados/limites.
-- [ ] **Revisão Final:** Aplicar [AUDIT.md](AUDIT.md). O script watchdog é auxiliar e não comprova aprovação geral do produto.
-- [ ] **Atualização de Estado:** O arquivo `PROJECT_STATE.md` foi atualizado com o status exato, testes realizados, limitações e a próxima ação imediata?
+- [ ] **Revisão Final:** Aplicar [AUDIT.md](docs/AUDIT.md). O script watchdog é auxiliar e não comprova aprovação geral do produto.
+- [ ] **Atualização de Estado:** O arquivo `STATE.md` foi atualizado com o status exato, testes realizados, limitações e a próxima ação imediata?
 - [ ] **Relatório Transparente:** O relatório final especifica arquivos alterados, decisões técnicas, testes executados, limitações identificadas e a próxima tarefa recomendada?
 
 ## 3. Guardrails incorporados do Drive

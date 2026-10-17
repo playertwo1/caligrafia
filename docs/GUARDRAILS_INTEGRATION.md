@@ -8,7 +8,7 @@ Encontrados e lidos integralmente os três arquivos Markdown da [pasta GUARDRAIL
 |---|---|
 | [AGENTS_GUARDRAILS.md](https://drive.google.com/file/d/1nPdaQRnQH9ROBe_WzvYDJFH9BYmpln_x/view) | Leitura prévia, controle de escopo, preservação do trabalho e ligação de [AGENTS](../AGENTS.md) a WATCHDOG/AUDIT |
 | [WATCHDOG.md](https://drive.google.com/file/d/1zH3fYkqrIIQ_qgjubwzdwUguQw9xoy7J/view) | Autonomia com mudanças pequenas, riscos, recuperação, segurança, revisão após falhas repetidas e dependências justificadas em [WATCHDOG](../WATCHDOG.md) |
-| [AUDIT.md](https://drive.google.com/file/d/1-n9yn6S66o06oaRg9aqZyesZVvvOvxhm/view) | Revisão adversarial de escopo/diff/regressão/segurança, caça a atalhos, severidades e PASS/FAIL em [AUDIT](../AUDIT.md) |
+| [AUDIT.md](https://drive.google.com/file/d/1-n9yn6S66o06oaRg9aqZyesZVvvOvxhm/view) | Revisão adversarial de escopo/diff/regressão/segurança, caça a atalhos, severidades e PASS/FAIL em [AUDIT](AUDIT.md) |
 
 ## Adaptações necessárias
 
