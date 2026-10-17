@@ -9,18 +9,32 @@ O usuário autorizou explicitamente transformar as 12 áreas do painel e os 12 f
 
 **Plano detalhado obrigatório para o Antigravity:** [dos mockups ao Scribe funcional](docs/ANTIGRAVITY_FUNCTIONAL_ROADMAP.md). Ele contém navegação, escopo por tela PF-01–PF-12, comportamento/persistência, critérios de aceite, dependências e protocolo de evidência. Esta autorização substitui a limitação anterior a ajustes visuais e libera as opções explicitamente enumeradas no plano; auditorias e preservação de dados continuam válidas.
 
-| Ordem | Entrega | Resultado que deve funcionar | Status de Execução |
-|---|---|---|---|
-| F0 | Integridade e mapa de ações | Resolver contraprovas V5 de manifesto/cache; registrar IDs, dados e rotas | **CONCLUÍDO** (`3d4f0c5`) |
-| F1 | Navegação, biblioteca, editor e páginas | Encontrar as áreas, organizar cadernos e escrever com ferramentas completas | **CONCLUÍDO** (`9f692d4`) |
-| F2 | Aulas, objetivos, treino e feedback | Escolher lição/estilo/duração e concluir sessão real ligada ao histórico/SRS | **CONCLUÍDO** (`4dab8cb`) |
-| F3 | Evolução, replay, variantes e estilos | Rever, comparar, favoritar e usar a própria escrita como referência | **CONCLUÍDO** (`43a84d6`) |
-| F4 | Professor explicável e cópia de textos | Seguir orientação até o resultado e copiar o texto realmente selecionado | **CONCLUÍDO** (`127c604`) |
-| **F5** | **Assinaturas, exportação e backup** | **Salvar referência, levar arquivos para fora do app e restaurar dados** | **PARADA ATUAL (A Iniciar: F5.01–F5.21 e F5.G)** |
-| F6 | Preferências, S Pen/Watch e laboratório | Ajustes persistentes com efeito real, diagnóstico e fallback explícito | PENDENTE |
-| F7 | Consolidação e entrega | Percursos completos, acessibilidade, preservação de acervo e APK verificável | PENDENTE |
+| Ordem | Entrega | Resultado que deve funcionar | Status de Execução | Gate |
+|---|---|---|---|---|
+| F0 | Integridade e mapa de ações | Resolver contraprovas V5 de manifesto/cache; registrar IDs, dados e rotas | **CONCLUÍDO** (`3d4f0c5`) | F0.G |
+| F1 | Navegação, biblioteca, editor e páginas | Encontrar as áreas, organizar cadernos e escrever com ferramentas completas | **CONCLUÍDO** (`9f692d4`) | F1.G |
+| F2 | Aulas, objetivos, treino e feedback | Escolher lição/estilo/duração e concluir sessão real ligada ao histórico/SRS | **CONCLUÍDO** (`4dab8cb`) | F2.G |
+| F3 | Evolução, replay, variantes e estilos | Rever, comparar, favoritar e usar a própria escrita como referência | **CONCLUÍDO** (`43a84d6`) | F3.G |
+| F4 | Professor explicável e cópia de textos | Seguir orientação até o resultado e copiar o texto realmente selecionado | **CONCLUÍDO** (`127c604`) | F4.G |
+| **F5** | **Assinaturas, exportação e backup** | **Salvar referência, levar arquivos para fora do app e restaurar dados** | **PARADA ATUAL (A Iniciar: F5.01–F5.21 e F5.G)** | F5.G |
+| F6 | Preferências, S Pen/Watch e laboratório | Ajustes persistentes com efeito real, diagnóstico e fallback explícito | PENDENTE | F6.G |
+| F7 | Consolidação e entrega | Percursos completos, acessibilidade, preservação de acervo e APK verificável | PENDENTE | F7.G |
+
+Gates `Fn.G` definidos no [checklist de execução](docs/ANTIGRAVITY_EXECUTION_CHECKLIST.md); "CONCLUÍDO" acima é marcação do implementador, não aprovação Codex (ver `AGENTS.md`).
 
 > **Ponto de Parada Atual (2026-09-13):** Fases F0, F1, F2, F3 e F4 concluídas com 100% de cobertura (297 testes unitários passando, 0 falhas, `assembleDebug` OK). A execução parou na entrada da **Fase F5 — Assinaturas, exportação e recuperação (F5.01 a F5.21 e F5.G)**. Todos os commits anteriores estão publicados no GitHub (HEAD: `127c604`).
+
+## Marco ativo — F5 — Assinaturas, exportação e recuperação
+**Objetivo de produto:** salvar referência de assinatura, levar arquivos para fora do app e restaurar dados sem perda. · **Quem valida:** Codex (verificação) e usuário (aceite).
+
+| ID | Tarefa | Prioridade | Depende de | Estado | Evidência exigida |
+|---|---|---|---|---|---|
+| F5.01–F5.05 | Assinatura: política de pointer/eixos, salvar/confirmar referência, recriação da View, comparação honesta | P1 | F4 | READY | testes unitários + percurso sair/voltar/reiniciar |
+| F5.06–F5.10 | Exportação SVG/PNG de assinatura e página via seletor Android | P1 | F5.01–F5.05 | READY | arquivos abertos fora do app (conteúdo, transparência, dimensões) |
+| F5.11–F5.21 | Backup `.scribepack`: inventário real, export para URI, revisão e restauração com staging/recuperação, testes de falha | P0 | F4 | READY | testes de pacote inválido/cancelamento/interrupção + round-trip em acervo limpo e existente |
+| F5.G | Gate da fase | P0 | F5.01–F5.21 | BACKLOG | arquivos reproduzíveis e prova de recuperação |
+
+**Gate de saída:** F5.G aprovado pelo Codex. · **Riscos:** restauração substitui o acervo; exige staging e recuperação antes de qualquer publicação.
 
 **Entrada de Praticar:** Hub de aulas com objetivo, categorias e duração; não abrir invariavelmente um traço `/`. **Mais:** destinos nomeados para Alfabeto, Professor, Estilos, Assinaturas, Cópia de textos, Backup, S Pen/Watch, Laboratório e Preferências.
 

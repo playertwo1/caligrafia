@@ -1,6 +1,6 @@
 # AUDIT — Revisão final de alterações do Scribe
 
-Adaptado do checklist da pasta GUARDRAILS do usuário. [Origem e adaptações](docs/GUARDRAILS_INTEGRATION.md). Aplicar após alterações relevantes; escopo proporcional ao pedido.
+Adaptado do checklist da pasta GUARDRAILS do usuário. [Origem e adaptações](GUARDRAILS_INTEGRATION.md). Aplicar após alterações relevantes; escopo proporcional ao pedido.
 
 ## Método
 

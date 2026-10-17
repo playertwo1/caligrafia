@@ -8,7 +8,7 @@ Há correções reais: finalização do ZIP, retirada da chamada de seeds das te
 
 ## 1. Escopo e método
 
-Lidos os quatro documentos solicitados: [dossiê](../AUDIT_REPORT_STABILIZATION.md), [instruções V4](CODEX_AUDIT_INSTRUCTIONS_V4.md), [matriz submetida](audit-v4/AUDIT_STABILIZATION_MATRIX.md) e [guia visual](design/fluxos-v1/README.md). Também examinados AGENTS, README, PRODUCT_SPEC, ROADMAP, ARCHITECTURE, STYLUS_ENGINE, PROJECT_STATE, V1/V2/V3, código de produção, chamadores de UI, testes e workflow.
+Lidos os quatro documentos solicitados: [dossiê](audit-reports/AUDIT_REPORT_STABILIZATION.md), [instruções V4](CODEX_AUDIT_INSTRUCTIONS_V4.md), [matriz submetida](audit-v4/AUDIT_STABILIZATION_MATRIX.md) e [guia visual](design/fluxos-v1/README.md). Também examinados AGENTS, README, PRODUCT_SPEC, ROADMAP, ARCHITECTURE, STYLUS_ENGINE, PROJECT_STATE, V1/V2/V3, código de produção, chamadores de UI, testes e workflow.
 
 Os **66 IDs históricos** têm avaliação individual na [matriz independente](audit-v4/INDEPENDENT_COMPLIANCE_MATRIX.md). Não são 66 defeitos distintos: há sobreposição entre auditorias. Os significados originais foram preservados. Em particular, **R17 originalmente é importação/preview de fontes**, não seleção de inclinação; **A12 é completude e A13 é coerência modelo/slant**; **A16 é benchmark SQLite/Room**, não uma categoria genérica de validação física. O teste submetido chamado `s18_teacherPrescription...` não comprova S18, que é curva de pressão.
 

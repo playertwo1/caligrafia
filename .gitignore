@@ -13,3 +13,8 @@ build/
 keystore/*.jks
 keystore/*.txt
 keystore/*.properties
+
+# Segredos e configuração local (nunca versionar)
+.env
+.env.*
+!.env.example

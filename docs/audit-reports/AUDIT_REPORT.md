@@ -1,4 +1,4 @@
-> **Revisão independente vigente:** fechamento M0–M8 não aprovado na v0.8.0. Os status de conclusão históricos abaixo são alegações do implementador. Ver [auditoria V3](docs/ANTIGRAVITY_AUDIT_REVIEW_V3.md) e [referências visuais com instruções](docs/design/fluxos-v1/README.md). A construção visual deve seguir as ondas de estabilização.
+> **Revisão independente vigente:** fechamento M0–M8 não aprovado na v0.8.0. Os status de conclusão históricos abaixo são alegações do implementador. Ver [auditoria V3](../ANTIGRAVITY_AUDIT_REVIEW_V3.md) e [referências visuais com instruções](../design/fluxos-v1/README.md). A construção visual deve seguir as ondas de estabilização.
 # AUDIT_REPORT — Relatório Completo de Implementação e Auditoria
 
 > [!IMPORTANT]
@@ -253,9 +253,9 @@ O próximo marco planejado no [ROADMAP.md](file:///c:/Users/fael/Documents/Codex
 
 Por solicitação do usuário, o projeto contém **13 imagens de referência**: um painel geral com 12 telas e 12 imagens complementares, cada uma com três estados de um fluxo.
 
-- [Painel geral das telas](docs/design/scribe-visao-12-telas-v1.png).
-- [Índice das 12 referências de fluxos e instruções para o Antigravity](docs/design/fluxos-v1/README.md).
-- [Auditoria independente V3: achados, dependências e ondas de estabilização](docs/ANTIGRAVITY_AUDIT_REVIEW_V3.md).
+- [Painel geral das telas](../design/scribe-visao-12-telas-v1.png).
+- [Índice das 12 referências de fluxos e instruções para o Antigravity](../design/fluxos-v1/README.md).
+- [Auditoria independente V3: achados, dependências e ondas de estabilização](../ANTIGRAVITY_AUDIT_REVIEW_V3.md).
 
 **Direção visual:** papel claro, tinta azul-marinho, ações em azul, guias discretas, controles nativos e espaço amplo para S Pen no Galaxy S25 Ultra. Usar as imagens como base de composição e interação; consultar o guia antes de copiar textos, valores, navegação ou controles.
 

@@ -4,14 +4,19 @@
 
 O usuário autorizou implementar as áreas/opções dos mockups e determinou que Codex organiza/verifica e Antigravity executa. Seguir o [checklist obrigatório](docs/ANTIGRAVITY_EXECUTION_CHECKLIST.md), F0–F7, caixa por caixa; o [roadmap funcional](docs/ANTIGRAVITY_FUNCTIONAL_ROADMAP.md) fornece contexto. Este mandato prevalece sobre restrições históricas a expansões no escopo explicitamente enumerado. Preservar dados e gates de integridade. Marcação do implementador não é aprovação Codex; alterações de requisito exigem decisão registrada, não improvisação.
 
+## Comandos
+- Instalar: JDK 17 + Android SDK; usar o wrapper `./gradlew`.
+- Verificar: `./gradlew testDebugUnitTest assembleDebug` (igual à CI); auxiliar: `scripts/watchdog.ps1`.
+- Rodar: `./gradlew installDebug`.
+
 ## Missão atual
 Construir o Scribe incrementalmente. O maior risco é o ink engine; não começar pelas telas finais.
 
 ## Regra de execução
-1. Leia README, PRODUCT_SPEC, ROADMAP, ARCHITECTURE, STYLUS_ENGINE e PROJECT_STATE.
+1. Leia `STATE.md`, `ROADMAP.md` (marco ativo) e `PROJECT.md`; abra `docs/PRODUCT_SPEC.md`, `docs/ARCHITECTURE.md` e `docs/STYLUS_ENGINE.md` quando a tarefa pedir.
 2. Trabalhe somente no milestone atual.
 3. Não avance sem critérios de aceite.
-4. Registre decisões relevantes em PROJECT_STATE/ADR.
+4. Registre decisões relevantes em STATE.md/ADR.
 5. Não introduza backend/cloud no MVP sem requisito explícito.
 
 ## Prioridade atual
@@ -35,7 +40,7 @@ Os requisitos dependentes do hardware físico do Samsung Galaxy S25 Ultra e do r
 9. Não afirmar aprovação do Codex, teste físico, latência comprovada ou conclusão 100% sem evidência correspondente. Distinguir autorrevisão de revisão independente.
 10. Falta de aparelho não impede trabalho independente: corrigir e validar o que for possível, mantendo a etapa física pendente. Não fabricar resultado nem promover gate por tempo gasto/versão/test count.
 11. Preservar dados reais em migrações; não limpar diretórios do usuário nem recriar seeds como recuperação de corrupção.
-12. Ao concluir a onda, atualizar PROJECT_STATE e matriz de auditoria. Prosseguir apenas para a próxima onda cujos pré-requisitos estejam satisfeitos, sem iniciar milestones novos.
+12. Ao concluir a onda, atualizar STATE.md e matriz de auditoria. Prosseguir apenas para a próxima onda cujos pré-requisitos estejam satisfeitos, sem iniciar milestones novos.
 
 ## Aparelho-alvo e integração Samsung
 - Aparelho principal: Samsung Galaxy S25 Ultra com sua S Pen original. Validar capacidades e desempenho no aparelho real.
@@ -51,10 +56,10 @@ Kotlin nativo; sem WebView no canvas; raw strokes nunca substituídos por bitmap
 Build e testes relevantes devem passar; falhas conhecidas são registradas; dependências devem ser justificadas; preferir código simples e observável.
 
 ## Ao concluir uma tarefa
-Reportar arquivos alterados, decisão, testes, limitações e próxima tarefa recomendada. Atualizar PROJECT_STATE.md.
+Reportar arquivos alterados, decisão, testes, limitações e próxima tarefa recomendada. Atualizar STATE.md.
 
 ## Histórico de fundação e escopo atual
 O repositório nasceu como fundação documental; SCR-001/SCR-002 eram o ponto de partida histórico. A etapa atual é estabilizar a implementação existente conforme a auditoria, sem recriar o projeto nem reiniciar o bootstrap. A existência do roadmap continua não sendo autorização para implementar todos os marcos.
 
 ## Referências visuais solicitadas pelo usuário
-Antes de construir ou ajustar a UI, consultar [o painel geral](docs/design/scribe-visao-12-telas-v1.png) e [o guia das 12 imagens de fluxos](docs/design/fluxos-v1/README.md). Usar como direção visual; seguir as correções de texto/valores/navegação do guia e os requisitos funcionais da auditoria. Os mockups não são prova de entrega e seus elementos incidentais não autorizam features novas. Registrar imagem usada, diferenças justificadas e evidência real do fluxo em PROJECT_STATE.
+Antes de construir ou ajustar a UI, consultar [o painel geral](docs/design/scribe-visao-12-telas-v1.png) e [o guia das 12 imagens de fluxos](docs/design/fluxos-v1/README.md). Usar como direção visual; seguir as correções de texto/valores/navegação do guia e os requisitos funcionais da auditoria. Os mockups não são prova de entrega e seus elementos incidentais não autorizam features novas. Registrar imagem usada, diferenças justificadas e evidência real do fluxo em STATE.md.

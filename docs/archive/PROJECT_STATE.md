@@ -2,9 +2,9 @@
 
 ## Prioridade vigente — checklist funcional para execução
 
-Por solicitação do usuário, o planejamento foi convertido em [ordens detalhadas com checkboxes](docs/ANTIGRAVITY_EXECUTION_CHECKLIST.md). Codex decide requisitos e verifica; Antigravity executa na sequência F0–F7 e apresenta provas por ID. Todas as caixas começam desmarcadas: não se certificou implementação nesta tarefa documental. ROADMAP, plano funcional e AGENTS apontam para o novo contrato. Próxima ação: F0.01, registrar checkout e preservar alterações; depois seguir a primeira caixa pendente.
+Por solicitação do usuário, o planejamento foi convertido em [ordens detalhadas com checkboxes](../ANTIGRAVITY_EXECUTION_CHECKLIST.md). Codex decide requisitos e verifica; Antigravity executa na sequência F0–F7 e apresenta provas por ID. Todas as caixas começam desmarcadas: não se certificou implementação nesta tarefa documental. ROADMAP, plano funcional e AGENTS apontam para o novo contrato. Próxima ação: F0.01, registrar checkout e preservar alterações; depois seguir a primeira caixa pendente.
 
-Os status históricos de fechamento abaixo não anulam as duas falhas reproduzidas no [parecer V5 de revalidação](docs/ANTIGRAVITY_AUDIT_REVIEW_V5_RECHECK.md). O checklist exige verificar a base atual antes de corrigir ou marcar qualquer requisito. Validação desta entrega: IDs únicos, cobertura F0–F7, links e diff; testes Android não se aplicam à alteração documental.
+Os status históricos de fechamento abaixo não anulam as duas falhas reproduzidas no [parecer V5 de revalidação](../ANTIGRAVITY_AUDIT_REVIEW_V5_RECHECK.md). O checklist exige verificar a base atual antes de corrigir ou marcar qualquer requisito. Validação desta entrega: IDs únicos, cobertura F0–F7, links e diff; testes Android não se aplicam à alteração documental.
 
 > **Status de Execução Supervisionada — Fases F0, F1, F2, F3 e F4 Concluídas (2026-09-13):**
 > - **Fase F0 (Integridade de Dados e Contratos):** Concluída com 100% de aprovação. BASELINE, DATA_CONTRACT e ROUTE_ACTION_MATRIX documentados; parser JSON estrito (rejeição de sintaxe quebrada/valores omitidos) e invalidação de cache de traços integrados.
@@ -203,6 +203,6 @@ Não iniciar backend, nuvem ou marketplace antes dos milestones correspondentes.
 
 ## Revisão independente e referências visuais — 2026-09-12
 
-Estado vigente: ESTABILIZACAO_OBRIGATORIA. O fechamento M0–M8 declarado acima não foi aprovado pela auditoria independente de bb09dc4. Consultar [V3](docs/ANTIGRAVITY_AUDIT_REVIEW_V3.md) e as pendências históricas V1/V2. Nenhum defeito de produto foi corrigido por esta publicação documental.
+Estado vigente: ESTABILIZACAO_OBRIGATORIA. O fechamento M0–M8 declarado acima não foi aprovado pela auditoria independente de bb09dc4. Consultar [V3](../ANTIGRAVITY_AUDIT_REVIEW_V3.md) e as pendências históricas V1/V2. Nenhum defeito de produto foi corrigido por esta publicação documental.
 
-Publicadas 13 imagens: [painel geral](docs/design/scribe-visao-12-telas-v1.png) e [12 fluxos detalhados](docs/design/fluxos-v1/README.md). O guia contém índice e ajustes necessários nos mockups. Usar como base visual dentro da onda de correção correspondente; não promover gates por aparência. Próxima tarefa: confirmar instruções atualizadas, executar onda 0 da V3 e mapear cada fluxo corrigido à sua referência visual.
+Publicadas 13 imagens: [painel geral](../design/scribe-visao-12-telas-v1.png) e [12 fluxos detalhados](../design/fluxos-v1/README.md). O guia contém índice e ajustes necessários nos mockups. Usar como base visual dentro da onda de correção correspondente; não promover gates por aparência. Próxima tarefa: confirmar instruções atualizadas, executar onda 0 da V3 e mapear cada fluxo corrigido à sua referência visual.
