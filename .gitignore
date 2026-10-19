@@ -13,3 +13,5 @@ build/
 keystore/*.jks
 keystore/*.txt
 keystore/*.properties
+SECRETS_GUIA.txt
+*SECRETS*.txt

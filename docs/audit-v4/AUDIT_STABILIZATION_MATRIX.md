@@ -33,7 +33,7 @@ Legenda de Status:
 | **S18** | P1 | Curvas de pressão da S Pen não afetavam o traço visual renderizado | `PressureCalibration.kt`, `ExpansionsViewModel.kt` | Curvas matemáticas prontas; resposta física: `PENDENTE_DISPOSITIVO` | **PARCIAL** |
 | **S19** | P1 | Watch companion bridge enviava broadcasts sem nó receptor pareado | `WatchCompanionBridge.kt`, `ExpansionsViewModel.kt` | Fallback tátil no telefone; pareamento Watch: `PENDENTE_DISPOSITIVO` | **PARCIAL** |
 | **S20** | P2 | Estilos novos (Gótica, Itálica, Uncial) não adaptavam guias no treino | `GuidedPracticeViewModel.kt` | `r17_guidedPracticeAdaptsTargetSlantToSelectedStyle` | **CONCLUÍDO** |
-| **S21** | P1 | Release público sem assinatura verificável no repositório | `SECRETS_GUIA.txt`, `.github/workflows` | Configuração documentada dos 4 secrets para GitHub Actions CI | **CONCLUÍDO (CONFIG)** |
+| **S21** | P1 | Release público sem assinatura verificável no repositório | `.github/workflows`, secrets do repositório (config local não versionada) | Configuração dos secrets para GitHub Actions CI | **CONCLUÍDO (CONFIG)** |
 | **S22** | P2 | Watchdog/testes tinham alcance menor que a aprovação anunciada | `scripts/watchdog.ps1`, `docs/CODEX_AUDIT_INSTRUCTIONS_V4.md` | Escopo e alcance transparentes documentados | **CONCLUÍDO** |
 | **S23** | P1 | Gates documentais fechados sem evidência | `PROJECT_STATE.md`, `AGENTS.md`, `AUDIT_REPORT_STABILIZATION.md` | Matriz e status sincronizados sem alegação prematura de aprovação | **CONCLUÍDO** |
 | **S24** | P2 | Serializers permissivos mascaravam corrupção com defaults | `BackupSerializer.kt`, `PersonalAlphabetSerializer.kt` | Validação defensiva rejeitando corrupção | **CONCLUÍDO** |
